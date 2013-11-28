@@ -1,0 +1,64 @@
+;
+;
+;    Copyright (C) 2005 Steven Sourbron
+;
+;    This program is free software; you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation; either version 2 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License along
+;    with this program; if not, write to the Free Software Foundation, Inc.,
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
+
+
+pro DECONVOLVECURVE__REGRID $
+, 	time, curve, aif $
+, 	dt=dt, CurveRegr=c, AifRegr=a
+
+	n = n_elements(time)
+	dtime = time[1:n-1]-time[0:n-2]
+	dt = min(dtime,max=mdt)
+	if dt eq 0 then dt=1.0
+
+	if (mdt-dt)/dt lt 0.01 then begin
+		c = curve
+		a = aif
+	endif else begin
+		t = dt*findgen(1+floor(time[n-1]/dt))
+		c = interpol(curve,time,t)
+		a = interpol(aif,time,t)
+	endelse
+end
+
+function DECONVOLVECURVE, time,curve,aif,dt=dt,CurveRegr=c,AifRegr=a,Fit=Fit,_EXTRA=e,QUAD=quad,RegPar=RegPar
+
+
+	DECONVOLVECURVE__REGRID $
+	, 	time, curve, aif $
+	, 	dt=dt, CurveRegr=c, AifRegr=a
+
+	p = fltarr(1,n_elements(c))
+	p[0,*] = c
+;	p[0,*]=ShiftAif(p[0,*],dt*findgen(n_elements(p[0,*])),10*dt)
+
+	Mat = dt*convolution_matrix(a,QUAD=quad)
+
+	if n_elements(RegPar) ne 0 then begin
+		INVERTILLPOSEDFAST, p, Mat, RegPar=RegPar
+	endif else begin
+		INVERTILLPOSED, p, Mat, _EXTRA=e
+	endelse
+
+	if arg_present(Fit) then Fit = Mat ## p
+
+	return, reform(p)
+END

@@ -1,6 +1,12 @@
-;    PMI Main Menu
+;C(t) = F [(1+b)/(1+b exp(at))] * Ca(t)
+
+;P[0] = F
+;P[1] = a
+;P[2] = b
+
 ;
-;    Copyright (C) 2013 Steven Sourbron
+;
+;    Copyright (C) 2009 Steven Sourbron
 ;
 ;    This program is free software; you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -14,22 +20,22 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
+Pro SingleInletFermi, X, P, C, C_DER
 
+	if n_params() eq 0 then return
 
+	ni=X[0] & n=n_elements(X[ni+1:*])/2
+	ti=X[1:ni] & time=X[ni+1:ni+n] & input=X[ni+n+1:*]
 
- pro PMI__Menu, mbar
+	residue = (1+P[2])/(1+P[2]*exp(P[1]*time))
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+	Conv = P[0]*ConvolveIrreg(time, input, residue)
+	C = Conv[ti]
 
-	;PMI__Menu__Skeleton, mbar
-
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
-
-	;Please name all your menus "PMI__Menu__XXXXX"
-
-	PMI__Menu__Skeleton, mbar
+	IF n_params() LT 4 THEN return
 
 end

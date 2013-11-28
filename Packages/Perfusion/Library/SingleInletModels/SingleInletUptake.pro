@@ -1,6 +1,11 @@
-;    PMI Main Menu
+;C(t) = FE * Ca(t)
+;P = [FE]
+;				Pars[0] is the flow or transfer rate into the compartment (in 1/s)
+
+
 ;
-;    Copyright (C) 2013 Steven Sourbron
+;
+;    Copyright (C) 2009 Steven Sourbron
 ;
 ;    This program is free software; you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -14,22 +19,26 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
+Pro SingleInletUptake, X, P, C, C_DER
 
+	if n_params() eq 0 then return
 
+	ni=X[0] & n=n_elements(X[ni+1:*])/2
+	ti=X[1:ni] & time=X[ni+1:ni+n] & input=X[ni+n+1:*]
 
- pro PMI__Menu, mbar
+	Integral = IntVector(time,input)
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+	C = P[0]*Integral[ti]
 
-	;PMI__Menu__Skeleton, mbar
+	IF n_params() LT 4 THEN return
 
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
+	;Derivatives wrt model parameters
 
-	;Please name all your menus "PMI__Menu__XXXXX"
+	C_DER0 = Integral[ti]
 
-	PMI__Menu__Skeleton, mbar
-
+   	C_DER = [[C_DER0]]
 end

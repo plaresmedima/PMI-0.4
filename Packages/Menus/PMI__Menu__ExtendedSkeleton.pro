@@ -1,4 +1,3 @@
-;    PMI Main Menu
 ;
 ;    Copyright (C) 2013 Steven Sourbron
 ;
@@ -14,22 +13,13 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 
+pro PMI__Menu__ExtendedSkeleton, parent
 
- pro PMI__Menu, mbar
-
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
-
-	;PMI__Menu__Skeleton, mbar
-
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
-
-	;Please name all your menus "PMI__Menu__XXXXX"
-
-	PMI__Menu__Skeleton, mbar
+    PMI__Menu__Skeleton, parent
+    PMI__Menu__Slices, parent
+    PMI__Menu__Dynamic, parent
 
 end

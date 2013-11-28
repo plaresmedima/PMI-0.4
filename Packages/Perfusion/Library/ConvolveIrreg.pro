@@ -1,6 +1,6 @@
-;    PMI Main Menu
 ;
-;    Copyright (C) 2013 Steven Sourbron
+;
+;    Copyright (C) 2009 Steven Sourbron
 ;
 ;    This program is free software; you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -14,22 +14,30 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
 
+function ConvolveIrreg, t, g, h
 
+	n = n_elements(t)
 
- pro PMI__Menu, mbar
+	n_int = n*(n+1)/2
+	g_int = fltarr(n_int)
+	i0=0
+	for i=1L,n-1 do begin
+		g_int[i0:i0+i-1] = t[i]-t[0:i-1]
+		i0 = i0+i
+	endfor
+	g_int = interpol(g,t,g_int)
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+	f = fltarr(n)
+	i0=0
+	for i=1L,n-1 do begin
+		f[i] = total(g_int[i0:i0+i-1]*h[0:i-1]*(t[1:i]-t[0:i-1]))
+		i0=i0+i
+	endfor
 
-	;PMI__Menu__Skeleton, mbar
-
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
-
-	;Please name all your menus "PMI__Menu__XXXXX"
-
-	PMI__Menu__Skeleton, mbar
-
+	return, f
 end

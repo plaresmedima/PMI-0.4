@@ -1,6 +1,12 @@
-;    PMI Main Menu
+;C(t) = F exp(-t/T)*Ca(t)
+;P = [VP+VE, F]
+
+;T =(VP+VE)/F
+
+
 ;
-;    Copyright (C) 2013 Steven Sourbron
+;
+;    Copyright (C) 2009 Steven Sourbron
 ;
 ;    This program is free software; you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -14,22 +20,33 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
 
+Pro SingleInletCompartment, X, P, C, C_DER
 
+	if n_params() eq 0 then return
 
- pro PMI__Menu, mbar
+	ni=X[0] & n=n_elements(X[ni+1:*])/2
+	ti=X[1:ni] & time=X[ni+1:ni+n] & input=X[ni+n+1:*]
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+	K = P[1]/P[0] ; F/V
 
-	;PMI__Menu__Skeleton, mbar
+	Conv = ExpConvolution(K,[time,input],Der=dConv)
 
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
+	C = P[1]*Conv[ti]
 
-	;Please name all your menus "PMI__Menu__XXXXX"
+	IF n_params() LT 4 THEN return
 
-	PMI__Menu__Skeleton, mbar
+	;Derivatives wrt model parameters
 
+	K_DER0 = -P[1]/P[0]^2
+	K_DER1 = 1/P[0]
+
+	C_DER0 = P[1]*dConv[ti]*K_DER0
+	C_DER1 = Conv[ti] + P[1]*dConv[ti]*K_DER1
+
+	C_DER = [[C_DER0],[C_DER1]]
 end

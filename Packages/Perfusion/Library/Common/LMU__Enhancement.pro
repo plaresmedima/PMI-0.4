@@ -1,6 +1,6 @@
-;    PMI Main Menu
 ;
-;    Copyright (C) 2013 Steven Sourbron
+;
+;    Copyright (C) 2009 Steven Sourbron
 ;
 ;    This program is free software; you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -14,22 +14,22 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
 
+function LMU__Enhancement, Y, n, relative=relative
 
+	if n_elements(n) eq 0 then n=1
 
- pro PMI__Menu, mbar
+	Y0 = total(Y[0:n-1])/n
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+	case relative of
+		0:return, Y-Y0	;enhancement (T1)
+		1:if Y0 ne 0 then return, (Y-Y0)/Y0		;relative enhancement (T1)
+		2:if Y0 ne 0 then return, -alog(Y/Y0)  	;for T2* perfusion
+	endcase
 
-	;PMI__Menu__Skeleton, mbar
-
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
-
-	;Please name all your menus "PMI__Menu__XXXXX"
-
-	PMI__Menu__Skeleton, mbar
-
+	return, Y*0B
 end

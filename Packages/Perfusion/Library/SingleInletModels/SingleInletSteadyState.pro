@@ -1,6 +1,11 @@
-;    PMI Main Menu
+;C(t) = V Ca(t)
+;P = [V]
+;				Pars[0] is the volume fraction of the compartment (dimensionless)
+
+
 ;
-;    Copyright (C) 2013 Steven Sourbron
+;
+;    Copyright (C) 2009 Steven Sourbron
 ;
 ;    This program is free software; you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -14,22 +19,24 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
+Pro SingleInletSteadyState, X, P, C, C_DER
 
+	if n_params() eq 0 then return
 
+	ni=X[0] & n=n_elements(X[ni+1:*])/2
+	ti=X[1:ni] & time=X[ni+1:ni+n] & input=X[ni+n+1:*]
 
- pro PMI__Menu, mbar
+	C = P[0]*input[ti]
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+	IF n_params() LT 4 THEN return
 
-	;PMI__Menu__Skeleton, mbar
+	;Derivatives wrt model parameters
 
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
+	C_DER0 = input[ti]
 
-	;Please name all your menus "PMI__Menu__XXXXX"
-
-	PMI__Menu__Skeleton, mbar
-
+   	C_DER = [[C_DER0]]
 end

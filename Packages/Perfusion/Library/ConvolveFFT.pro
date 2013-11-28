@@ -1,6 +1,8 @@
-;    PMI Main Menu
+;Calculates a convolution in first order using the FFT
+
 ;
-;    Copyright (C) 2013 Steven Sourbron
+;
+;    Copyright (C) 2009 Steven Sourbron
 ;
 ;    This program is free software; you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -14,22 +16,19 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
 
+FUNCTION ConvolveFFT, dt, f, g
 
+	N = n_elements(f)
 
- pro PMI__Menu, mbar
+	Ff = 2*N * FFT([f,fltarr(N)], -1)
+	Fg = 2*N * FFT([g,fltarr(N)], -1)
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+	c = FFT(Ff*Fg, +1)/(2*N)
 
-	;PMI__Menu__Skeleton, mbar
-
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
-
-	;Please name all your menus "PMI__Menu__XXXXX"
-
-	PMI__Menu__Skeleton, mbar
-
-end
+	return, dt * REAL_PART(c[0:n-1])
+END
