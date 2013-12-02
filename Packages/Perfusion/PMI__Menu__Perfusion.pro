@@ -34,7 +34,7 @@
 
 
 
-pro PMI__Menu__Package__Perfusion, parent
+pro PMI__Menu__Perfusion, parent
 
 
 id = widget_button(parent, value='Perfusion',/menu)

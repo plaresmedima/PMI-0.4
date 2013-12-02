@@ -55,8 +55,8 @@ FUNCTION PMI__Display__Welcome::Init, parent, CursorPos, xsize=xsize, ysize=ysiz
 	s = str_sep(!path,';')
 	imagepath = s[0]
 	for i=1L,n_elements(s)-1 do begin
-		a = strsplit(s[i],'PMI 0.4',count=cnt,/regex,/extract)
-		if cnt eq 2 then if a[1] eq '\Source\Interface' then imagepath = s[i]
+		a = strsplit(s[i],'PMI-0.4',count=cnt,/regex,/extract)
+		if cnt eq 2 then if a[1] eq '\Skeleton\Interface' then imagepath = s[i]
 	endfor
 	file = imagepath + '\' + 'PMI__Welcome.tif'
 	info = file_info(file)

@@ -4,7 +4,7 @@ pro PMI__Compile
 ;	path = path[n_elements(path)-1]
 
 	path = dialog_pickfile(/directory, $
-		path 	= 'C:\PMI\PMI 0.4\', $
+		path 	= 'C:\', $
 		title	= 'Save pmi.sav in the directory..' )
 	if path eq '' then return
 	file = path + 'pmi.sav'
