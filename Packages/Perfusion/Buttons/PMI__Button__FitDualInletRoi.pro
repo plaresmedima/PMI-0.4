@@ -70,7 +70,7 @@ PRO PMI__Button__Display__FitDualInletRoi::Fit
 			END
 
 		'Uptake':BEGIN
-			P = [FA,FV,0.2,0.2] ;P = [FA,FV,VE+VP,EI]
+			P = [FA,FV,0.2,0.2] ;P = [FA,FV,VE,EI]
 			Fit = FitDualInlet('Uptake', Time, Aif, Vif, Curve, P, LIMITED_ABOVE=[0,0,1,1], DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, DELAY_WHICH=DELAY_WHICH, AKAIKE_ERROR=aic, /POSITIVITY, /NODERIVATIVE, FIXED=fixed)
 			Parameters = $
 				[{Name:'Extracellular Volume'	,Units:'ml/100ml'		,Value:100D*P[2]				,Nr: 4} $
