@@ -60,7 +60,8 @@ id = widget_button(parent, value='Perfusion',/menu)
 		SSid = PMI__Button__FitPatlak(Sid, value='Patlak')
 		SSid = PMI__Button__FitTofts(Sid, value='1 compartment')
 
-	Sid = PMI__Button__FitSingleInletRoi(id, value='Exchange models (ROI)')
+	Sid = PMI__Button__FitSingleInletRoi(id, value='Single-inlet exchange models (ROI)')
+	Sid = PMI__Button__FitDualInletRoi(id, value='Dual-inlet exchange models (ROI)')
 
 
 end

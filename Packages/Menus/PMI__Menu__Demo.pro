@@ -39,5 +39,6 @@ pro PMI__Menu__Demo, parent
 
     Sid = PMI__Button__FitSingleInletRoi(id, value='Exchange models (ROI)', /separator)
 	Sid = PMI__Button__KidneyModelsROI(id, value = 'Kidney models (ROI)')
+	Sid = PMI__Button__FitDualInletRoi(id, value = 'Liver models (ROI)')
 
 end
