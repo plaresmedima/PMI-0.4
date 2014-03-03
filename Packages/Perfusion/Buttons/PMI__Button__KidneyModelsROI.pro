@@ -98,10 +98,29 @@ PRO PMI__Display__KidneyModelsROI::Fit
 				,{Name:'Extraction Fraction',Units:'%' 				,Value:100D*P[3]				,Nr: 7} $
 				,{Name:'Tubular Flow'		,Units:'ml/100ml/min'	,Value:6000D*P[1]*P[3]			,Nr: 4} $
 				,{Name:'Regional GFR'		,Units:'ml/min'			,Value:Vol*60D*P[1]*P[3]		,Nr: 8} $
-				,{Name:'Region Volume'		,Units:'ml'				,Value:Vol						,Nr: 10}]
+				,{Name:'Region Volume'		,Units:'ml'				,Value:Vol						,Nr: 10} $
+				,{Name:'Chi-Square'		    ,Units:'%'				,Value:100D*total((Fit-curve)^2)/total(curve^2)						,Nr: 14}]
+
 			IF Delay NE 0 THEN $
 				Parameters = [Parameters,{Name:'Arterial Delay', Units:'sec', Value:1D*Pd, Nr:12} ]
 			end
+
+;		'2C Filtration (LLS)':begin
+;		    RENALMODEL_INVERSE_LLS_METHOD, curve, aif, time, TPrec, TTrec, VPrec, VTrec
+;		    RENALMODEL_INVERSE_NONLINEAR_FUNC_2_, [time,aif], [TPrec, TTrec, VPrec, VTrec], Fit
+;			Parameters = $
+;				[{Name:'Blood Flow'			,Units:'ml/100ml/min'	,Value:6000D*VPrec/TPrec/(1D -self.Hematocrit)			,Nr: 0} $
+;				,{Name:'Blood MTT'			,Units:'sec'			,Value:1D*TPrec					,Nr: 1} $
+;				,{Name:'Blood Volume'		,Units:'ml/100ml'		,Value:100D*VPrec/(1D -self.Hematocrit)	,Nr: 2} $
+;				,{Name:'Tubular MTT'		,Units:'min'			,Value:1D*TTrec/60D	,Nr: 5} $
+;				,{Name:'Extraction Fraction',Units:'%' 				,Value:100D*(VTrec/TTrec)/(VPrec/TPrec)				,Nr: 7} $
+;				,{Name:'Tubular Flow'		,Units:'ml/100ml/min'	,Value:6000D*VTrec/TTrec			,Nr: 4} $
+;				,{Name:'Regional GFR'		,Units:'ml/min'			,Value:Vol*60D*VTrec/TTrec		,Nr: 8} $
+;				,{Name:'Region Volume'		,Units:'ml'				,Value:Vol						,Nr: 10} $
+;				,{Name:'Chi-Square'		    ,Units:'%'				,Value:100D*total((Fit-curve)^2)/total(curve^2)						,Nr: 14}]
+;
+;			end
+
 
 		'Filtration (plug-flow)':begin
 			P = [0.3, 120.0/6000, 2.0/3, 12/120.] ;[VP+VE, FP, VE/(VP+VE), FE/FP]
@@ -119,8 +138,6 @@ PRO PMI__Display__KidneyModelsROI::Fit
 				Parameters = [Parameters,{Name:'Arterial Delay', Units:'sec', Value:1D*Pd, Nr:12} ]
 			end
 	endcase
-
-;	Parameters = [Parameters,{Name:'Akaike Fit Error', Units:'', Value:AIC, Nr:14} ]
 
 	self.Curve[2] = ptr_new(Fit)
 	self.Parameters = ptr_new(Parameters)
@@ -498,6 +515,7 @@ FUNCTION PMI__Display__KidneyModelsROI::Init, parent, CursorPos, xsize=xsize, ys
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
 ;		id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Maximum slope','Model-free','Patlak','Modified Tofts','2C Uptake','2C Filtration','Filtration (plug-flow)'])
+;		id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Maximum slope','Model-free','Patlak','Modified Tofts','2C Uptake','2C Filtration','2C Filtration (LLS)'])
 			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Maximum slope','Model-free','Patlak','Modified Tofts','2C Uptake','2C Filtration'])
   			widget_control, id, set_droplist_select = 5
 

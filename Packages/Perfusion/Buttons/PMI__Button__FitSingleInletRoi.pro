@@ -59,9 +59,9 @@ PRO PMI__Button__FitSingleInletRoi__Display::Fit
 			P = [0.1, 12.0/6000] ;[VP, FE]
 			Fit = FitSingleInlet('Patlak', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0])
 			Parameters = $
-				[{Name:'Plasma Volume'		,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 1} $
-				,{Name:'Ktrans'	            ,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 8} $
-			]
+				[{Name:'Plasma Volume'		                ,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 1} $
+				,{Name:'Permeability-surface area product'	,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 4} $
+				,{Name:'Ktrans'	                            ,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 8} ]
 			end
 
 		'Model-free':begin
@@ -90,10 +90,10 @@ PRO PMI__Button__FitSingleInletRoi__Display::Fit
 			P = [0.3, 120.0/6000] ;[V, F]
 			Fit = FitSingleInlet('Compartment', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0])
 			Parameters = $
-				[{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]	                ,Nr: 5} $
-				,{Name:'Ktrans'	                ,Units:'ml/100ml/min'	,Value:6000D*P[1]               	,Nr: 8} $
-				,{Name:'kep'                    ,Units:'ml/100ml/min'   ,Value:6000D*P[1]/P[0]              ,Nr: 9} $
-				,{Name:'Extracellular Volume'   ,Units:'%'              ,Value:100D*P[0]	                ,Nr: 11} $
+				[{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]	     ,Nr: 5} $
+				,{Name:'Ktrans'	                ,Units:'ml/100ml/min'	,Value:6000D*P[1]        ,Nr: 8} $
+				,{Name:'kep'                    ,Units:'ml/100ml/min'   ,Value:6000D*P[1]/P[0]   ,Nr: 9} $
+				,{Name:'Extracellular Volume'	,Units:'ml/100ml'		,Value:100D*P[0]	     ,Nr: 11} $
 			]
 			end
 
@@ -101,25 +101,38 @@ PRO PMI__Button__FitSingleInletRoi__Display::Fit
 			P = [0.3, 2.0/3, 12.0/6000] 	;[VP+VE, VE/(VP+VE), FE]
 			Fit = FitSingleInlet('ModifiedTofts', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,1,0])
 			Parameters = $
-				[{Name:'Plasma Volume'			             ,Units:'ml/100ml'		,Value:100D*P[0]*(1-P[1])                   ,Nr: 1} $
-				,{Name:'Interstitial Volume'	             ,Units:'ml/100ml'		,Value:100D*P[0]*P[1]	                    ,Nr: 5} $
-				,{Name:'Ktrans'		                         ,Units:'ml/100ml/min'	,Value:6000D*P[2]	                        ,Nr: 8} $
-				,{Name:'kep'                                 ,Units:'ml/100ml/min'  ,Value:6000D*P[2]/(P[0]*P[1])		        ,Nr: 9} $
-				,{Name:'Extracellular Volume'                ,Units:'%'             ,Value:100D*P[0]	                        ,Nr: 11} $
-				]
+				[{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*P[0]*(1-P[1])       ,Nr: 1} $
+				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]*P[1]	        ,Nr: 5} $
+				,{Name:'Interstitial MTT'		,Units:'sec'			,Value:1D*P[0]*P[1]/P[2]        ,Nr: 6} $
+				,{Name:'Ktrans'					,Units:'ml/100ml/min'	,Value:6000D*P[2]	            ,Nr: 8} $
+				,{Name:'kep'                    ,Units:'ml/100ml/min'   ,Value:6000D*P[2]/(P[0]*P[1])	,Nr: 9} $
+				,{Name:'Extracellular Volume'   ,Units:'%'              ,Value:100D*P[0]	            ,Nr: 11}$
+			]
+			end
+
+		'Modified Tofts (Linear)':begin
+			FitModifiedToftsLinear, time, aif, curve, vp=vp, ve=ve, Ktrans=Ktrans, Fit=Fit, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /LIMITED_ABOVE
+			Parameters = $
+				[{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*vp	         ,Nr: 1} $
+				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*ve	         ,Nr: 5} $
+				,{Name:'Interstitial MTT'		,Units:'sec'			,Value:1D*ve/Ktrans      ,Nr: 6} $
+				,{Name:'Ktrans'		            ,Units:'ml/100ml/min'	,Value:6000D*Ktrans	     ,Nr: 8} $
+				,{Name:'kep'                    ,Units:'ml/100ml/min'   ,Value:6000D*Ktrans/ve	 ,Nr: 9} $
+				,{Name:'Extracellular Volume'   ,Units:'%'              ,Value:100D*(vp+ve)	     ,Nr: 11} $
+			]
 			end
 
 		'2C Uptake':begin
 			P = [0.1, 120.0/6000, 12/132.] ;[VP, FP, FE/(FP+FE)]
 			Fit = FitSingleInlet('2CUptakeExchange', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0,1])
 			Parameters = $
-				[{Name:'Plasma Flow'			             ,Units:'ml/100ml/min'	,Value:6000D*P[1]	                ,Nr: 0} $
-				,{Name:'Plasma Volume'			             ,Units:'ml/100ml'		,Value:100D*P[0]                    ,Nr: 1} $
-				,{Name:'Plasma MTT'				             ,Units:'sec'			,Value:1D*(1-P[2])*P[0]/P[1] 		,Nr: 2} $
-				,{Name:'Permeability-surface area product'	 ,Units:'ml/100ml/min'	,Value:6000D*P[1]*P[2]/(1-P[2])		,Nr: 4} $
-				,{Name:'Ktrans'		                         ,Units:'ml/100ml/min'	,Value:6000D*P[2]*P[1]		        ,Nr: 8} $
-				,{Name:'Extraction Fraction'	             ,Units:'%' 			,Value:100D*P[2]	                ,Nr: 9} $
-			]
+				[{Name:'Plasma Flow'			             ,Units:'ml/100ml/min'	,Value:6000D*P[1]		        ,Nr: 0} $
+				,{Name:'Plasma Volume'			             ,Units:'ml/100ml'		,Value:100D*P[0]		        ,Nr: 1} $
+				,{Name:'Plasma MTT'				             ,Units:'sec'			,Value:1D*P[0]*(1-P[2])/P[1]    ,Nr: 2} $
+				,{Name:'Permeability-surface area product'	 ,Units:'ml/100ml/min'	,Value:6000D*P[1]*P[2]/(1-P[2])	,Nr: 4} $
+				,{Name:'Ktrans'		                         ,Units:'ml/100ml/min'	,Value:6000D*P[2]*P[1]			,Nr: 8} $
+				,{Name:'Extraction Fraction'	             ,Units:'%' 		    ,Value:100D*P[2]	            ,Nr: 10} $
+				]
 			end
 
 		'2C Exchange':begin
@@ -450,9 +463,11 @@ FUNCTION PMI__Button__FitSingleInletRoi__Display::Init, parent, CursorPos, xsize
   			id = widget_droplist(Base,/dynamic_resize, value=Stdy->Names(1), uname=v[i])
   		endfor
 
+        models = ['Maximum slope', 'Uptake', 'Steady State', 'Patlak','Model-free', 'Compartment','Tofts','Modified Tofts','Modified Tofts (Linear)','2C Uptake','2C Exchange']
+
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-  			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Maximum slope', 'Uptake', 'Steady State', 'Patlak','Model-free', 'Compartment','Tofts','Modified Tofts','2C Uptake','2C Exchange'])
+  			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = models)
             widget_control, id, set_droplist_select = 7
 
 		v = ['Positive','Delay']

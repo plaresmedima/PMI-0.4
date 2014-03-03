@@ -32,83 +32,127 @@ PRO PMI__Button__FitSingleInletRoiPVcorr__Display::Fit
 
 	CASE Model OF
 
-		'1C Uptake':begin
+		'Maximum slope':begin
+			Fit = MaximumSlopePerfusion(time, curve, AIF, flow = flow)
+			aic = n_elements(time)*alog(total((curve-Fit)^2)/n_elements(time)) + 2D*(1+3)
+			Parameters = $
+				[{Name:'Plasma Flow'		,Units:'ml/100ml/min'	,Value:6000D*flow     ,Nr: 0}	]
+			Pd=0E
+			end
+
+		'Uptake':begin
 			P = [12.0/6000] ;[F]
 			Fit = FitSingleInlet('Uptake', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE)
 			Parameters = $
 				[{Name:'Plasma Flow'	,Units:'ml/100ml/min'	,Value:6000D*P[0]	,Nr: 0} ]
 			end
 
-		'1C Steady State':begin
+		'Steady State':begin
 			P = [0.2] ;[V]
 			Fit = FitSingleInlet('SteadyState', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1])
 			Parameters = $
-				[{Name:'Extracellular Volume'		,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 4} ]
+				[{Name:'Extracellular volume'		,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 11} ]
 			end
 
 		'Patlak':begin
 			P = [0.1, 12.0/6000] ;[VP, FE]
 			Fit = FitSingleInlet('Patlak', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0])
 			Parameters = $
-				[{Name:'Plasma Volume'		,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 1} $
-				,{Name:'Permeability-surface area product'	,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 6} $
-				,{Name:'Ktrans'	,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 7}]
+				[{Name:'Plasma Volume'		                ,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 1} $
+				,{Name:'Permeability-surface area product'	,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 4} $
+				,{Name:'Ktrans'	                            ,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 8} ]
+			end
+
+		'Model-free':begin
+			IRF = DeconvolveCurve(time,	curve, aif, dt=dt, Fit=Fit, pc='GCV', wm=1L, m0=0.001, m1=1.0, nm=100L, Quad='O2')
+			Fit = interpol(Fit, dt*findgen(n_elements(Fit)), Time)
+			aic = n_elements(time)*alog(total((curve-Fit)^2)/n_elements(time)) + 2D*(1+2)
+			Parameters = $
+				[{Name:'Plasma Flow'               ,Units:'ml/100ml/min'	,Value:6000D*max(IRF)	         ,Nr: 0} $
+				,{Name:'Extracellular Volume'	   ,Units:'ml/100ml'		,Value:100D*dt*total(IRF)	     ,Nr: 11} $
+				,{Name:'Extracellular MTT'		   ,Units:'sec'			    ,Value:1D*dt*total(IRF)/max(IRF) ,Nr: 12} $
+			]
+			Pd=0E
 			end
 
 		'Compartment':begin
 			P = [0.3, 120.0/6000] ;[V, F]
 			Fit = FitSingleInlet('Compartment', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0])
 			Parameters = $
-				[{Name:'Plasma Flow'	,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 0} $
-				,{Name:'Extracellular MTT'			,Units:'sec'			,Value:1D*P[0]/P[1] ,Nr: 3} $
-				,{Name:'Extracellular Volume'		,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 4} ]
+				[{Name:'Plasma Flow'	         ,Units:'ml/100ml/min'	,Value:6000D*P[1]	 ,Nr: 0} $
+				,{Name:'Extracellular Volume'	,Units:'ml/100ml'		,Value:100D*P[0]	 ,Nr: 11} $
+				,{Name:'Extracellular MTT'	    ,Units:'sec'			,Value:1D*P[0]/P[1]  ,Nr: 12} $
+			]
+			end
+
+		'Tofts':begin
+			P = [0.3, 120.0/6000] ;[V, F]
+			Fit = FitSingleInlet('Compartment', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0])
+			Parameters = $
+				[{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]	     ,Nr: 5} $
+				,{Name:'Ktrans'	                ,Units:'ml/100ml/min'	,Value:6000D*P[1]        ,Nr: 8} $
+				,{Name:'kep'                    ,Units:'ml/100ml/min'   ,Value:6000D*P[1]/P[0]   ,Nr: 9} $
+				,{Name:'Extracellular Volume'	,Units:'ml/100ml'		,Value:100D*P[0]	     ,Nr: 11} $
+			]
 			end
 
 		'Modified Tofts':begin
 			P = [0.3, 2.0/3, 12.0/6000] 	;[VP+VE, VE/(VP+VE), FE]
 			Fit = FitSingleInlet('ModifiedTofts', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,1,0])
 			Parameters = $
-				[{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*P[0]*(1-P[1])	,Nr: 0} $
-				,{Name:'Interstitial MTT'		,Units:'sec'			,Value:1D*P[0]*P[1]/P[2]		,Nr: 3} $
-				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]*P[1]	,Nr: 4} $
-				,{Name:'Ktrans'					,Units:'ml/100ml/min'	,Value:6000D*P[2]	,Nr: 7}]
+				[{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*P[0]*(1-P[1])       ,Nr: 1} $
+				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]*P[1]	        ,Nr: 5} $
+				,{Name:'Interstitial MTT'		,Units:'sec'			,Value:1D*P[0]*P[1]/P[2]        ,Nr: 6} $
+				,{Name:'Ktrans'					,Units:'ml/100ml/min'	,Value:6000D*P[2]	            ,Nr: 8} $
+				,{Name:'kep'                    ,Units:'ml/100ml/min'   ,Value:6000D*P[2]/(P[0]*P[1])	,Nr: 9} $
+				,{Name:'Extracellular Volume'   ,Units:'%'              ,Value:100D*P[0]	            ,Nr: 11}$
+			]
 			end
 
 		'Modified Tofts (Linear)':begin
 			FitModifiedToftsLinear, time, aif, curve, vp=vp, ve=ve, Ktrans=Ktrans, Fit=Fit, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /LIMITED_ABOVE
 			Parameters = $
-				[{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*vp	,Nr: 0} $
-				,{Name:'Interstitial MTT'		,Units:'sec'			,Value:1D*ve/Ktrans		,Nr: 3} $
-				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*ve	,Nr: 4} $
-				,{Name:'Ktrans'		,Units:'ml/100ml/min'	,Value:6000D*Ktrans	,Nr: 7} ]
+				[{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*vp	         ,Nr: 1} $
+				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*ve	         ,Nr: 5} $
+				,{Name:'Interstitial MTT'		,Units:'sec'			,Value:1D*ve/Ktrans      ,Nr: 6} $
+				,{Name:'Ktrans'		            ,Units:'ml/100ml/min'	,Value:6000D*Ktrans	     ,Nr: 8} $
+				,{Name:'kep'                    ,Units:'ml/100ml/min'   ,Value:6000D*Ktrans/ve	 ,Nr: 9} $
+				,{Name:'Extracellular Volume'   ,Units:'%'              ,Value:100D*(vp+ve)	     ,Nr: 11} $
+			]
 			end
 
 		'2C Uptake':begin
 			P = [0.1, 120.0/6000, 12/132.] ;[VP, FP, FE/(FP+FE)]
 			Fit = FitSingleInlet('2CUptakeExchange', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0,1])
 			Parameters = $
-				[{Name:'Plasma Flow'			,Units:'ml/100ml/min'	,Value:6000D*P[1]		,Nr: 0} $
-				,{Name:'Plasma MTT'				,Units:'sec'			,Value:1D*P[0]*(1-P[2])/P[1] 		,Nr: 1} $
-				,{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*P[0]		,Nr: 2} $
-				,{Name:'Extraction Fraction'	,Units:'%' 				,Value:100D*P[2]	,Nr: 5} $
-				,{Name:'Permeability-surface area product'		,Units:'ml/100ml/min'	,Value:6000D*P[1]*P[2]/(1-P[2])		,Nr: 6} $
-				,{Name:'Ktrans'		,Units:'ml/100ml/min'	,Value:6000D*P[2]*P[1]			,Nr: 7}]
+				[{Name:'Plasma Flow'			             ,Units:'ml/100ml/min'	,Value:6000D*P[1]		        ,Nr: 0} $
+				,{Name:'Plasma Volume'			             ,Units:'ml/100ml'		,Value:100D*P[0]		        ,Nr: 1} $
+				,{Name:'Plasma MTT'				             ,Units:'sec'			,Value:1D*P[0]*(1-P[2])/P[1]    ,Nr: 2} $
+				,{Name:'Permeability-surface area product'	 ,Units:'ml/100ml/min'	,Value:6000D*P[1]*P[2]/(1-P[2])	,Nr: 4} $
+				,{Name:'Ktrans'		                         ,Units:'ml/100ml/min'	,Value:6000D*P[2]*P[1]			,Nr: 8} $
+				,{Name:'Extraction Fraction'	             ,Units:'%' 		    ,Value:100D*P[2]	            ,Nr: 10} $
+				]
 			end
 
 		'2C Exchange':begin
  			P = [0.3, 0.02, 2.0/3, 0.1] ;[VP+VE, FP, VE/(VP+VE), FE/(FP+FE)]
 			Fit = FitSingleInlet('Exchange', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0,1,1])
 			Parameters = $
-				[{Name:'Plasma Flow'			,Units:'ml/100ml/min'	,Value:6000D*P[1]			,Nr: 0} $
-				,{Name:'Plasma MTT'				,Units:'sec'			,Value:1D*P[0]*(1-P[2])*(1-P[3])/P[1] 			,Nr: 1} $
-				,{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*P[0]*(1-P[2])			,Nr: 2} $
-				,{Name:'Interstitial MTT'		,Units:'sec'			,Value:1D*(1-P[3])*P[0]*P[2]/(P[1]*P[3])			,Nr: 3} $
-				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]*P[2]			,Nr: 4} $
-				,{Name:'Extraction Fraction'	,Units:'%' 				,Value:100D*P[3]				,Nr: 5} $
-				,{Name:'Permeability-surface area product'		,Units:'ml/100ml/min'	,Value:6000D*P[1]*P[3]/(1-P[3])			,Nr: 6} $
-				,{Name:'Ktrans'		,Units:'ml/100ml/min'	,Value:6000D*P[3]*P[1]			,Nr: 7}]
+			    [{Name:'Plasma Flow'                        ,Units:'ml/100ml/min' ,Value:6000D*P[1]                         ,Nr: 0} $
+			    ,{Name:'Plasma Volume'                      ,Units:'ml/100ml'     ,Value:100D*P[0]*(1-P[2])	                ,Nr: 1} $
+				,{Name:'Plasma MTT'                         ,Units:'sec'          ,Value:1D*(1-P[3])*P[0]*(1-P[2])/P[1] 	,Nr: 2} $
+				,{Name:'Permeability-surface area product'  ,Units:'ml/100ml/min' ,Value:6000D*P[1]*P[3]/(1-P[3])			,Nr: 4} $
+				,{Name:'Interstitial Volume'                ,Units:'ml/100ml'     ,Value:100D*P[0]*P[2]			            ,Nr: 5} $
+				,{Name:'Interstitial MTT'                   ,Units:'sec'          ,Value:1D*P[0]*P[2]*(1-P[3])/(P[1]*P[3])	,Nr: 6} $
+				,{Name:'Ktrans'                             ,Units:'ml/100ml/min' ,Value:6000D*P[3]*P[1]		            ,Nr: 8} $
+				,{Name:'kep'                                ,Units:'ml/100ml/min' ,Value:6000D*P[3]*P[1]/(P[0]*P[2])		,Nr: 9} $
+				,{Name:'Extraction Fraction'                ,Units:'%'            ,Value:100D*P[3]	                        ,Nr: 10} $
+				,{Name:'Extracellular Volume'               ,Units:'%'            ,Value:100D*P[0]	                        ,Nr: 11} $
+				,{Name:'Extracellular MTT'                  ,Units:'%'            ,Value:100D*P[0]/P[1]	                    ,Nr: 12} $
+			]
 			end
-	endcase
+
+		endcase
 
 	Parameters = [Parameters,{Name:'Akaike Fit Error', Units:'', Value:AIC, Nr:14} ]
 	IF Delay NE 0 THEN $
@@ -470,10 +514,12 @@ FUNCTION PMI__Button__FitSingleInletRoiPVcorr__Display::Init, parent, CursorPos,
 		id = widget_button(Base, xsize=25, ysize=19, value='VOF', uname='VOF'+'bttn')
   		id = widget_droplist(Base,/dynamic_resize, value=['<none>',Stdy->Names(1)], uname='VOF')
 
+        models = ['Maximum slope', 'Uptake', 'Steady State', 'Patlak','Model-free', 'Compartment','Tofts','Modified Tofts','Modified Tofts (Linear)','2C Uptake','2C Exchange']
+
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-  			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['1C Uptake', '1C Steady State','Compartment', 'Patlak','Modified Tofts','2C Uptake','2C Exchange'])
-  			widget_control, id, set_droplist_select = 4
+  			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = models)
+  			widget_control, id, set_droplist_select = 7
 
 		v = ['Positive','Delay']
 		for i=0,1 do begin
@@ -511,7 +557,7 @@ FUNCTION PMI__Button__Input__FitSingleInletRoiPVcorr, top, series, in, units
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, aif:stdy->sel(1), roi:stdy->sel(1), vof:0, rel:0, nb:5, hct:0.45}
+	in = {ser:sel, aif:stdy->sel(1), roi:stdy->sel(1), vof:0, rel:0, nb:1, hct:0.45}
 ;	Units = ['Signal Enhancement (T1)','Relative Signal Enhancement (T1)','Relative Signal Enhancement (T2)']
 	Units = ['Linear (a.u.)','Linear (%)','DSC-MRI']
 
@@ -522,7 +568,7 @@ FUNCTION PMI__Button__Input__FitSingleInletRoiPVcorr, top, series, in, units
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Tissue Region', Value:[Stdy->names(1)], Select:in.roi}), $
 		ptr_new({Type:'DROPLIST',Tag:'vof', Label:'Venous Region', Value:['<none>',Stdy->names(1)], Select:in.vof}), $
-		ptr_new({Type:'DROPLIST',Tag:'rel', Label:'Approximate tracer concentrations by:', Value:Units, Select:in.rel}), $
+		ptr_new({Type:'DROPLIST',Tag:'rel', Label:'Signal model:', Value:Units, Select:in.rel}), $
 		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct', Label:'Patients hematocrit', Value:in.hct})])
 		IF in.cancel THEN return, 0
