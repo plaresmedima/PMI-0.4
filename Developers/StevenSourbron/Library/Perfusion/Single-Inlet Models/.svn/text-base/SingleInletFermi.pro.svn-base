@@ -1,0 +1,22 @@
+;C(t) = F [(1+b)/(1+b exp(at))] * Ca(t)
+
+;P[0] = F
+;P[1] = a
+;P[2] = b
+
+
+Pro SingleInletFermi, X, P, C, C_DER
+
+	if n_params() eq 0 then return
+
+	ni=X[0] & n=n_elements(X[ni+1:*])/2
+	ti=X[1:ni] & time=X[ni+1:ni+n] & input=X[ni+n+1:*]
+
+	residue = (1+P[2])/(1+P[2]*exp(P[1]*time))
+
+	Conv = P[0]*ConvolveIrreg(time, input, residue)
+	C = Conv[ti]
+
+	IF n_params() LT 4 THEN return
+
+end
