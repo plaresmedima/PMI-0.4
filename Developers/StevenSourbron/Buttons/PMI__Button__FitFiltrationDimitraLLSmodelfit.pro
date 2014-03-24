@@ -17,7 +17,7 @@ pro PMI__Button__Event__FitFiltrationDimitraLLSmodelfit, ev
 	PMI__Message, status, 'Preparing calculation..'
 
 
-	d = Roi->d()
+	d = Series->d()
 	n = mult(d[0:2])
 	fit = fltarr(n,d[3])
 
@@ -39,11 +39,9 @@ pro PMI__Button__Event__FitFiltrationDimitraLLSmodelfit, ev
 
 	endfor
 
-	Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
-
 	PMI__Message, status, 'Saving Results'
 
-	S = Stdy->New('SERIES',	Domain=Dom,	Data=fit, Name= '2CFM Fit')
+	S = Stdy->New('SERIES',	Default=Series,	Data=fit, Name= '2CFM Fit')
 
 	PMI__Control, ev.top, /refresh
 end

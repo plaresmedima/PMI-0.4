@@ -17,7 +17,7 @@ pro PMI__Button__Event__FitModToftsDimitraLLSmodelfit, ev
 	PMI__Message, status, 'Preparing calculation..'
 
 
-	d = Roi->d()
+	d = Series->d()
 	n = mult(d[0:2])
 	fit = fltarr(n,d[3])
 
