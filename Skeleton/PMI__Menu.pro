@@ -17,7 +17,6 @@
 ;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-
  pro PMI__Menu, mbar
 
 	;Enter here the name of the procedure defining your PMI Menu
@@ -30,6 +29,6 @@
 
 	;Please name all your menus "PMI__Menu__XXXXX"
 
-	PMI__Menu__PerfPro, mbar
+	PMI__Menu__Dimitra, mbar
 
 end
