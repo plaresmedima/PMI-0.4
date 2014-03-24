@@ -33,17 +33,15 @@ pro PMI__Button__Event__FitModToftsDimitraLLSmodelfit, ev
 		PMI__Message, status, 'Fitting pixels to Modified Tofts model', i/(n-1.0)
 
 		FitModifiedToftsLinear, time, aif, reform(p[i,*]), vp=vp, ve=ve, Ktrans=Ktrans
-		SingleInletModifiedTofts, [d[3],lindgen(d[3]),time, aif], [vp+ve, ve/(vp+ve), Ktrans], Ctt
+		SingleInletModifiedTofts, [d[3], lindgen(d[3]), time, aif], [vp+ve, ve/(vp+ve), Ktrans], Ctt
 
 		fit[ind[i],*] = Ctt
 
 	endfor
 
-	Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
-
 	PMI__Message, status, 'Saving Results'
 
-	S = Stdy->New('SERIES',	Domain=Dom,	Data=fit, Name= 'ModTofts Fit')
+	S = Stdy->New('SERIES',	Default=Series,	Data=fit, Name= 'ModTofts Fit')
 
 	PMI__Control, ev.top, /refresh
 end

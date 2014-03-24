@@ -34,13 +34,13 @@ function TumorRoiAnalysis__input $
 	PMI__Message, id, 'Getting input..'
 
    	Series = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-    Units = ['Signal Enhancement (T1)','Relative Signal Enhancement (T1)','Relative Signal Enhancement (T2)']
+    Units = ['Linear (a.u.)','Linear (%)','DSC-MRI']
 
 	in = PMI__Form(ev.top, Title='Perfusion analysis setup', [$
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:Stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Tissue Region', Value:Stdy->names(1), Select:Stdy->sel(1)}), $
-		ptr_new({Type:'DROPLIST',Tag:'rel', Label:'Approximate tracer concentrations by:', Value:Units, Select:1}), $
+		ptr_new({Type:'DROPLIST',Tag:'rel', Label:'Signal model:', Value:Units, Select:0}), $
 		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:5B}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct', Label:'Patients hematocrit', Value:0.45})])
 		IF in.cancel THEN return, 0
