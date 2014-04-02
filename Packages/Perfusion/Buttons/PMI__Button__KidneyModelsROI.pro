@@ -498,7 +498,6 @@ FUNCTION PMI__Display__KidneyModelsROI::Init, parent, CursorPos, xsize=xsize, ys
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
 ;		    id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Maximum slope','Model-free','Patlak','Modified Tofts','2C Uptake','2C Filtration','Filtration (plug-flow)'])
-;		    id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Maximum slope','Model-free','Patlak','Modified Tofts','2C Uptake','2C Filtration','2C Filtration (LLS)'])
 			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Maximum slope','Model-free','Patlak','Modified Tofts','2C Uptake','2C Filtration'])
   			widget_control, id, set_droplist_select = 5
 

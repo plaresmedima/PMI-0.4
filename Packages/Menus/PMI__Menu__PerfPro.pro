@@ -1,5 +1,4 @@
-;Menu for the demo version on
-;https://sites.google.com/site/plaresmedima/
+;Menu for the PerfPro version on
 
 ;REQUIRES PACKAGES:
 ;  Slices
@@ -27,24 +26,23 @@
 
 pro PMI__Menu__PerfPro, parent
 
-	PMI__Menu__Skeleton, parent
-	PMI__Menu__Slices, parent
-	PMI__Menu__Dynamic, parent
+    PMI__Menu__Skeleton, parent
+    PMI__Menu__Slices, parent     ;PACKAGE: Slices
+    PMI__Menu__Dynamic, parent    ;PACKAGE: Dynamic
 
-	id = widget_button(parent, value='Perfusion',/menu)
+    id = widget_button(parent, value='Perfusion',/menu)
 
-	Sid = PMI__Button__SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')
-	Sid = PMI__Button__FastDeconvolutionAnalysis(id, value='Model-free (Pixel)')
-    Sid = PMI__Button__FitModToftsLin(id, value='Modified Tofts (Pixel)')
-
-    Sid = PMI__Button__FitSingleInletRoi(id, value='Exchange models (ROI)', /separator)
-	Sid = PMI__Button__KidneyModelsROI(id, value = 'Kidney models (ROI)')
-	Sid = PMI__Button__FitDualInletRoi(id, value = 'Liver models (ROI)')
+        Sid = PMI__Button__SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')   ;PACKAGE: Perfusion
+        Sid = PMI__Button__FastDeconvolutionAnalysis(id, value='Model-free (Pixel)')           ;PACKAGE: Perfusion
+        Sid = PMI__Button__FitModToftsLin(id, value='Modified Tofts (Pixel)')                  ;PACKAGE: Perfusion
+        Sid = PMI__Button__FitSingleInletRoi(id, value='Exchange models (ROI)', /separator)    ;PACKAGE: Perfusion
+        Sid = PMI__Button__KidneyModelsROI(id, value = 'Kidney models (ROI)')                  ;PACKAGE: Perfusion
+        Sid = PMI__Button__FitDualInletRoi(id, value = 'Liver models (ROI)')                   ;PACKAGE: Perfusion
 
     id = widget_button(parent, value='DCE-MRI',/menu)
 
-    Sid = PMI__Button__FitModToftsLinPopAif(id, value='Modified Tofts (Pixel - population AIF)')
-    Sid = PMI__Button__FitSingleInletRoiPVcorr(id, value='Exchange models (ROI - partial volume correction)')
-
+        Sid = PMI__Button__FitModToftsLinPopAif(id, value='Modified Tofts (Pixel - population AIF)')                ;PACKAGE: Perfusion
+        Sid = PMI__Button__FitSingleInletRoiPVcorr(id, value='Exchange models (ROI - partial volume correction)')   ;PACKAGE: Perfusion
+        Sid = PMI__Button__FitSingleInletRoiNormAif(id, value='Exchange models (ROI - normalised AIF)')             ;PACKAGE: Perfusion
 
 end
