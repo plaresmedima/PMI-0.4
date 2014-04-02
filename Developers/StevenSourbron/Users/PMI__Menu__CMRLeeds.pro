@@ -1,10 +1,10 @@
-pro PMI__Menu__Cardiac, parent
+pro PMI__Menu__CMRLeeds, parent
 
 	PMI__Menu__Skeleton, parent
 	PMI__Menu__Slices, parent
 	PMI__Menu__Dynamic, parent
 
-	id = widget_button(parent, value='Cardiac',/menu)
+	id = widget_button(parent, value='CMR Leeds',/menu)
 
 	Sid = PMI__Button__ArshadDeconvolution(id,value='DCE: Model-free analysis (Pixel)')
 	Sid = PMI__Button__ArshadDeconvolutionRoi(id,value='DCE: Model-free analysis (ROI)', /separator)
