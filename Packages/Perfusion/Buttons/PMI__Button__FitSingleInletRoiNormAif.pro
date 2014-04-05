@@ -22,11 +22,18 @@
 
 PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 
-	Self->GET, Model=Model, Positivity=Pos, Delay=Delay, Time=Time, AifCurve=Aif, RoiCurve=Curve, OnDisplay=OnDisplay
+	Self->GET, Model=Model, Norm=Norm, Delay=Delay, Time=Time, AifCurve=Aif, RoiCurve=Curve, OnDisplay=OnDisplay
 	Self->SET, Message='Fitting...', Sensitive=0
 
+    IF Norm NE 0 THEN BEGIN
+		AifPop = ParkerAif(Time, baseline=Self.Baseline) ;Plasma concentration in mM
+		AreaMeas = int_tabulated(Time, Aif)
+		AreaPop = int_tabulated(Time, AifPop)
+		Aif = Aif * (AreaPop/AreaMeas)
+    ENDIF
+
+    Pos=1
 	IF Delay NE 0 THEN BEGIN
-	;	If keyword_set(Pos) then Delay0=0 Else Delay0=-20
 		Delay0=0
 		DELAY_VALUES=[Delay0,20,time[1]/2]
 	ENDIF
@@ -187,7 +194,13 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Plot
 			end
 
 		'AIF':begin
-			Self -> GET, Time=Time, AifCurve=Y, AifName=AifName
+			Self -> GET, Time=Time, AifCurve=Y, AifName=AifName, Norm=Norm
+            IF Norm NE 0 THEN BEGIN
+		        AifPop = ParkerAif(Time, baseline=Self.Baseline) ;Plasma concentration in mM
+		        AreaMeas = int_tabulated(Time, Y)
+		        AreaPop = int_tabulated(Time, AifPop)
+		        Y = Y * (AreaPop/AreaMeas)
+            ENDIF
 			Self -> SET, /Erase
  			plot, time, Y, position=[0.1,0.2,0.5,0.9]  $
 			, 	/xstyle, /ystyle $
@@ -246,10 +259,16 @@ FUNCTION PMI__Button__FitSingleInletRoiNormAif__Display::Event, ev
 		return, 0B
 	endif
 
-	i = where(Uname Eq ['FIT','Delay','Positive'], cnt)
+	i = where(Uname Eq ['Norm'], cnt)
+	if cnt eq 1 then begin
+	    ptr_free, Self.Curve[2], self.parameters
+		Self->SET, /Refresh
+		return, 0B
+	endif
+
+	i = where(Uname Eq ['FIT','Delay'], cnt)
 	if cnt eq 1 then begin
 		ptr_free, Self.Curve[2], self.parameters
-	;	Self->SET, OnDisplay='ROI', /Refresh
 		Self->SET, /Refresh
 		return, 0B
 	endif
@@ -301,7 +320,8 @@ FUNCTION PMI__Button__FitSingleInletRoiNormAif__Display::GetCurve, List
 	Y = PMI__RoiCurve(Stdy->DataPath(), Self.Series, Region, cnt=cnt)
 	Self -> SET, OnDisplay=OnDisplay, /Sensitive
 	if cnt eq 0 then return, Time*0
-	return, LMU__Enhancement(Y,Self.Baseline,relative=1)
+	RE = LMU__Enhancement(Y,Self.Baseline,relative=1)
+    return, RE/(1.0*4.5) ;Assume T10 = 1sec and r1 = 4.5 Hz/sec
 END
 
 FUNCTION PMI__Button__FitSingleInletRoiNormAif__Display::GetName, List
@@ -314,7 +334,7 @@ END
 
 PRO PMI__Button__FitSingleInletRoiNormAif__Display::GET $
 , 	CursorPos = CursorPos $
-,	Model=Model, Positivity=Positivity, Delay=Delay $
+,	Model=Model, Norm=Norm, Delay=Delay $
 ,	Time=Time, Fit=Fit $
 , 	RoiCurve=RoiCurve, AifCurve=AifCurve $
 ,	RoiName=RoiName, AifName=AifName $
@@ -327,9 +347,8 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::GET $
 		widget_control, list, Get_Value=Models
 		Model = Models[widget_info(list,/droplist_select)]
 	endif
-	if arg_present(Positivity) then $
-	    Positivity = 0
-	;	Positivity = widget_info(widget_info(self.id,find_by_uname='Positive'),/Button_set)
+	if arg_present(Norm) then $
+		Norm = widget_info(widget_info(self.id,find_by_uname='Norm'),/Button_set)
 	if arg_present(Delay) then $
 		Delay = widget_info(widget_info(self.id,find_by_uname='Delay'),/Button_set)
 
@@ -345,7 +364,6 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::GET $
 		if ptr_valid(Self.Curve[0]) then RoiCurve = *Self.Curve[0] $
 		else begin
 			RoiCurve = Self->GetCurve('ROI')
-			RoiCurve = RoiCurve/(1.0*4.5) ;Assume T10 = 1sec and r1 = 4.5 Hz/sec
 			Self.Curve[0] = ptr_new(RoiCurve)
 		endelse
 
@@ -353,11 +371,6 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::GET $
 		if ptr_valid(Self.Curve[1]) then AifCurve = *Self.Curve[1] $
 		else begin
 			AifCurve = Self->GetCurve('AIF')
-			Self->GET, Time=t
-			AifPop = ParkerAif(t, baseline=Self.Baseline) ;Plasma concentration in mM
-		    AreaMeas = int_tabulated(t, AifCurve)
-		    AreaPop = int_tabulated(t, AifPop)
-		    AifCurve = AifCurve * (AreaPop/AreaMeas)
 			Self.Curve[1] = ptr_new(AifCurve)
 		endelse
 
@@ -380,7 +393,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::SET, $
 	Message=Message, Sensitive=Sensitive, $
 	xsize=xsize, ysize=ysize, $
 	Set_droplist_select = Set_droplist_select, $
-	Series=Series, Units=Units, Baseline=Baseline, Hematocrit=Hematocrit, $
+	Series=Series, Baseline=Baseline, $
 	OnDisplay=OnDisplay
 
 	if keyword_set(pmi_resize) then begin
@@ -390,9 +403,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::SET, $
 
 
 	if n_elements(Series) 	ne 0 then Self.Series = Series
-	if n_elements(Units) 	ne 0 then self.Units = Units
 	if n_elements(Baseline) 	ne 0 then self.Baseline = Baseline
-	if n_elements(Hematocrit) 	ne 0 then self.Hematocrit = Hematocrit
 	if n_elements(Message) 	ne 0 then begin
 		Self -> SET, OnDisplay='', /Refresh
 		xyouts, 0.1,0.9, Message, color=0,/normal,charsize=1.5,charthick=2.0
@@ -471,11 +482,10 @@ FUNCTION PMI__Button__FitSingleInletRoiNormAif__Display::Init, parent, CursorPos
   			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = models)
             widget_control, id, set_droplist_select = 7
 
-		v = ['Positive','Delay']
-		for i=1,1 do begin
-			Base = widget_base(Controls,/row,/frame,/nonexclusive)
-			id = widget_button(Base, value=v[i], uname=v[i])
-		endfor
+		Base = widget_base(Controls,/row,/frame,/nonexclusive)
+			id = widget_button(Base, value='Norm', uname='Norm')
+			widget_control, id, /set_button
+			id = widget_button(Base, value='Delay', uname='Delay')
 
 		v = ['Export','Export As','Close']
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
@@ -494,10 +504,8 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display__Define
 	,	CursorPos:lonarr(4)	$
 	,	Curve:ptrarr(3) $ ;RoiCurve, AifCurve, Fit
 	,	Parameters: ptr_new() $
-	,	Units: '' $
 	,	Series: obj_new() $
 	,	Baseline: 0L $
-	,	Hematocrit: 0E $
 	}
 END
 
@@ -516,17 +524,14 @@ pro PMI__Button__Event__FitSingleInletRoiNormAif, ev
 		ptr_new({Type:'DROPLIST',Tag:'series', Label:'Dynamic series', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif'	 , Label:'Arterial Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)}), $
-		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Length of baseline (# of dynamics)', Value:1L}),$
-		ptr_new({Type:'VALUE'	,Tag:'hct'	 , Label:'Patients hematocrit', Value:0.45})])
+		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Length of baseline (# of dynamics)', Value:1L})])
 	IF v.cancel THEN return
 
 	PMI__Control, ev.top, Viewer = 'PMI__Button__FitSingleInletRoiNormAif__Display', Display=Display
 
 	Display -> Set, /Refresh, $
 		Series = Stdy->Obj(0,ind[v.series]), $
-		Units = 'Linear (%)', $
 		Baseline = v.nbase, $
-		Hematocrit = v.hct, $
 		set_droplist_select = [v.roi,v.aif]
 end
 
