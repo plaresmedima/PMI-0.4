@@ -148,7 +148,7 @@ PRO PMI__Button__FitSingleInletRoiPVcorr__Display::Fit
 				,{Name:'kep'                                ,Units:'ml/100ml/min' ,Value:6000D*P[3]*P[1]/(P[0]*P[2])		,Nr: 9} $
 				,{Name:'Extraction Fraction'                ,Units:'%'            ,Value:100D*P[3]	                        ,Nr: 10} $
 				,{Name:'Extracellular Volume'               ,Units:'%'            ,Value:100D*P[0]	                        ,Nr: 11} $
-				,{Name:'Extracellular MTT'                  ,Units:'%'            ,Value:100D*P[0]/P[1]	                    ,Nr: 12} $
+				,{Name:'Extracellular MTT'                  ,Units:'sec'          ,Value:1D*P[0]/P[1]	                    ,Nr: 12} $
 			]
 			end
 

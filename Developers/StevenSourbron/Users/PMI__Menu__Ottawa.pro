@@ -1,10 +1,10 @@
-pro PMI__Menu__Greg, parent
+pro PMI__Menu__Ottawa, parent
 
 	PMI__Menu__Skeleton, parent
 	PMI__Menu__Slices, parent
 	PMI__Menu__Dynamic, parent
 
-	id = widget_button(parent, value='Greg',/menu)
+	id = widget_button(parent, value='Ottawa',/menu)
 
 	Sid = PMI__Button__SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')
 	Sid = PMI__Button__SemiQuantitativePerfusionRoi(id, value='Semi-quantitative (ROI)')
