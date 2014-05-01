@@ -30,9 +30,9 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 		AreaMeas = int_tabulated(Time, Aif)
 		AreaPop = int_tabulated(Time, AifPop)
 		Aif = Aif * (AreaPop/AreaMeas)
-    ENDIF
+    ENDIF ELSE Aif = Aif/0.55 ;Hematocrit correction
 
-    Pos=1
+    Pos=0
 	IF Delay NE 0 THEN BEGIN
 		Delay0=0
 		DELAY_VALUES=[Delay0,20,time[1]/2]
@@ -57,14 +57,14 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 
 		'Steady State':begin
 			P = [0.2] ;[V]
-			Fit = FitSingleInlet('SteadyState', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1])
+			Fit = FitSingleInlet('SteadyState', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[0])
 			Parameters = $
 				[{Name:'Extracellular volume'		,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 11} ]
 			end
 
 		'Patlak':begin
 			P = [0.1, 12.0/6000] ;[VP, FE]
-			Fit = FitSingleInlet('Patlak', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0])
+			Fit = FitSingleInlet('Patlak', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[0,0])
 			Parameters = $
 				[{Name:'Plasma Volume'		                ,Units:'ml/100ml'		,Value:100D*P[0]	,Nr: 1} $
 				,{Name:'Permeability-surface area product'	,Units:'ml/100ml/min'	,Value:6000D*P[1]	,Nr: 4} $
@@ -85,7 +85,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 
 		'Compartment':begin
 			P = [0.3, 120.0/6000] ;[V, F]
-			Fit = FitSingleInlet('Compartment', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0])
+			Fit = FitSingleInlet('Compartment', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[0,0])
 			Parameters = $
 				[{Name:'Plasma Flow'	         ,Units:'ml/100ml/min'	,Value:6000D*P[1]	 ,Nr: 0} $
 				,{Name:'Extracellular Volume'	,Units:'ml/100ml'		,Value:100D*P[0]	 ,Nr: 11} $
@@ -95,7 +95,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 
 		'Tofts':begin
 			P = [0.3, 120.0/6000] ;[V, F]
-			Fit = FitSingleInlet('Compartment', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0])
+			Fit = FitSingleInlet('Compartment', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[0,0])
 			Parameters = $
 				[{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]	     ,Nr: 5} $
 				,{Name:'Ktrans'	                ,Units:'ml/100ml/min'	,Value:6000D*P[1]        ,Nr: 8} $
@@ -106,7 +106,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 
 		'Modified Tofts':begin
 			P = [0.3, 2.0/3, 12.0/6000] 	;[VP+VE, VE/(VP+VE), FE]
-			Fit = FitSingleInlet('ModifiedTofts', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,1,0])
+			Fit = FitSingleInlet('ModifiedTofts', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[0,0,0])
 			Parameters = $
 				[{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*P[0]*(1-P[1])       ,Nr: 1} $
 				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*P[0]*P[1]	        ,Nr: 5} $
@@ -118,7 +118,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 			end
 
 		'Modified Tofts (Linear)':begin
-			FitModifiedToftsLinear, time, aif, curve, vp=vp, ve=ve, Ktrans=Ktrans, Fit=Fit, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /LIMITED_ABOVE
+			FitModifiedToftsLinear, time, aif, curve, vp=vp, ve=ve, Ktrans=Ktrans, Fit=Fit, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, LIMITED_ABOVE=0
 			Parameters = $
 				[{Name:'Plasma Volume'			,Units:'ml/100ml'		,Value:100D*vp	         ,Nr: 1} $
 				,{Name:'Interstitial Volume'	,Units:'ml/100ml'		,Value:100D*ve	         ,Nr: 5} $
@@ -131,7 +131,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 
 		'2C Uptake':begin
 			P = [0.1, 120.0/6000, 12/132.] ;[VP, FP, FE/(FP+FE)]
-			Fit = FitSingleInlet('2CUptakeExchange', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0,1])
+			Fit = FitSingleInlet('2CUptakeExchange', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[0,0,0])
 			Parameters = $
 				[{Name:'Plasma Flow'			             ,Units:'ml/100ml/min'	,Value:6000D*P[1]		        ,Nr: 0} $
 				,{Name:'Plasma Volume'			             ,Units:'ml/100ml'		,Value:100D*P[0]		        ,Nr: 1} $
@@ -144,7 +144,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 
 		'2C Exchange':begin
  			P = [0.3, 0.02, 2.0/3, 0.1] ;[VP+VE, FP, VE/(VP+VE), FE/(FP+FE)]
-			Fit = FitSingleInlet('Exchange', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0,1,1])
+			Fit = FitSingleInlet('Exchange', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[0,0,0,0])
 			Parameters = $
 			    [{Name:'Plasma Flow'                        ,Units:'ml/100ml/min' ,Value:6000D*P[1]                         ,Nr: 0} $
 			    ,{Name:'Plasma Volume'                      ,Units:'ml/100ml'     ,Value:100D*P[0]*(1-P[2])	                ,Nr: 1} $
@@ -156,12 +156,12 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 				,{Name:'kep'                                ,Units:'ml/100ml/min' ,Value:6000D*P[3]*P[1]/(P[0]*P[2])		,Nr: 9} $
 				,{Name:'Extraction Fraction'                ,Units:'%'            ,Value:100D*P[3]	                        ,Nr: 10} $
 				,{Name:'Extracellular Volume'               ,Units:'%'            ,Value:100D*P[0]	                        ,Nr: 11} $
-				,{Name:'Extracellular MTT'                  ,Units:'%'            ,Value:100D*P[0]/P[1]	                    ,Nr: 12} $
+				,{Name:'Extracellular MTT'                  ,Units:'sec'          ,Value:P[0]/P[1]	                        ,Nr: 12} $
 			]
 			end
 	endcase
 
-;	Parameters = [Parameters,{Name:'Akaike Fit Error', Units:'', Value:AIC, Nr:16} ]
+	Parameters = [Parameters,{Name:'Akaike Fit Error', Units:'', Value:AIC, Nr:16} ]
 	IF Delay NE 0 THEN $
 	Parameters = [Parameters,{Name:'Arterial Delay', Units:'sec', Value:1D*Pd, Nr:14} ]
 
@@ -200,7 +200,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Plot
 		        AreaMeas = int_tabulated(Time, Y)
 		        AreaPop = int_tabulated(Time, AifPop)
 		        Y = Y * (AreaPop/AreaMeas)
-            ENDIF
+            ENDIF ELSE Y=Y/0.55 ;Hematocrit correction
 			Self -> SET, /Erase
  			plot, time, Y, position=[0.1,0.2,0.5,0.9]  $
 			, 	/xstyle, /ystyle $
@@ -321,7 +321,7 @@ FUNCTION PMI__Button__FitSingleInletRoiNormAif__Display::GetCurve, List
 	Self -> SET, OnDisplay=OnDisplay, /Sensitive
 	if cnt eq 0 then return, Time*0
 	RE = LMU__Enhancement(Y,Self.Baseline,relative=1)
-    return, RE/(1.0*4.5) ;Assume T10 = 1sec and r1 = 4.5 Hz/sec
+    return, RE/(1.0*3.5) ;Assume T10 = 1sec and r1 = 3.5 Hz/sec
 END
 
 FUNCTION PMI__Button__FitSingleInletRoiNormAif__Display::GetName, List
