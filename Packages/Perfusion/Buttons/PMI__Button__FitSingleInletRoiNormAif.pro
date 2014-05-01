@@ -345,7 +345,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::GET $
 		if ptr_valid(Self.Curve[0]) then RoiCurve = *Self.Curve[0] $
 		else begin
 			RoiCurve = Self->GetCurve('ROI')
-			RoiCurve = RoiCurve/(1.0*4.5) ;Assume T10 = 1sec and r1 = 4.5 Hz/sec
+			RoiCurve = RoiCurve/(1.0*3.5) ;Assume T10 = 1sec and r1 = 4.5 Hz/sec
 			Self.Curve[0] = ptr_new(RoiCurve)
 		endelse
 
