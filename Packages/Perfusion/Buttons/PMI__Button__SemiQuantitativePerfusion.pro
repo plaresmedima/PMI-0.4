@@ -70,29 +70,31 @@ pro PMI__Button__Event__SemiQuantitativePerfusion, ev
 		P0 = P0/v.nb
 		nozero = where(P0 NE 0, cnt_nozero)
 
-		if cnt_nozero GT 0 then for j=0L,d[3]-1 do begin
+		if cnt_nozero GT 0 then begin
+		    for j=0L,d[3]-1 do begin
 
-			PMI__Message, Status, 'Calculating', (i*d[3]+j)/(d[2]*d[3]-1E)
-			P = Series -> Read(Stdy->DataPath(),i,j)
+			    PMI__Message, Status, 'Calculating', (i*d[3]+j)/(d[2]*d[3]-1E)
+			    P = Series -> Read(Stdy->DataPath(),i,j)
 
-			case v.units of
+			    case v.units of
 				0:P = P[nozero]-P0[nozero]
 				1:P = 100*(P[nozero]/P0[nozero]-1)
 				2:P = -remove_inf(alog(P[nozero]/P0[nozero]))
-			endcase
+			    endcase
 
-			if j eq 0 then begin
-				MaxIm[nozero] = P
-			endif else begin
-				ind = where(P gt MaxIm[nozero], cnt)
-				if cnt gt 0 then begin
-					MaxIm[nozero[ind]] = P[ind]
-				endif
-				AUCim[nozero] = AUCim[nozero] + (Time[j]-Time[j-1])*P
-			endelse
-		endfor
+			    if j eq 0 then begin
+				    MaxIm[nozero] = P
+			    endif else begin
+				    ind = where(P gt MaxIm[nozero], cnt)
+				    if cnt gt 0 then begin
+					    MaxIm[nozero[ind]] = P[ind]
+				    endif
+				    AUCim[nozero] = AUCim[nozero] + (Time[j]-Time[j-1])*P
+			    endelse
+			endfor
 
-		MTTim[nozero] = remove_inf(AUCim[nozero]/MaxIm[nozero])
+            MTTim[nozero] = remove_inf(AUCim[nozero]/MaxIm[nozero])
+        endif
 
 		MAX -> Write, Stdy->DataPath(), MaxIm, i
 		AUC -> Write, Stdy->DataPath(), AUCim, i
@@ -102,9 +104,12 @@ pro PMI__Button__Event__SemiQuantitativePerfusion, ev
 		AUC->Trim, max([AUC->Trim(1),max(AUCim)]), 1
 		MTT->Trim, max([MTT->Trim(1),max(MTTim)]), 1
 
-		MaxIm[nozero] = 0
-		AUCim[nozero] = 0
-		MTTim[nozero] = 0
+        if cnt_nozero GT 0 then begin
+
+		    MaxIm[nozero] = 0
+		    AUCim[nozero] = 0
+		    MTTim[nozero] = 0
+		endif
 
 	endfor
 
