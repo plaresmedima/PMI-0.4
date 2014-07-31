@@ -1,4 +1,4 @@
-pro PMI__Menu__Steven, parent
+pro PMI__Menu__Marco, parent
 
 	PMI__Menu__Skeleton, parent
 	PMI__Menu__Slices, parent
@@ -35,6 +35,15 @@ pro PMI__Menu__Steven, parent
 	Sid = PMI__Button__FastDeconvolutionAnalysisTrig(id,value='Pixel-by-pixel deconvolution (with triggering)')
 	Sid = PMI__Button__TriggeredKidneyFiltrationRoi(id, value='ROI filtration model (with triggering)')
 	Sid = PMI__Button__FitPatlakLinearRoi(id, value='Fit Linearized Patlak (ROI)')
+
+    id = widget_button(parent, value='Marco',/menu)
+
+    Sid = PMI__Button__SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')
+
+    Sid = PMI__Button__MarcoPatlakPixel(id, value='Patlak (Pixel)',/separator)
+    Sid = PMI__Button__MarcoExtPatlakPixel(id, value='Extended Patlak (Pixel)')
+    Sid = PMI__Button__MarcoPatlakRoi(id, value='Patlak (ROI)', /separator)
+    Sid = PMI__Button__MarcoExtPatlakRoi(id, value='Extended Patlak (ROI)')
 
 	id = widget_button(parent, value='Other',/menu)
 

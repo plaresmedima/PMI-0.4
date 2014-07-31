@@ -20,17 +20,16 @@
 ;
 
 
+
+
 PRO PMI__Button__FitSingleInletRoiNormAif__Display::Fit
 
 	Self->GET, Model=Model, Norm=Norm, Delay=Delay, Time=Time, AifCurve=Aif, RoiCurve=Curve, OnDisplay=OnDisplay
 	Self->SET, Message='Fitting...', Sensitive=0
 
-    IF Norm NE 0 THEN BEGIN
-		AifPop = ParkerAif(Time, baseline=Self.Baseline) ;Plasma concentration in mM
-		AreaMeas = int_tabulated(Time, Aif)
-		AreaPop = int_tabulated(Time, AifPop)
-		Aif = Aif * (AreaPop/AreaMeas)
-    ENDIF ELSE Aif = Aif/0.55 ;Hematocrit correction
+    IF Norm NE 0 $
+    THEN AIF = NormaliseAifToParker(Time, AIF, Self.Baseline) $
+    ELSE Aif = Aif/0.55 ;Hematocrit correction
 
     Pos=0
 	IF Delay NE 0 THEN BEGIN
@@ -182,6 +181,7 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Plot
 
 		'ROI':begin
 			Self -> GET, Time=Time, RoiCurve=Y, RoiName=RoiName
+			print, Y
 			Self -> SET, /Erase
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
 			, 	[0,max(time)], [min(Y),max(Y)] $
@@ -195,19 +195,19 @@ PRO PMI__Button__FitSingleInletRoiNormAif__Display::Plot
 
 		'AIF':begin
 			Self -> GET, Time=Time, AifCurve=Y, AifName=AifName, Norm=Norm
-            IF Norm NE 0 THEN BEGIN
-		        AifPop = ParkerAif(Time, baseline=Self.Baseline) ;Plasma concentration in mM
-		        AreaMeas = int_tabulated(Time, Y)
-		        AreaPop = int_tabulated(Time, AifPop)
-		        Y = Y * (AreaPop/AreaMeas)
-            ENDIF ELSE Y=Y/0.55 ;Hematocrit correction
+
+    		IF Norm NE 0 $
+    		THEN Y = NormaliseAifToParker(Time, Y, Self.Baseline) $
+    		ELSE Y = Y/0.55 ;Hematocrit correction
+
 			Self -> SET, /Erase
- 			plot, time, Y, position=[0.1,0.2,0.5,0.9]  $
+ 			plot, time, ParkerAif(Time, Baseline=self.Baseline), position=[0.1,0.2,0.5,0.9]  $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'Time (sec)', ytitle='Concentration (mM)' $
-			, 	linestyle=0, thick=2 $
+			, 	linestyle=1, thick=2 $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
+			oplot, time, Y, linestyle=0, thick=2, color=0
 			xyouts, x0, top-1*dy, 'Arterial Input Function: ' + AifName	, color=0, /normal, charsize=1.5, charthick=1.5
 			end
 
