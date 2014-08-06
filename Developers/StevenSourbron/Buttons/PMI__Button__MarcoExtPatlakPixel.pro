@@ -74,7 +74,7 @@ pro PMI__Button__Event__MarcoExtPatlakPixel, ev
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
 	Sur = Stdy->New('SERIES', Domain= Dom,  Name= 'Intracellular Uptake Rate (/100/min)')
 	Sev = Stdy->New('SERIES', Domain= Dom,  Name= 'Extracellular Volume (ml/100ml)')
-    Ske = Stdy->New('SERIES', Domain= Dom,  Name= 'Cellular Clearance Rate (/100/min)')
+    Ske = Stdy->New('SERIES', Domain= Dom,  Name= 'Intracellular Clearance Rate (/100/min)')
 
 	Sur->Trim, 0E, 1
 	Sev->Trim, 0E, 1
