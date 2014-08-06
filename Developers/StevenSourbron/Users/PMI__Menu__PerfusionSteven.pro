@@ -42,13 +42,13 @@ pro PMI__Menu__PerfusionSteven, parent
 
 	Sid = widget_button(id,value='2 compartments (Pixel)', /menu)
 
-	SSid = PMI__Button__FitExchange(Sid			, value='Exchange')
-	SSid = PMI__Button__FitFiltration(Sid		, value='Filtration')
+	SSid = PMI__Button__FitExchange(Sid, value='Exchange')
+	SSid = PMI__Button__FitFiltration(Sid, value='Filtration')
 	SSid = PMI__Button__FitSingleInletUptakeExchange(Sid, value='Uptake (Exchange)',/separator)
 	SSid = PMI__Button__FitSingleInletUptakeFiltration(Sid, value='Uptake (Filtration)')
-	SSid = PMI__Button__FitModifiedTofts(Sid			, value='Modified Tofts')
-	SSid = PMI__Button__FitPatlakLinPixel(Sid			, value='Patlak',/separator)
-
+	SSid = PMI__Button__FitModifiedTofts(Sid, value='Modified Tofts')
+;
+	SSid = PMI__Button__FitPatlakLinPixel(Sid, value='Patlak',/separator)
 
 	Sid = widget_button(id,value='1 compartment (ROI)', /menu , /separator)
 
