@@ -35,7 +35,7 @@ pro PMI__Button__Event__FitModToftsDimitraLLSmodelfit, ev
 		FitModifiedToftsLinear, time, aif, reform(p[i,*]), vp=vp, ve=ve, Ktrans=Ktrans
 		SingleInletModifiedTofts, [d[3], lindgen(d[3]), time, aif], [vp+ve, ve/(vp+ve), Ktrans], Ctt
 
-		fit[ind[i],*] = Ctt
+		fit[ind[i],*] = remove_inf(Ctt)
 
 	endfor
 

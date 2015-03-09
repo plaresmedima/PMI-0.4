@@ -29,6 +29,6 @@
 
 	;Please name all your menus "PMI__Menu__XXXXX"
 
-	PMI__Menu__Marco, mbar
+	PMI__Menu__AnnaCorby, mbar
 
 end
