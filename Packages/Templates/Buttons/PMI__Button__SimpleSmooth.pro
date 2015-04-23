@@ -4,7 +4,7 @@ pro PMI__Button__Event__SimpleSmooth, ev	;The procedure to be called after butto
 
 	PMI__info, ev.top, Stdy=Stdy, Series=Series
 
-  	Smth = Stdy -> New('SERIES', Default	= Series )     ; Name of the new series 'Smth'
+  	Smth = Stdy -> New('SERIES', Default= Series )     ; Name of the new series 'Smth'
 
 	d = Series -> d() ;[x,y,z,t]
 
