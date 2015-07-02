@@ -30,7 +30,19 @@ function PMI__Dicom__Valid, file
 	point_lun, unit, 128
 	preamble = 'DICM'
 	readu, unit, preamble
-	if preamble ne 'DICM' then goto, exit
+
+	;if preamble ne 'DICM' then goto, exit
+
+    if preamble eq 'DICM' then begin
+        free_lun, unit
+	    return, 1B
+    endif
+
+    point_lun, unit, 0
+    ts = '1.2.840.10008.1.2.1'
+    ok = PMI__Dicom__ReadDataElement(unit,'0008'x,'0010'x, value=val, TransferSyntaxUID=ts)
+    if not OK then goto, exit
+    if strmid(string(val),0,8) ne 'ACR-NEMA' then goto, exit
 
 	free_lun, unit
 	return, 1B

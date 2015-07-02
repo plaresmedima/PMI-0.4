@@ -36,7 +36,7 @@ function PMI__Dicom__ReadImage, file, ok=ok, Info=Info
 
 	if not ok then begin
 		free_lun, unit
-		If ImplicitVR then obj_destroy, Hdr
+		If obj_valid(Hdr) then obj_destroy, Hdr
 		return,0B
 	endif
 

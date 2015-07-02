@@ -36,14 +36,25 @@ function PMI__Dicom__Openr, file, unit, TransferSyntaxUID=ts
 	point_lun, unit, 128
 	preamble = 'DICM'
 	readu, unit, preamble
-	if preamble ne 'DICM' then goto, exit
 
-	point_lun, -unit, p
-	ok = PMI__Dicom__ReadDataElement(unit,'0002'x,'0010'x, value=ts, TransferSyntaxUID='1.2.840.10008.1.2.1')
-	if not OK then goto, exit
-	point_lun, unit, p
+	;if preamble ne 'DICM' then goto, exit
 
-	return, 1B
+    if preamble eq 'DICM' then begin
+        point_lun, -unit, p
+	    ok = PMI__Dicom__ReadDataElement(unit,'0002'x,'0010'x, value=ts, TransferSyntaxUID='1.2.840.10008.1.2.1')
+	    if not OK then goto, exit
+	    point_lun, unit, p
+	    return, 1B
+    endif
+
+    point_lun, unit, 0
+    ts = '1.2.840.10008.1.2.1'
+    ok = PMI__Dicom__ReadDataElement(unit,'0008'x,'0010'x, value=val, TransferSyntaxUID=ts)
+    if not OK then goto, exit
+    if strmid(string(val),0,8) ne 'ACR-NEMA' then goto, exit
+    point_lun, unit, 0
+    return, 1B
+
 
 	exit:
 	free_lun, unit
