@@ -190,10 +190,10 @@ function PMI__Button__SeriesImportDicom__Input, top, files=files, first=first, s
 			,	['0020'x,'0100'x] $	;Temporal position identifier
 			,	['0020'x,'0011'x] $	;Series Number
 			,	['0018'x,'0082'x] $	;Inversion Time
-			, ['0018'x,'0081'x] $ ;Echo Time
+			,   ['0018'x,'0081'x] $ ;Echo Time
 			,	['0018'x,'0080'x] $	;Repetition Time
-      ,	['0018'x,'1314'x] $; flip angle
-      ,['0019'x,'100c'x] ];b-Value (Siemens)
+            ,	['0018'x,'1314'x] $; flip angle
+            ,   ['0019'x,'100c'x] ] ;
 	sort0 = sort0[*,in.(1)]
 	sort1 = sort1[*,in.(2)]
 

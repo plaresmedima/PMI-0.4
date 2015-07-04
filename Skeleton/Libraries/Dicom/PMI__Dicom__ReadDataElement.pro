@@ -63,7 +63,7 @@
 
 
 
-function PMI__Dicom__ReadDataElement, unit, group, element, value=value, gr=gr, el=el, vr=vr, TransferSyntaxUID=ts, Template=Template
+function PMI__Dicom__ReadDataElement, unit, group, element, value=value, gr=gr, el=el, vr=vr, length=length, TransferSyntaxUID=ts, Template=Template
 
 	vr = 'UN'
 	value = 0B
@@ -80,7 +80,6 @@ function PMI__Dicom__ReadDataElement, unit, group, element, value=value, gr=gr, 
 	explicit_vr = (gr EQ '0002'x) OR (TS NE '1.2.840.10008.1.2')
 	IF explicit_vr THEN BEGIN
 		vr = PMI__Dicom__ReadValueRepresentation(unit)
-		if (gr EQ '7FE0'x) and (el EQ '0010'x) then vr = 'OW' ; Assume pixel data are always 'OW'. Exception built in on 15/06/2012, based on Philips data (Bordeaux). Header wrongly stated 'OB'.
 		valid_vr = total(vr EQ ['FL','FD','SL','SS','UL','US','AT','OB','OF','OW','DS','IS','TM','AE','AS','CS','DA','DT','LO','LT','PN','SH','ST','UI','UT','UN','SQ'],/PRESERVE_TYPE)
 		IF NOT valid_vr THEN BEGIN ;if invalid vr then assume implicit vr
 			Hdr = LMU__DicomTemplate()
@@ -90,7 +89,10 @@ function PMI__Dicom__ReadDataElement, unit, group, element, value=value, gr=gr, 
 			point_lun, unit, p-2
 			length = 0UL
 			readu, unit, length
-		ENDIF ELSE length = PMI__Dicom__ReadLength(unit, gr, ts, vr)
+		ENDIF ELSE BEGIN
+		    if (gr EQ '7FE0'x) and (el EQ '0010'x) then vr = 'OW' ; Assume pixel data are always 'OW'. Exception built in on 15/06/2012, based on Philips data (Bordeaux). Header wrongly stated 'OB'.
+		    length = PMI__Dicom__ReadLength(unit, gr, ts, vr)
+		ENDELSE
 	ENDIF ELSE BEGIN
 		vr = Template->GetVr(gr,el)
 		length = PMI__Dicom__ReadLength(unit, gr, ts)

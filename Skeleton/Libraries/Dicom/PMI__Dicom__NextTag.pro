@@ -19,7 +19,10 @@
 function PMI__Dicom__NextTag, unit, gr, el, ts
 
 	if eof(unit) then begin
-		point_lun, unit, 132
+		point_lun, unit, 128
+	    preamble = 'DICM'
+	    readu, unit, preamble
+	    if preamble ne 'DICM' then point_lun, unit, 0
 		return_value = 0B
 	endif else return_value = 1B
 

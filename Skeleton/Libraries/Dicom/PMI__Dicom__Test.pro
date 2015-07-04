@@ -1,6 +1,9 @@
-;    PMI Main Menu
+;Writes a text file with the DICOM header data
+;Returns 1 when writing is completed without error, and 0 otherwise
+
+
 ;
-;    Copyright (C) 2013 Steven Sourbron
+;    Copyright (C) 2015 Steven Sourbron
 ;
 ;    This program is free software; you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -17,18 +20,25 @@
 ;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
- pro PMI__Menu, mbar
+function PMI__Dicom__Test, file
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+	if not PMI__Dicom__Openr(file, unit, TransferSyntaxUID=TS) then return, 0B
 
-	;PMI__Menu__Skeleton, mbar
+    s = fstat(unit)
 
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
+	Hdr = LMU__DicomTemplate()
+	while not eof(unit) do begin
+	    ok = PMI__Dicom__ReadDataElement(unit, gr=gr, el=el, vr=vr, value=v, length=length, TransferSyntaxUID=TS, Template=Hdr)
+	    print, gr
+	    print, el
+	    print, vr
+	    print, length
+	    print, ''
+	endwhile
+	obj_destroy, Hdr
 
-	;Please name all your menus "PMI__Menu__XXXXX"
+	close, unit & free_lun, unit
 
-	PMI__Menu__Grenier, mbar
+	return, 1B
 
 end

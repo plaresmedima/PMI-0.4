@@ -54,7 +54,10 @@ function PMI__Dicom__Point, unit, group, element, ts
 
 	ok = PMI__Dicom__NextTag(unit, gr, el, ts)
 	if (gr gt group) or ((gr eq group) and (el gt element)) then begin
-		point_lun, unit, 132
+		point_lun, unit, 128
+	    preamble = 'DICM'
+	    readu, unit, preamble
+	    if preamble ne 'DICM' then point_lun, unit, 0
 		ok = PMI__Dicom__NextTag(unit, gr, el, ts)
 	endif
 

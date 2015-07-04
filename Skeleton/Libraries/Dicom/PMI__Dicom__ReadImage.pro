@@ -24,7 +24,6 @@ function PMI__Dicom__ReadImage, file, ok=ok, Info=Info
 	ok = PMI__Dicom__ReadDataElement(unit,'0008'x,'0070'x,value=Manufacturer, TransferSyntaxUID=TS, Template=Hdr)
 	Philips = Manufacturer Eq 'Philips Medical Systems '
 
-
 	if arg_present(info) then begin
 		Info = Obj_new('HEADER')
 		Info->Set, Obj_new('DATA_ELEMENT','0020'x,'0032'x, unit=unit, TransferSyntaxUID=TS, Template=Hdr)
