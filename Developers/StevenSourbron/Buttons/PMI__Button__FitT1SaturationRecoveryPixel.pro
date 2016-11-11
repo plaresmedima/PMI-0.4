@@ -21,13 +21,12 @@ pro PMI__Button__Event__FitT1SaturationRecoveryPixel, ev
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
-    Sinf = Stdy->New('SERIES', Domain= Dom,  Name= 'Sinf' )
-    St1 = Stdy->New('SERIES', Domain= Dom,  Name= 'T1')
+    Sinf = Stdy->New('SERIES', Domain= Dom,  Name= Series->name() + '_Sinf' )
+    St1 = Stdy->New('SERIES', Domain= Dom,  Name= Series->name() + '_T1')
 
 	d = Series->d()
 	time = Series->t()
-
-	Time = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 1.2, 1.5, 2.0] ;Irene's Data
+	ExpectedT1 = max(time)/2.0
 
 	for j=0L,d[2]-1 do begin
 
@@ -43,7 +42,7 @@ pro PMI__Button__Event__FitT1SaturationRecoveryPixel, ev
 
 			Sig = reform(P[i,*])
 
-			Pars = [max(Sig),1.0] ;[Sinf, R1]
+			Pars = [max(Sig),1/ExpectedT1] ;[Sinf, R1]
 			Fit = mpcurvefit(Time, Sig, 1+0E*Sig, Pars, function_name='PMI__FitT1SaturationRecovery',/quiet,NODERIVATIVE=0)
 			Sinf_slice[i] = Pars[0]
 			T1_slice[i] = 1/Pars[1]

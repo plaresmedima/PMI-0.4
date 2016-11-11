@@ -81,6 +81,7 @@ PRO PMI__Display__ViewHistogram::Event, ev
 			Self -> TextStats, stats, hist=hist
 			PMI__Write_csv, Filename +'_plot.csv', hist
 			PMI__Write_csv, Filename +'_stats.csv', stats
+			PMI__Write_csv, Filename +'_data.csv', *self.data
 			end
 
 		self.saveas:begin
@@ -92,6 +93,7 @@ PRO PMI__Display__ViewHistogram::Event, ev
 			Self -> TextStats, stats, hist=hist
 			PMI__Write_csv, Filename +'_plot.csv', hist
 			PMI__Write_csv, Filename +'_stats.csv', stats
+			PMI__Write_csv, Filename +'_data.csv', *self.data
 			end
 
 		self.close:begin
