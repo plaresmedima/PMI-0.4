@@ -14,6 +14,7 @@ pro PMI__Menu__Steven, parent
 	Sid = PMI__Button__DeconvolutionAnalysisRoiPVcorr(id, value='Model-free (ROI)')
 	Sid = PMI__Button__FitSingleInletPatlakPVcorr(id, value='Model-based (Pixel)',/separator)
 	Sid = PMI__Button__FitSingleInletRoiPVcorr(id, value='Model-based (ROI)')
+    Sid = PMI__Button__FitPatlakLinPixel(id, value='Patlak Model (Pixel)',/separator)
 
 	id = widget_button(parent, value='Cardiac',/menu)
 
