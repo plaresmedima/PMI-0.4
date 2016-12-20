@@ -31,6 +31,12 @@ pro PMI__Menu__Region, parent
 
 	SSid = PMI__Button__RegionExportBmp(Sid)
 	SSid = PMI__Button__RegionExportRaw(Sid)
+	SSid = PMI__Button__RegionExportCsv(Sid, value='CSV')
+
+	Sid = widget_button(id,/menu,value='Edit',/separator)
+
+    SSid = PMI__Button__SeriesEditTimeResolution(Sid, value='Time Resolution')
+    SSid = PMI__Button__SeriesEditCoordinates(Sid, value='All coordinates')
 
 	Sid = PMI__Button__RegionExtrude(id,/separator)
 	Sid = PMI__Button__RegionCombine(id)
