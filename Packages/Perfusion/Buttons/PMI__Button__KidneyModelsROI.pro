@@ -293,13 +293,24 @@ FUNCTION PMI__Display__KidneyModelsROI::Conc, Region
 	If SignalModel eq 1 then return, 100*(Signal-S0)/S0
 	relaxivity = 3.6
 	case Region of
-		'ROI':R10=1.0
-		'AIF':R10=1/1441.
+		'ROI':R10=1/1142.0 ;de Bazelaire JMRI 2004
+		'AIF':R10=(0.52 * self.Hematocrit + 0.38) / 1000.0 ; Lu MRM 2004
 	endcase
 	if SignalModel eq 2 then return, (1000*R10/relaxivity)*(Signal-S0)/S0
-	TR = self.series->GETVALUE('0018'x,'0080'x)
-	FA = self.series->GETVALUE('0018'x,'1314'x)
-	return, Concentration_SPGRESS(Signal, S0, 1/R10, FA, TR, relaxivity)
+	IF self.TR EQ 0 THEN BEGIN
+		self.TR = self.series->GETVALUE('0018'x,'0080'x)
+		self.FA = self.series->GETVALUE('0018'x,'1314'x)
+		IF (self.TR EQ 0) OR (self.FA EQ 0) THEN BEGIN
+			v = PMI__Form(tlb(self.id), Title='Please enter correct parameters', [$
+				ptr_new({Type:'VALUE', Tag:'TR' , Label:'Repetition Time (msec)', Value:5E}),$
+				ptr_new({Type:'VALUE', Tag:'FA' , Label:'Flip Angle (Degrees)', Value:20E})])
+			IF v.cancel THEN return, Signal*0 ELSE BEGIN
+				self.TR = v.TR
+				self.FA = v.FA
+			ENDELSE
+		ENDIF
+	ENDIF
+	return, Concentration_SPGRESS(Signal, S0, 1/R10, self.FA, self.TR, relaxivity)
 END
 
 FUNCTION PMI__Display__KidneyModelsROI::GetCurve, Region
@@ -396,7 +407,7 @@ PRO PMI__Display__KidneyModelsROI::GET, $
 		Region='ROI'
 		Self->GET, Stdy=Stdy, Region=Region
 		v = PMI__RoiValues(Stdy->DataPath(), self.series, Region, cnt=npix)
-		thick = self.Series->GetValue('0018'x,'0050'x)
+		thick = self.Series->GetValue('0018'x,'0088'x)
 		pixel = self.Series->GetValue('0028'x,'0030'x)
 		RoiVolume = npix*(thick[0]/10D)*(pixel[0]/10D)^2
 	endif
@@ -491,8 +502,8 @@ FUNCTION PMI__Display__KidneyModelsROI::Init, parent, CursorPos, xsize=xsize, ys
   		endfor
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
-		    id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['Linear (a.u.)','Linear (%)','Linear (mM)'])
-		;	id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['Linear (a.u.)','Linear (%)','Linear (mM)', 'Non-linear (mM)'])
+		;    id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['Linear (a.u.)','Linear (%)','Linear (mM)'])
+			id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['Linear (a.u.)','Linear (%)','Linear (mM)', 'Non-linear SpGESS (mM)'])
   			widget_control, id, set_droplist_select = 0
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
@@ -530,6 +541,8 @@ PRO PMI__Display__KidneyModelsROI__Define
 	,	Series: obj_new() $
 	,	Baseline: 0L $
 	,	Hematocrit: 0E $
+	,	TR: 0E $
+	,	FA: 0E $
 	}
 END
 

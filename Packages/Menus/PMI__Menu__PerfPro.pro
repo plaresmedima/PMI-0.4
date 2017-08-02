@@ -43,6 +43,12 @@ pro PMI__Menu__PerfPro, parent
 
         Sid = PMI__Button__FitModToftsLinPopAif(id, value='Modified Tofts (Pixel - population AIF)')                ;PACKAGE: Perfusion
         Sid = PMI__Button__FitSingleInletRoiPVcorr(id, value='Exchange models (ROI - partial volume correction)')   ;PACKAGE: Perfusion
-        Sid = PMI__Button__FitSingleInletRoiNormAif(id, value='Exchange models (ROI - normalised AIF)')             ;PACKAGE: Perfusion
+        Sid = PMI__Button__FitSingleInletRoiNormAif(id, value='Exchange models (ROI - normalised AIF)') ;PACKAGE:
+
+    id = widget_button(parent, value='Recon',/menu)
+
+ 		Sid = PMI__Button__SlicesAxialToCoronal(id)
+ 		Sid = PMI__Button__SlicesCoronalToSagittal(id)
+ 		Sid = PMI__Button__SlicesSagittalToAxial(id)
 
 end

@@ -26,6 +26,7 @@ pro PMI__Menu__Region, parent
 	Sid = widget_button(id,/menu,value='Import',/separator)
 
 	SSid = PMI__Button__RegionImportRaw(Sid)
+	SSid = PMI__Button__RegionImportBmp(Sid)
 
 	Sid = widget_button(id,/menu,value='Export')
 

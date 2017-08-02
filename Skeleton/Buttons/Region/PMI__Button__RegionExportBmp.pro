@@ -52,7 +52,7 @@ function PMI__Button__RegionExportBmp, parent, separator	= separator
 
   	return, widget_button(parent $
   	, 	separator	= separator	$
-  	, 	value		= 'BITMAP' $
+  	, 	value		= 'BMP' $
 	, 	event_pro 	= 'PMI__Button__Event__RegionExportBmp'	$
 	,	pro_set_value = 'PMI__Button__Control__RegionExportBmp' $
 	)
