@@ -18,5 +18,5 @@ pro PMI__Menu__Katja, parent
 	Sid = PMI__Button__FastDeconvolutionAnalysis(id, value='Perfusion: Deconvolution (Pixel)')
 	Sid = PMI__Button__SemiQuantitativePerfusionRoi(id	, value='Perfusion: Semi-quantitative (ROI)',/separator)
 	Sid = PMI__Button__DeconvolutionAnalysisRoi(id		, value='Perfusion: Deconvolution (ROI)')
-	Sid = PMI__Button__MM__Fit(id, value='Perfusion: Multi-model fit', /separator)
+;	Sid = PMI__Button__MM__Fit(id, value='Perfusion: Multi-model fit', /separator)
 end
