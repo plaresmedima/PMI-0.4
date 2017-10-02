@@ -177,7 +177,9 @@ function PMI__Button__SeriesImportDicom__Input, top, files=files, first=first, s
 	in = PMI__Form(top, Title='Please select which series to load', [$
 		ptr_new({Type:'LIST', Label:'Series', select:0L,Value:Descr}), $
 		ptr_new({Type:'DROPLIST', Label:'Sort by..', select:0L, Value:[ 'Slice location','Image number','Study date']}), $
-		ptr_new({Type:'DROPLIST', Label:'..and by ', select:sortdef, Value:[ 'Acquisition time','Image number','Temporal position identifier','Series Number','Inversion Time','Echo Time','Repetition Time','Flip Angle','b-value (Siemens)' ]})])
+		ptr_new({Type:'DROPLIST', Label:'..and by ', select:sortdef, Value:[ $
+		   'Acquisition time','Acquisition Datetime', 'Image number','Temporal position identifier',$
+		   'Series Number','Inversion Time','Echo Time','Repetition Time','Flip Angle','b-value (Siemens)' ]})])
 	IF in.cancel THEN return, 0
 
 
@@ -194,7 +196,7 @@ function PMI__Button__SeriesImportDicom__Input, top, files=files, first=first, s
 			,   ['0018'x,'0081'x] $ ;Echo Time
 			,	['0018'x,'0080'x] $	;Repetition Time
             ,	['0018'x,'1314'x] $; flip angle
-            ,   ['0019'x,'100c'x] ] ;
+            ,   ['0019'x,'100c'x] ] ;b-value (Siemens)
 	sort0 = sort0[*,in.(1)]
 	sort1 = sort1[*,in.(2)]
 

@@ -186,6 +186,7 @@ function PMI__Button__SeriesImportDicom__Input, top, files=files, first=first, s
 			,	['0020'x,'0013'x] $ ;Image Number
 			,	['0008'x,'0020'x] ] ;Study date
 	sort1 = [	['0008'x,'0032'x] $ ;Acquisition time
+			,	['0008'x,'002A'x] $ ;Acquisition Datetime
 			,	['0020'x,'0013'x] $ ;Image Number
 			,	['0020'x,'0100'x] $	;Temporal position identifier
 			,	['0020'x,'0011'x] $	;Series Number
