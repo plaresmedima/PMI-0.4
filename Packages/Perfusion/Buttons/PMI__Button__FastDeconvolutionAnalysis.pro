@@ -106,8 +106,8 @@ pro PMI__Button__Event__FastDeconvolutionAnalysis, ev
     				2:P = -alog(P/P0)
     			endcase
 
-;				RegridDeconvolutionPixelData,time,P,aif,time_regr=t,aif_regr=a
-				t=time & a=aif
+				RegridDeconvolutionPixelData,time,P,aif,time_regr=t,aif_regr=a
+;				t=time & a=aif
 				InvertIllPosedFast, P, (t[1]-t[0])*convolution_matrix(a), REGPAR=0.15
 
 				PF = fltarr(d[0]*d[1]) & PF[k[nozero]] = 6000*remove_inf(max(P,dimension=2))

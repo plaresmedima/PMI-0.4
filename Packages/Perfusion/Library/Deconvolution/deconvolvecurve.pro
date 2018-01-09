@@ -33,7 +33,12 @@ pro DECONVOLVECURVE__REGRID $
 		c = curve
 		a = aif
 	endif else begin
-		t = dt*findgen(1+floor(time[n-1]/dt))
+		nt = floor(time[n-1]/dt)
+		if nt gt 300 then begin
+			nt = 300.
+			dt = time[n-1]/nt
+		endif
+		t = dt*findgen(1+nt)
 		c = interpol(curve,time,t)
 		a = interpol(aif,time,t)
 	endelse
