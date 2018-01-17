@@ -1,4 +1,4 @@
-pro PMI__Button__Event__DualInletUptakeDelayPixel, ev
+pro PMI__Button__Event__DualInletUptakePixel, ev
 
 	if not DualInletPerfusionAnalysis__input($
 		ev.top $
@@ -6,9 +6,9 @@ pro PMI__Button__Event__DualInletUptakeDelayPixel, ev
 	,	status 		= status $
 	,	time 		= time $
 	,	pixelcurve 	= p $
+	,	Roi			= Roi $
 	,	aif			= aif $
 	,	vif 		= vif $
-	,	Roi			= Roi $
 	,	ev = ev $
 	) then goto, return
 
@@ -23,7 +23,6 @@ pro PMI__Button__Event__DualInletUptakeDelayPixel, ev
 	VL	= fltarr(n) ;extracellular volume
 	UP	= fltarr(n) ;uptake fraction
 	UF	= fltarr(n) ;uptake flow
-	DT	= fltarr(n) ;delay time
 
    i=0L
    ind = Roi -> Where(Stdy->DataPath(),t=Roi->t(i),n=n)
@@ -34,12 +33,12 @@ pro PMI__Button__Event__DualInletUptakeDelayPixel, ev
 
 	for i=0L,n-1 do begin
 
-		PMI__Message, status, 'Fitting ' + Roi->name() + ' pixels to Dual-inlet 2-compartment uptake model with delay', 	i/(n-1.0)
+		PMI__Message, status, 'Fitting ' + Roi->name() + ' pixels to Dual-inlet 2-compartment uptake model', 	i/(n-1.0)
 
 		;Pars = [0.2*50/6000.,0.8*50/6000.,20.]
 		Pars = [0.2*50/6000D,0.8*50/6000.,20.,0.2]
 		;p[i,*] = FitDualInletCompartment(time,reform(p[i,*]),aif,vif,Pars=Pars,/quiet)
-		Fit = FitDualInletDelay('FitDualInletUptake',time,reform(p[i,*]),aif,vif,Pars=Pars,Delay=Pd,AIC=AIC,/noderivative,/quiet,/constrained)
+		Fit = FitDualInletUptake(time,reform(p[i,*]),aif,vif,Pars=Pars,AIC=AIC,/noderivative,/quiet,/constrained)
 
 		FA[ind[i]] 	= 6000.0*Pars[0]
 		FV[ind[i]] 	= 6000.0*Pars[1]
@@ -48,7 +47,7 @@ pro PMI__Button__Event__DualInletUptakeDelayPixel, ev
 		VL[ind[i]]	= 100*(Pars[0]+Pars[1])*Pars[2]/(1-Pars[3])
 		UP[ind[i]]	= 100*Pars[3]
 		UF[ind[i]]	= 6000*(Pars[0]+Pars[1])*Pars[3]/(1-Pars[3])
-		DT[ind[i]]	= 1D*Pd
+
 	endfor
 
 
@@ -63,14 +62,13 @@ pro PMI__Button__Event__DualInletUptakeDelayPixel, ev
 	S = Stdy->New('SERIES', Domain=Domain, Data=VL,	Name='2-inlet 2-compartment model - Extracellular Volume (ml/100ml)')
 	S = Stdy->New('SERIES', Domain=Domain, Data=UP,	Name='2-inlet 2-compartment model - Uptake Fraction %')
 	S = Stdy->New('SERIES', Domain=Domain, Data=UF,	Name='2-inlet 2-compartment model - Uptake Flow (ml/100ml/min)')
-	S = Stdy->New('SERIES', Domain=Domain, Data=DL,	Name='2-inlet 2-compartment model - Delay (sec)')
 
 
 	PMI__Control, ev.top, /refresh
 	return:PMI__Message, status
 end
 
-pro PMI__Button__Control__DualInletUptakeDelayPixel, id, v
+pro PMI__Button__Control__DualInletUptakePixel, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -81,14 +79,14 @@ pro PMI__Button__Control__DualInletUptakeDelayPixel, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__DualInletUptakeDelayPixel, parent,value=value, separator=separator
+function PMI__Button__DualInletUptakePixel, parent,value=value, separator=separator
 
 	if n_elements(value) eq 0 then value = 'Fit dual input 2-compartment model (Pixel)'
 
 	id = widget_button(parent $
 	,	value 		= value	$
-	,	event_pro 	= 'PMI__Button__Event__DualInletUptakeDelayPixel'	$
-	,	pro_set_value 	= 'PMI__Button__Control__DualInletUptakeDelayPixel' $
+	,	event_pro 	= 'PMI__Button__Event__DualInletUptakePixel'	$
+	,	pro_set_value 	= 'PMI__Button__Control__DualInletUptakePixel' $
 	, 	separator 	= separator	)
 
 	return, id
