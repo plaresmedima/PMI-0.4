@@ -227,8 +227,11 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2::Plot
 			end
 
 		'FIT':BEGIN
-			Self -> GET, RoiCurve=Curve, Timet=Timet, Fit=Fit, Model=Model, RoiName=RoiName, AifName=AifName, VifName=VifName
+			Self -> GET, RoiCurve=Curve, Timet=Timet,Timei=timei, Fit=Fit, Model=Model, RoiName=RoiName, AifName=AifName, VifName=VifName
 			Self -> SET, /Erase
+
+			curve = interpol(curve,timet,timei)
+
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
 			, 	[0,max(timet)], [min([min(Curve),min(Fit)]),max([max(Curve),max(Fit)])] $
