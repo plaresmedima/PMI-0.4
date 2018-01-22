@@ -177,12 +177,12 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi::Fit
 	ENDCASE
 
 	IF DELAY_WHICH EQ 2 THEN Parameters = [Parameters $
-		,{Name:'Arterial Delay'	,Units:'sec',Value:1D*Pd[0]	,Nr:13} $
-		,{Name:'Venous Delay'	,Units:'sec',Value:1D*Pd[1]	,Nr:14} ] $
+		,{Name:'Arterial Delay'	,Units:'sec',Value:1D*Pd[0]	,Nr:14} $
+		,{Name:'Venous Delay'	,Units:'sec',Value:1D*Pd[1]	,Nr:15} ] $
 	ELSE IF DELAY_WHICH EQ 0 THEN Parameters = [Parameters $
-		,{Name:'Arterial Delay'	,Units:'sec',Value:1D*Pd	,Nr:13} ] $
+		,{Name:'Arterial Delay'	,Units:'sec',Value:1D*Pd	,Nr:14} ] $
 	ELSE IF DELAY_WHICH EQ 1 THEN Parameters = [Parameters $
-		,{Name:'Venous Delay'	,Units:'sec',Value:1D*Pd	,Nr:14} ]
+		,{Name:'Venous Delay'	,Units:'sec',Value:1D*Pd	,Nr:15} ]
 
 	self.Curve[3] = ptr_new(Fit)
 	self.Parameters = ptr_new(Parameters)
@@ -369,12 +369,30 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi::GetCurve, List
 	Y = PMI__RoiCurve(Stdy->DataPath(), Self.Series, Region, cnt=cnt)
 	Self -> SET, OnDisplay=OnDisplay, /Sensitive
 	if cnt eq 0 then return, Time*0
+
+	S0 = total(Y[0:self.Baseline-1])/self.Baseline
 	case self.units of
-	'Linear (a.u.)': relative=0
-	'Linear (%)': relative=1
-	'DSC-MRI': relative=2
+	'Linear (a.u.)': return, Y-S0
+	'Linear (%)': return, 100E*(Y-S0)/S0
+	'Linear (mM)': BEGIN
+		CASE List OF
+			'ROI':R10=1/self.T1t
+			'AIF':R10=1/self.T1a
+			'VIF':R10=1/self.T1v
+		ENDCASE
+		return, (1000*R10/self.relaxivity)*(Y-S0)/S0
+		END
+	'Non-linear (mM)': BEGIN
+		S0 = total(Y[0:self.Baseline-1])/self.Baseline
+		CASE List OF
+			'ROI':T10=self.T1t
+			'AIF':T10=self.T1a
+			'VIF':T10=self.T1v
+		ENDCASE
+		return, Concentration_SPGRESS(Y, S0, T10, self.FA, self.TR, self.Relaxivity)
+		END
 	endcase
-	return, LMU__Enhancement(Y,Self.Baseline,relative=relative)
+
 
 END
 
@@ -461,6 +479,7 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi::SET, $
  	xsize=xsize, ysize=ysize, $
 	Set_droplist_select = Set_droplist_select, $
 	Series=Series, Units=Units, Baseline=Baseline, Hematocrit=Hematocrit, $
+	Relaxivity=Relaxivity, T1t=T1t, T1a=T1a, T1v=T1v, TR=TR, FA=FA, $
 	OnDisplay=OnDisplay
 
 	if keyword_set(pmi_resize) then begin
@@ -472,6 +491,13 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi::SET, $
 	if n_elements(Units) 	ne 0 then self.Units = Units
 	if n_elements(Baseline) 	ne 0 then self.Baseline = Baseline
 	if n_elements(Hematocrit) 	ne 0 then self.Hematocrit = Hematocrit
+	if n_elements(Relaxivity) 	ne 0 then self.Relaxivity = Relaxivity
+	if n_elements(T1t) 	ne 0 then self.T1t = T1t
+	if n_elements(T1a) 	ne 0 then self.T1a = T1a
+	if n_elements(T1v) 	ne 0 then self.T1v = T1v
+	if n_elements(TR) 	ne 0 then self.TR = TR
+	if n_elements(FA) 	ne 0 then self.FA = FA
+
 	if n_elements(Message) 	ne 0 then begin
 		Self -> SET, OnDisplay='', /Refresh
 		xyouts, 0.1,0.9, Message, color=0,/normal,charsize=1.5,charthick=2.0
@@ -592,6 +618,12 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi__Define
 	,	Series: obj_new() $
 	,	Baseline: 0L $
 	,	Hematocrit: 0E $
+	,	Relaxivity:0E $
+	, 	T1t:0E $
+	, 	T1a:0E $
+	, 	T1v:0E $
+	,	TR:0E $
+	, 	FA:0E $
 	}
 END
 
@@ -602,7 +634,7 @@ pro PMI__Button__Event__Sergios_FitDualInletRoi, ev
 
     Series = Stdy->Names(0,ns,DefDim=3,ind=ind,sel=sel)
     Regions = Stdy->Names(1,nr)
-    Units = ['Linear (a.u.)','Linear (%)','DSC-MRI']
+    Units = ['Linear (a.u.)','Linear (%)','Linear (mM)','Non-linear (mM)']
 
 	v = PMI__Form(ev.top, Title='Perfusion analysis setup', [$
 		ptr_new({Type:'DROPLIST',Tag:'series', Label:'Dynamic series', Value:Series, Select:sel}), $
@@ -614,14 +646,53 @@ pro PMI__Button__Event__Sergios_FitDualInletRoi, ev
 		ptr_new({Type:'VALUE'	,Tag:'hct'	 , Label:'Patients hematocrit', Value:0.45})])
 	IF v.cancel THEN return
 
+    Series = Stdy->Obj(0,ind[v.series])
+
+	IF v.units EQ 2 THEN BEGIN
+
+		T1a = 1000.0 / (0.52 * v.hct + 0.38)  ; Lu MRM 2004
+		T1v = 1000.0 / (0.83 * v.hct + 0.28)  ; Lu MRM 2004
+
+		p = PMI__Form(ev.top, Title='Check parameters', [$
+			ptr_new({Type:'VALUE', Tag:'Relaxivity' , Label:'Relaxivity ', Value:3.6E}),$
+			ptr_new({Type:'VALUE', Tag:'T1t' , Label:'Tissue T1 (msec)', Value:809E}), $
+			ptr_new({Type:'VALUE', Tag:'T1a' , Label:'Arterial Blood T1 (msec)', Value:T1a}), $
+			ptr_new({Type:'VALUE', Tag:'T1v' , Label:'Venous Blood T1 (msec)', Value:T1v}) $
+			])
+		IF p.cancel THEN return
+	ENDIF
+
+	IF v.units EQ 3 THEN BEGIN
+
+		T1a = 1000.0 / (0.52 * v.hct + 0.38)  ; Lu MRM 2004
+		T1v = 1000.0 / (0.83 * v.hct + 0.28)  ; Lu MRM 2004
+		TR = series->GETVALUE('0018'x,'0080'x)
+		FA = series->GETVALUE('0018'x,'1314'x)
+
+		p = PMI__Form(ev.top, Title='Check parameters', [$
+			ptr_new({Type:'VALUE', Tag:'TR' , Label:'Repetition Time (msec)', Value:TR}),$
+			ptr_new({Type:'VALUE', Tag:'FA' , Label:'Flip Angle (Degrees)', Value:FA}), $
+			ptr_new({Type:'VALUE', Tag:'Relaxivity' , Label:'Relaxivity ', Value:3.6E}),$
+			ptr_new({Type:'VALUE', Tag:'T1t' , Label:'Tissue T1 (msec)', Value:809E}), $
+			ptr_new({Type:'VALUE', Tag:'T1a' , Label:'Arterial Blood T1 (msec)', Value:T1a}), $
+			ptr_new({Type:'VALUE', Tag:'T1v' , Label:'Venous Blood T1 (msec)', Value:T1v}) $
+			])
+		IF p.cancel THEN return
+	ENDIF
+
 	PMI__Control, ev.top, Viewer = 'PMI__Button__Display__Sergios_FitDualInletRoi', Display=Display
 
-	Display -> Set, /Refresh, $
-		Series = Stdy->Obj(0,ind[v.series]), $
+	Display -> Set, $
+		Series = Series, $
 		Units = Units[v.units], $
 		Baseline = v.nbase, $
 		Hematocrit = v.hct, $
 		set_droplist_select = [v.roi,v.aif,v.vif]
+
+	if v.units EQ 2 THEN Display -> Set, Relaxivity=p.Relaxivity, T1t=p.T1t, T1a=p.T1a, T1v=p.T1v
+	if v.units EQ 3 THEN Display -> Set, Relaxivity=p.Relaxivity, T1t=p.T1t, T1a=p.T1a, T1v=p.T1v, TR=p.TR, FA=p.FA
+
+	Display -> Set, /Refresh
 end
 
 pro PMI__Button__Control__Sergios_FitDualInletRoi, id, v
