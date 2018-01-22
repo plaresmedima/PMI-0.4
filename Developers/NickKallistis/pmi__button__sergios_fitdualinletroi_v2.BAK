@@ -19,10 +19,12 @@
 ;
 ;
 
-PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::Fit
+PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2::Fit
 
-	Self->GET, Model=Model, AIF_Delay=AIF_Delay, VIF_Delay=VIF_Delay, AIF_Use=AIF_Use, VIF_Use=VIF_Use, Time=Time, AifCurve=Aif, VifCurve=Vif, RoiCurve=Curve, OnDisplay=OnDisplay
+	Self->GET, Model=Model, AIF_Delay=AIF_Delay, VIF_Delay=VIF_Delay, AIF_Use=AIF_Use, VIF_Use=VIF_Use, Timei=Time, Timet=Timet, AifCurve=Aif, VifCurve=Vif, RoiCurve=Curve, OnDisplay=OnDisplay
 	Self->SET, Message='Fitting...', Sensitive=0
+
+    curve = interpol(curve,timet,time)
 
 	DELAY_VALUES=[0,20,1]
 
@@ -197,7 +199,7 @@ END
 
 
 
-PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::Plot
+PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2::Plot
 
 	Self->GET, OnDisplay=OnDisplay
 
@@ -208,22 +210,22 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::Plot
 		'':Self->Set, /Erase
 
 		'ROI':begin
-			Self -> GET, Time=Time, RoiCurve=Y, RoiName=RoiName
+			Self -> GET, Timet=Timet, RoiCurve=Y, RoiName=RoiName
 			Self -> SET, /Erase
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(time)], [min(Y),max(Y)] $
+			, 	[0,max(timet)], [min(Y),max(Y)] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'Time (sec)', ytitle=self.Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, time, Y, color=6*16, linestyle=0, thick=2
+			oplot, timet, Y, color=6*16, linestyle=0, thick=2
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
 		'AIF':begin
-			Self -> GET, Time=Time, AifCurve=Y, AifName=AifName
+			Self -> GET, Timei=Timei, AifCurve=Y, AifName=AifName
 			Self -> SET, /Erase
- 			plot, time, Y, position=[0.1,0.2,0.5,0.9]  $
+ 			plot, timei, Y, position=[0.1,0.2,0.5,0.9]  $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'Time (sec)', ytitle=self.Units $
@@ -233,9 +235,9 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::Plot
 			end
 
 		'VIF':begin
-			Self -> GET, Time=Time, VifCurve=Y, VifName=VifName
+			Self -> GET, Timei=Timei, VifCurve=Y, VifName=VifName
 			Self -> SET, /Erase
- 			plot, time, Y, position=[0.1,0.2,0.5,0.9]  $
+ 			plot, timei, Y, position=[0.1,0.2,0.5,0.9]  $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'Time (sec)', ytitle=self.Units $
@@ -245,17 +247,19 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::Plot
 			end
 
 		'FIT':BEGIN
-			Self -> GET, RoiCurve=Curve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, AifName=AifName, VifName=VifName
+			Self -> GET, RoiCurve=Curve, Timet=Timet,Timei=timei, Fit=Fit, Model=Model, RoiName=RoiName, AifName=AifName, VifName=VifName
 			Self -> SET, /Erase
 
+			curve = interpol(curve,timet,timei)
+
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(time)], [min([min(Curve),min(Fit)]),max([max(Curve),max(Fit)])] $
+			, 	[0,max(timet)], [min([min(Curve),min(Fit)]),max([max(Curve),max(Fit)])] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'Time (sec)', ytitle=self.Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, time, Curve, color=6*16, linestyle=0, thick=2
-			oplot, time, Fit, color=12*16, linestyle=0, thick=2
+			oplot, timet, Curve, color=6*16, linestyle=0, thick=2
+			oplot, timet, Fit, color=12*16, linestyle=0, thick=2
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
 			xyouts, x0, top-1*dy, 'Arterial Input Function: ' + AifName	, color=0, /normal, charsize=1.5, charthick=1.5
@@ -278,7 +282,7 @@ END
 
 
 
-FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::Event, ev
+FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v2::Event, ev
 
 	Uname = widget_info(ev.id,/uname)
 
@@ -320,11 +324,9 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::Event, ev
 		return, 0B
 	endif
 
-
-
 	i = where(Uname Eq ['Export','Export As'], cnt)
 	if cnt eq 1 then begin
-		Self->GET, Time=Time, RoiCurve=RoiCurve, Fit=Fit, Model=Model, Roiname=Roiname
+		Self->GET, Timet=Timet, RoiCurve=RoiCurve, Fit=Fit, Model=Model, Roiname=Roiname
 		if Uname eq 'Export' then begin
 			PMI__Info, ev.top, Stdy=Stdy
 			Path = Stdy->Datapath() + 'Dual-Inlet Models (ROI)'
@@ -336,8 +338,8 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::Event, ev
 			File = strmid(file,0,strlen(file)-4)
 		endelse
 		Write_tiff, File + '.tif', reverse(tvrd(/true),3)
-		PMI__WritePlot, File + '__Curve.txt', Time, RoiCurve
-		PMI__WritePlot, File + '__Fit.txt', time, Fit
+		PMI__WritePlot, File + '__Curve.txt', Timet, RoiCurve
+		PMI__WritePlot, File + '__Fit.txt', timet, Fit
 		PMI__WritePlot, File + '__Parameters.txt' $
 		, 	Xname = 'Parameters', (*self.Parameters).Name + '  (' + (*self.Parameters).Units + ')' $
 		, 	Yname = 'Fitted Values', (*self.Parameters).Value
@@ -352,7 +354,7 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::Event, ev
 	return, 0B
 END
 
-FUNCTION PMI__Button__Display__Event__Sergios_FitDualInletRoi_v3, ev
+FUNCTION PMI__Button__Display__Event__Sergios_FitDualInletRoi_v2, ev
 
 	widget_control, ev.handler, get_uvalue=self
 	return, Self -> Event(ev)
@@ -360,59 +362,48 @@ END
 
 
 
-FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::GetCurve, List
+FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v2::GetCurve, List
 
 	PMI__Info, tlb(self.id), Stdy=Stdy
 	Region = Stdy->Obj(1,widget_info(widget_info(self.id,find_by_uname=List),/droplist_select))
-	Self -> GET, OnDisplay=OnDisplay, Time=Time
-	Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
-	Y = PMI__RoiCurve(Stdy->DataPath(), Self.Series, Region, cnt=cnt)
-	Self -> SET, OnDisplay=OnDisplay, /Sensitive
-	if cnt eq 0 then return, Time*0
-	case self.units of
-	'Linear (a.u.)': relative=0
-	'Linear (%)': relative=1
-	'DSC-MRI': relative=2
-	'Non-linear SPGRRE (mM)': relative=3
-	endcase
-	IF relative eq 3 THEN BEGIN
-		S0 = total(Y[0:self.Baseline-1])/self.Baseline
-		TR = self.series->GETVALUE('0018'x,'0080'x)
-		FA = self.series->GETVALUE('0018'x,'1314'x)
-;		case Region->Name() of
-;			'ROI':R10=1/1142.0 ;de Bazelaire JMRI 2004
-;			'AIF':R10=(0.52 * self.Hematocrit + 0.38) / 1000.0 ; Lu MRM 2004
-;			VIF_Corection :R10=(0.52 * self.Hematocrit + 0.38) / 1000.0 ; Lu MRM 2004
-;		endcase
-		b = PMI__Form(tlb(self.id), Title='Please enter correct parameters', [$
-				ptr_new({Type:'VALUE', Tag:'Relaxivity' , Label:'Contrast Relaxivity ', Value:3.6E}),$
-				ptr_new({Type:'VALUE', Tag:'TR' , Label:'Repetition Time (msec)', Value:TR}),$
-				ptr_new({Type:'VALUE', Tag:'FA' , Label:'Flip Angle (Degrees)', Value:FA}), $
-				ptr_new({Type:'VALUE', Tag:'T1' , Label:'T1 value (msec) for '+Region->Name(), Value:1000E})])
-			IF b.cancel THEN return, Y*0 ELSE BEGIN
-				TR = b.TR
-				FA = b.FA
-				T10 = b.T1
-				r = b.relaxivity
-			ENDELSE
-		return, Concentration_SPGRESS(Y, S0, T10, FA, TR, r)
+
+    if List EQ 'ROI' THEN BEGIN
+
+	  Self -> GET, OnDisplay=OnDisplay, Timet=Timet
+	  Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
+	  Y = PMI__RoiCurve(Stdy->DataPath(), Self.Seriest, Region, cnt=cnt)
+
 	ENDIF ELSE BEGIN
-		return, LMU__Enhancement(Y,Self.Baseline,relative=relative)
+
+	  Self -> GET, OnDisplay=OnDisplay, Timei=Timei
+	  Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
+	  Y = PMI__RoiCurve(Stdy->DataPath(), Self.Seriesi, Region, cnt=cnt)
+
 	ENDELSE
+
+	Self -> SET, OnDisplay=OnDisplay, /Sensitive
+	if cnt eq 0 then return, Timei*0
+	case self.units of
+	  'Linear (a.u.)': relative=0
+	  'Linear (%)': relative=1
+	  'DSC-MRI': relative=2
+	endcase
+	return, LMU__Enhancement(Y,Self.Baseline,relative=relative)
+
 END
 
-FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::GetName, List
+FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v2::GetName, List
 
 	PMI__Info, tlb(self.id), Stdy=Stdy
 	Region = Stdy -> Obj(1,widget_info(widget_info(self.id,find_by_uname=List),/droplist_select))
 	return, Region -> Name()
 END
 
-PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::GET $
+PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2::GET $
 , 	CursorPos = CursorPos $
 ,	Model=Model, AIF_Delay=AIF_Delay, VIF_Delay=VIF_Delay $
 , 	AIF_Use=AIF_Use, VIF_Use=VIF_Use $
-,	Time=Time, Fit=Fit $
+,	Timei=Timei, Timet=Timet, Fit=Fit $
 , 	RoiCurve=RoiCurve, AifCurve=AifCurve, VifCurve=VifCurve $
 ,	RoiName=RoiName, AifName=AifName, VifName=VifName $
 , 	OnDisplay=OnDisplay
@@ -430,9 +421,13 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::GET $
 	if arg_present(AIF_Use) then AIF_Use = widget_info(widget_info(self.id,find_by_uname='AIF Use'),/Button_set)
 	if arg_present(VIF_Use) then VIF_Use = widget_info(widget_info(self.id,find_by_uname='VIF Use'),/Button_set)
 
-	if arg_present(Time) then begin
-		t = Self.Series -> c(1)
-		Time = t-t[0]
+	if arg_present(Timei) then begin
+		t = Self.Seriesi -> c(1)
+		Timei = t-t[0]
+	endif
+	if arg_present(Timet) then begin
+		t = Self.Seriest -> c(1)
+		Timet = t-t[0]
 	endif
 
 	if arg_present(RoiName) then RoiName=Self->GetName('ROI')
@@ -477,13 +472,13 @@ END
 
 
 
-PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::SET, $
+PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2::SET, $
 	PMI__REFRESH=pmi__refresh, PMI__RESIZE=pmi_resize, $
 	Refresh=Refresh,	Erase=Erase, $
 	Message=Message, Sensitive=Sensitive, $
  	xsize=xsize, ysize=ysize, $
 	Set_droplist_select = Set_droplist_select, $
-	Series=Series, Units=Units, Baseline=Baseline, Hematocrit=Hematocrit, $
+	Seriesi=Seriesi, Seriest=Seriest, Units=Units, Baseline=Baseline, Hematocrit=Hematocrit, $
 	OnDisplay=OnDisplay
 
 	if keyword_set(pmi_resize) then begin
@@ -491,7 +486,8 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::SET, $
 		self -> Set, xsize=gpmi.xsize, ysize=gpmi.ysize, /REFRESH
 	endif
 
-	if n_elements(Series) 	ne 0 then Self.Series = Series
+	if n_elements(Seriesi) 	ne 0 then Self.Seriesi = Seriesi
+	if n_elements(Seriest) 	ne 0 then Self.Seriest = Seriest
 	if n_elements(Units) 	ne 0 then self.Units = Units
 	if n_elements(Baseline) 	ne 0 then self.Baseline = Baseline
 	if n_elements(Hematocrit) 	ne 0 then self.Hematocrit = Hematocrit
@@ -542,13 +538,13 @@ END
 
 
 
-PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3::Cleanup
+PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2::Cleanup
 	widget_control, self.id, /destroy
 	ptr_free, Self.Curve, self.Parameters
 	loadct, 0
 END
 
-FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::Init, parent, CursorPos, xsize=xsize, ysize=ysize
+FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v2::Init, parent, CursorPos, xsize=xsize, ysize=ysize
 
 	loadct, 12
 
@@ -556,7 +552,7 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::Init, parent, CursorP
 
 	if n_elements(CursorPos) ne 0 then self.CursorPos = CursorPos
 
-	self.id = widget_base(parent,/column,map=0,event_func='PMI__Button__Display__Event__Sergios_FitDualInletRoi_v3')
+	self.id = widget_base(parent,/column,map=0,event_func='PMI__Button__Display__Event__Sergios_FitDualInletRoi_v2')
 
 	Controls = widget_base(self.id,/row,ysize=40,/base_align_center,space=5)
 	self.DrawId	= widget_draw(self.id,/retain)
@@ -582,7 +578,7 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::Init, parent, CursorP
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-  			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Compartment','Patlak','Modified Tofts', 'Uptake', 'Filtration', 'Exchange','Exchange-Uptake'])
+  			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['Compartment','Patlak','Modified Tofts', 'Uptake', 'Filtration','Exchange','Exchange-Uptake'])
   			widget_control, id, set_droplist_select=3
 
 		v = ['Export','Export As','Close']
@@ -595,7 +591,7 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v3::Init, parent, CursorP
 	return, 1
 END
 
-PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3__Define
+PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2__Define
 
 	DualInletCompartment
 	DualInletPatlak
@@ -604,69 +600,72 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v3__Define
 	DualInletExchange
 	DualInletExchangeUptake
 
-	Struct = {PMI__Button__Display__Sergios_FitDualInletRoi_v3 	$
+	Struct = {PMI__Button__Display__Sergios_FitDualInletRoi_v2 	$
 	,	id: 0L 	$
 	,	DrawId: 0L $
 	,	CursorPos:lonarr(4)	$
 	,	Curve:ptrarr(4) $ ;RoiCurve, AifCurve, VifCurve, Fit
 	,	Parameters: ptr_new() $
 	,	Units: '' $
-	,	Series: obj_new() $
+	,	Seriesi: obj_new() $
+	,	Seriest: obj_new() $
 	,	Baseline: 0L $
 	,	Hematocrit: 0E $
 	}
 END
 
 
-pro PMI__Button__Event__Sergios_FitDualInletRoi_v3, ev
+pro PMI__Button__Event__Sergios_FitDualInletRoi_v2, ev
 
 	PMI__Info, ev.top, Stdy=Stdy
 
     Series = Stdy->Names(0,ns,DefDim=3,ind=ind,sel=sel)
     Regions = Stdy->Names(1,nr)
-    Units = ['Linear (a.u.)','Linear (%)','DSC-MRI','Non-linear SPGRRE (mM)']
+    Units = ['Linear (a.u.)','Linear (%)','DSC-MRI']
 
 	v = PMI__Form(ev.top, Title='Perfusion analysis setup', [$
-		ptr_new({Type:'DROPLIST',Tag:'series', Label:'Dynamic series', Value:Series, Select:sel}), $
+		ptr_new({Type:'DROPLIST',Tag:'seriesi', Label:'Dynamic series (input)', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif'	 , Label:'Arterial Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'vif'	 , Label:'Venous Region', Value:Regions, Select:stdy->sel(1)}), $
+		ptr_new({Type:'DROPLIST',Tag:'seriest', Label:'Dynamic series (tissue)', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'units' , Label:'Signal model', Value:Units, Select:1}), $
 		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Length of baseline (# of dynamics)', Value:1L}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct'	 , Label:'Patients hematocrit', Value:0.45})])
 	IF v.cancel THEN return
 
-	PMI__Control, ev.top, Viewer = 'PMI__Button__Display__Sergios_FitDualInletRoi_v3', Display=Display
+	PMI__Control, ev.top, Viewer = 'PMI__Button__Display__Sergios_FitDualInletRoi_v2', Display=Display
 
 	Display -> Set, /Refresh, $
-		Series = Stdy->Obj(0,ind[v.series]), $
+		Seriesi = Stdy->Obj(0,ind[v.seriesi]), $
+		Seriest = Stdy->Obj(0,ind[v.seriest]), $
 		Units = Units[v.units], $
 		Baseline = v.nbase, $
 		Hematocrit = v.hct, $
 		set_droplist_select = [v.roi,v.aif,v.vif]
 end
 
-pro PMI__Button__Control__Sergios_FitDualInletRoi_v3, id, v
+pro PMI__Button__Control__Sergios_FitDualInletRoi_v2, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
 		Series = Stdy->Names(0,ns,DefDim=3)
 		Regions = Stdy->Names(1,nr)
-		sensitive = (ns gt 0) and (nr gt 2)
+		sensitive = (ns gt 1) and (nr gt 2)
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__Sergios_FitDualInletRoi_v3, parent,value=value, separator=separator
+function PMI__Button__Sergios_FitDualInletRoi_v2, parent,value=value, separator=separator
 
-	PMI__Button__Display__Sergios_FitDualInletRoi_v3__Define
+	PMI__Button__Display__Sergios_FitDualInletRoi_v2__Define
 
 	if n_elements(value) eq 0 then value = 'Fit dual-inlet models (ROI)'
 
 	id = widget_button(parent $
 	,	value = value	$
-	,	event_pro = 'PMI__Button__Event__Sergios_FitDualInletRoi_v3'	$
-	,	pro_set_value = 'PMI__Button__Control__Sergios_FitDualInletRoi_v3' $
+	,	event_pro = 'PMI__Button__Event__Sergios_FitDualInletRoi_v2'	$
+	,	pro_set_value = 'PMI__Button__Control__Sergios_FitDualInletRoi_v2' $
 	, 	separator = separator)
 
 	return, id

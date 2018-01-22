@@ -34,12 +34,12 @@ Pro DualInletUptake, X, P, F, Fi
 
 	I0 	= IntVector(time,inputA)
 	I1 	= IntVector(time,inputV)
-	X0 	= ExpConvolution(KT,[time,inputA],Der=D0)
-	X1 	= ExpConvolution(KT,[time,inputV],Der=D1)
+	X0 	= ExpConvolution(KT,[time,inputA])
+	X1 	= ExpConvolution(KT,[time,inputV])
 
 	I0=I0[ti] & I1=I1[ti]
 	X0=X0[ti] & X1=X1[ti]
-	D0=D0[ti] & D1=D1[ti]
+;	D0=D0[ti] & D1=D1[ti]
 
 	F = P[0]*(1-P[3])*X0 + P[1]*(1-P[3])*X1 + P[0]*P[3]*I0 + P[1]*P[3]*I1
 

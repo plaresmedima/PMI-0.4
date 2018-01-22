@@ -40,7 +40,7 @@ pro PMI__Menu__Sergios, parent
 
 	Sid = PMI__Button__Sergios_FitDualInletRoi(id, value = 'Dual-inlet models (ROI)', /separator)
 	Sid = PMI__Button__Sergios_FitDualInletRoi_V2(id, value = 'Dual-inlet models dual-TR (ROI)')
-	Sid = PMI__Button__Sergios_FitDualInletRoi_V3(id, value = 'Dual-inlet models non-linear (ROI)')
+	Sid = PMI__Button__Sergios_FitDualInletRoi_V3(id, value = 'Dual-inlet non-linear option models variable (ROI)')
 
 
 end
