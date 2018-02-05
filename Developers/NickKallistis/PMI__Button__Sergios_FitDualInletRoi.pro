@@ -642,11 +642,12 @@ pro PMI__Button__Event__Sergios_FitDualInletRoi, ev
 		ptr_new({Type:'DROPLIST',Tag:'vif'	 , Label:'Venous Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'units' , Label:'Signal model', Value:Units, Select:1}), $
-		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Length of baseline (# of dynamics)', Value:1L}),$
+		ptr_new({Type:'VALUE'	,Tag:'nt' , Label:'Length of baseline (sec)', Value:5.0}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct'	 , Label:'Patients hematocrit', Value:0.45})])
 	IF v.cancel THEN return
 
     Series = Stdy->Obj(0,ind[v.series])
+    time = Series->t() - Series->t(0)
 
 	IF v.units EQ 2 THEN BEGIN
 
@@ -685,7 +686,7 @@ pro PMI__Button__Event__Sergios_FitDualInletRoi, ev
 	Display -> Set, $
 		Series = Series, $
 		Units = Units[v.units], $
-		Baseline = v.nbase, $
+		Baseline = ceil(v.nt/time[1]), $
 		Hematocrit = v.hct, $
 		set_droplist_select = [v.roi,v.aif,v.vif]
 

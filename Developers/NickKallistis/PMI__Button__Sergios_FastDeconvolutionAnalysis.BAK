@@ -23,7 +23,7 @@ FUNCTION PMI__Button__Input__Sergios_FastDeconvolutionAnalysis, top, series, aif
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, aif:stdy->sel(1), rel:1, nt:5.0, hct:0.45}
+	in = {ser:sel, aif:stdy->sel(1), rel:1, nb:1, hct:0.45}
 
 	WHILE 1 DO BEGIN
 
@@ -31,16 +31,13 @@ FUNCTION PMI__Button__Input__Sergios_FastDeconvolutionAnalysis, top, series, aif
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
 		ptr_new({Type:'DROPLIST',Tag:'rel', Label:'Signal model', Value:['Linear (a.u.)','Linear (%)'], Select:in.rel}), $
-		ptr_new({Type:'VALUE'	,Tag:'nt' , Label:'Length of baseline (sec)', Value:in.nt}),$
+		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct', Label:'Patients hematocrit', Value:in.hct})])
 		IF in.cancel THEN return, 0
 
-        Series = Stdy->Obj(0,ind[in.ser])
-        time = Series->t() - Series->t(0)
-  		nb = ceil(in.nt/time[1])
-
-    	IF (nb LT 1) or (nb GT Series->d(3)) THEN BEGIN
-    		in.nt = 5.0
+    	Series = Stdy->Obj(0,ind[in.ser])
+    	IF (in.nb LT 1) or (in.nb GT Series->d(3)) THEN BEGIN
+    		in.nb = 1
     		msg = ['Baseline length must be less than the total number of dynamics',$
     		'Please select another baseline length']
     	ENDIF ELSE BEGIN
@@ -52,7 +49,7 @@ FUNCTION PMI__Button__Input__Sergios_FastDeconvolutionAnalysis, top, series, aif
     			msg = ['Arterial region is not defined on every dynamic',$
     			'Please select another region and/or series'] $
     		ELSE BEGIN
-    			Aif = LMU__Enhancement(Aif,nb,relative=in.rel)/(1-in.hct)
+    			Aif = LMU__Enhancement(Aif,in.nb,relative=in.rel)/(1-in.hct)
 				return, 1
     		ENDELSE
     	ENDELSE
@@ -78,7 +75,6 @@ pro PMI__Button__Event__Sergios_FastDeconvolutionAnalysis, ev
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
-	nb = ceil(in.nt/time[1])
 
 	for j=0L,d[2]-1 do begin
 
@@ -88,7 +84,7 @@ pro PMI__Button__Event__Sergios_FastDeconvolutionAnalysis, ev
 		P = reform(P,d[0]*d[1],d[3],/overwrite)
 		k = lindgen(d[0]*d[1])
 
-		if nB eq 1 then P0 = reform(P[*,0]) else P0 = total(P[*,0:nB-1],2)/nB
+		if in.nB eq 1 then P0 = reform(P[*,0]) else P0 = total(P[*,0:in.nB-1],2)/in.nB
 		nozero = where(P0 NE 0, cnt)
 
 		if cnt gt 0 then begin

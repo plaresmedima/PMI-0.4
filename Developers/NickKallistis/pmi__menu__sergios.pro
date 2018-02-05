@@ -37,8 +37,9 @@ pro PMI__Menu__Sergios, parent
 	Sid = PMI__Button__Sergios_SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')
    	Sid = PMI__Button__Sergios_FastDeconvolutionAnalysis(id, value='Model-free quantitative (Pixel)')
 
-   	Sid = PMI__Button__DualInletUptakePixel(id, value='Dual-inlet uptake model (Pixel)', /separator)
+   	Sid = PMI__Button__Sergios_DualInletUptakePixel_Orig(id, value='Dual-inlet uptake model (Pixel)', /separator)
    	Sid = PMI__Button__Sergios_DualInletUptakePixel(id, value='Dual-inlet uptake model non-linear (Pixel)')
+   	Sid = PMI__Button__Sergios_DualInletUptakePixel_DualTR(id, value='Dual-inlet uptake model non-linear, dual-TR (Pixel)')
 
 	Sid = PMI__Button__Sergios_FitDualInletRoi(id, value = 'Dual-inlet models (ROI)', /separator)
 	Sid = PMI__Button__Sergios_FitDualInletRoi_V2(id, value = 'Dual-inlet models dual-TR (ROI)')

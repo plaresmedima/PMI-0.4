@@ -33,7 +33,7 @@ pro PMI__Button__Event__Sergios_SemiQuantitativePerfusion, ev
 	[ ptr_new({Type:'DROPLIST',Tag:'series',Label: 'Dynamic series', Value:Series, Select:sel}) $
 	, ptr_new({Type:'DROPLIST',Tag:'units',Label: 'Signal model', Value:['Linear (a.u.)','Linear (%)','DSC-MRI'], Select:1}) $
 	, ptr_new({Type:'DROPLIST',Tag:'tmax',Label: 'Limit to 100 sec?', Value:['Yes','No'], Select:0}) $
-	, ptr_new({Type:'VALUE'	,Tag:'nt',Label: 'Length of baseline (sec)', Value:5.0}) ] )
+	, ptr_new({Type:'VALUE'	,Tag:'nb',Label: 'Length of baseline (# of dynamics)', Value:1L}) ] )
 	if v.cancel then return
 
 	PMI__Message, Status, 'Preparing calculation'
@@ -56,7 +56,6 @@ pro PMI__Button__Event__Sergios_SemiQuantitativePerfusion, ev
 	time = Series->t()
 	time = float(time-time[0])
 	d = Series->d()
-	nb = ceil(v.nt/time[1])
 
     max_t = d[3]-1
     if v.tmax eq 0 then begin
@@ -73,8 +72,8 @@ pro PMI__Button__Event__Sergios_SemiQuantitativePerfusion, ev
 
 		;calculate baseline P0
 		P0 = Series -> Read(Stdy->DataPath(),i,0)
-		for j=1L,nb-1 do P0 = P0 + Series -> Read(Stdy->DataPath(),i,j)
-		P0 = P0/nb
+		for j=1L,v.nb-1 do P0 = P0 + Series -> Read(Stdy->DataPath(),i,j)
+		P0 = P0/v.nb
 		nozero = where(P0 NE 0, cnt_nozero)
 
 		if cnt_nozero GT 0 then begin

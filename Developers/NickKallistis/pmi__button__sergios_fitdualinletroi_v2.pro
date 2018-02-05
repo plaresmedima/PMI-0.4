@@ -375,18 +375,20 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v2::GetCurve, List
 	  Self -> GET, OnDisplay=OnDisplay, Timet=Timet
 	  Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
 	  Y = PMI__RoiCurve(Stdy->DataPath(), Self.Seriest, Region, cnt=cnt)
+	  Baseline = ceil(self.baseline/timet[1])
 
 	ENDIF ELSE BEGIN
 
 	  Self -> GET, OnDisplay=OnDisplay, Timei=Timei
 	  Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
 	  Y = PMI__RoiCurve(Stdy->DataPath(), Self.Seriesi, Region, cnt=cnt)
+	  Baseline = ceil(self.baseline/timei[1])
 
 	ENDELSE
 	Self -> SET, OnDisplay=OnDisplay, /Sensitive
 	if cnt eq 0 then return, Timei*0
 
-	S0 = total(Y[0:self.Baseline-1])/self.Baseline
+	S0 = total(Y[0:Baseline-1])/Baseline
 	case self.units of
 	'Linear (a.u.)': return, Y-S0
 	'Linear (%)': return, 100E*(Y-S0)/S0
@@ -399,7 +401,7 @@ FUNCTION PMI__Button__Display__Sergios_FitDualInletRoi_v2::GetCurve, List
 		return, (1000*R10/self.relaxivity)*(Y-S0)/S0
 		END
 	'Non-linear (mM)': BEGIN
-		S0 = total(Y[0:self.Baseline-1])/self.Baseline
+		S0 = total(Y[0:Baseline-1])/Baseline
 		CASE List OF
 			'ROI':T10=self.T1t
 			'AIF':T10=self.T1a
@@ -637,7 +639,7 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2__Define
 	,	Units: '' $
 	,	Seriesi: obj_new() $
 	,	Seriest: obj_new() $
-	,	Baseline: 0L $
+	,	Baseline: 0E $
 	,	Hematocrit: 0E $
 	,	Relaxivity:0E $
 	, 	T1t:0E $
@@ -664,7 +666,7 @@ pro PMI__Button__Event__Sergios_FitDualInletRoi_v2, ev
 		ptr_new({Type:'DROPLIST',Tag:'seriest', Label:'Dynamic series (tissue)', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'units' , Label:'Signal model', Value:Units, Select:1}), $
-		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Length of baseline (# of dynamics)', Value:1L}),$
+		ptr_new({Type:'VALUE'	,Tag:'nt' , Label:'Length of baseline (sec)', Value:5.0}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct'	 , Label:'Patients hematocrit', Value:0.45})])
 	IF v.cancel THEN return
 
@@ -708,7 +710,7 @@ pro PMI__Button__Event__Sergios_FitDualInletRoi_v2, ev
 		Seriesi = Seriesi, $
 		Seriest = Stdy->Obj(0,ind[v.seriest]), $
 		Units = Units[v.units], $
-		Baseline = v.nbase, $
+		Baseline = v.nt, $
 		Hematocrit = v.hct, $
 		set_droplist_select = [v.roi,v.aif,v.vif]
 

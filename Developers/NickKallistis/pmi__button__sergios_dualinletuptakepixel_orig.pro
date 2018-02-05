@@ -1,4 +1,4 @@
-FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
+FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel_Orig, ev $
 	,	Stdy		= Stdy $
 	,	status 		= status $
 	,	time 		= time $
@@ -13,11 +13,11 @@ FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
     Regions = Stdy->names(1,nr)
 
 	in = PMI__Form(ev.top, Title='Perfusion analysis setup', [$
-		ptr_new({Type:'DROPLIST',Tag:'T1', Label:'Precontrast T1-map (msec)', Value:Stdy->Names(0), Select:Stdy->sel(0)}), $
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Regions, Select:Stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'vif', Label:'Venous Region', Value:Regions, Select:Stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Tissue Region', Value:Regions, Select:Stdy->sel(1)}), $
+		ptr_new({Type:'DROPLIST',Tag:'rel', Label:'Signal model', Value:['Linear (a.u.)','Linear (%)'], Select:1}), $
 		ptr_new({Type:'VALUE'	,Tag:'nt' , Label:'Length of baseline (sec)', Value:5.0}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct', Label:'Patients hematocrit', Value:0.45})])
 	IF in.cancel THEN return, 0
@@ -25,61 +25,42 @@ FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
 	Series = Stdy->Obj(0,ind[in.ser])
     time = Series->t() - Series->t(0)
     nb = ceil(in.nt/time[1])
-	TR = series->GETVALUE('0018'x,'0080'x)
-	FA = series->GETVALUE('0018'x,'1314'x)
-	p = PMI__Form(ev.top, Title='Check sequence parameters', [$
-		ptr_new({Type:'VALUE', Tag:'TR' , Label:'Repetition Time (msec)', Value:TR}),$
-		ptr_new({Type:'VALUE', Tag:'FA' , Label:'Flip Angle (Degrees)', Value:FA}) $
-		])
-	IF p.cancel THEN return, 0
 
     Roi = Stdy->Obj(1,in.roi)
 	RoiName = Roi->Name()
 
-    Aif = PMI__RoiCurve(Stdy->DataPath(), Series, Stdy->Obj(1,in.aif), status, cnt=cnt)
+    Aif = PMI__RoiCurve(Stdy->DataPath(), Series, Stdy->Obj(1,in.aif), id, cnt=cnt)
     if cnt eq 0 then begin
     	ok = dialog_message(/information,'Arterial ROI is empty!')
     	return, 0
     endif
-    Vif = PMI__RoiCurve(Stdy->DataPath(), Series, Stdy->Obj(1,in.vif), status, cnt=cnt)
+    Vif = PMI__RoiCurve(Stdy->DataPath(), Series, Stdy->Obj(1,in.vif), id, cnt=cnt)
     if cnt eq 0 then begin
     	ok = dialog_message(/information,'Venous ROI is empty!')
     	return, 0
     endif
-	pcurve = PMI__PixelCurve(Stdy->DataPath(), Series, Roi, status, cnt=cnt)
+	pcurve = PMI__PixelCurve(Stdy->DataPath(), Series, Roi, id, cnt=cnt)
     if cnt eq 0 then begin
     	ok = dialog_message(/information,'Tissue ROI is empty!')
     	return, 0
     endif
 
-    T1series = Stdy->Obj(0,in.T1)
-    Relaxivity = 3.6 ;value does not matter
-
-    T10 = PMI__RoiValues(Stdy->DataPath(), T1Series, Stdy->Obj(1,in.aif), status, cnt=cnt)
-    T10 = total(T10)/cnt
-    S0 = total(Aif[0:nb-1])/nb
-    Aif =  Concentration_SPGRESS(Aif, S0, T10, p.FA, p.TR, Relaxivity)/(1-in.hct)
-
-    T10 = PMI__RoiValues(Stdy->DataPath(), T1Series, Stdy->Obj(1,in.vif), status, cnt=cnt)
-    T10 = total(T10)/cnt
-    S0 = total(Vif[0:nb-1])/nb
-    Vif =  Concentration_SPGRESS(Vif, S0, T10, p.FA, p.TR, Relaxivity)/(1-in.hct)
+    Aif = LMU__Enhancement(Aif,nb,relative=in.rel)/(1-in.hct)
+    Vif = LMU__Enhancement(Vif,nb,relative=in.rel)/(1-in.hct)
 
 	np = n_elements(pcurve[*,0])
-	T10 = PMI__RoiValues(Stdy->DataPath(), T1Series, Roi, status, cnt=np)
 	for i=0L,np-1 do begin
-		PMI__Message, status, 'Calculating concentrations ', i/(np-1E)
-		S0 = total(pcurve[i,0:nb-1])/nb
-		pcurve[i,*] = Concentration_SPGRESS(pcurve[i,*], S0, T10[i], p.FA, p.TR, Relaxivity)
+		PMI__Message, id, 'Calculating concentrations ', i/(np-1E)
+		pcurve[i,*] = LMU__Enhancement(pcurve[i,*],nb,relative=in.rel)
 	endfor
 
 	return, 1
 
 END
 
-pro PMI__Button__Event__Sergios_DualInletUptakePixel, ev
+pro PMI__Button__Event__Sergios_DualInletUptakePixel_Orig, ev
 
-	IF NOT PMI__Button__Input__Sergios_DualInletUptakePixel(ev $
+	IF NOT PMI__Button__Input__Sergios_DualInletUptakePixel_Orig(ev $
 	,	Stdy		= Stdy $
 	,	status 		= status $
 	,	time 		= time $
@@ -155,7 +136,7 @@ pro PMI__Button__Event__Sergios_DualInletUptakePixel, ev
 	return:PMI__Message, status
 end
 
-pro PMI__Button__Control__Sergios_DualInletUptakePixel, id, v
+pro PMI__Button__Control__Sergios_DualInletUptakePixel_Orig, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -166,14 +147,14 @@ pro PMI__Button__Control__Sergios_DualInletUptakePixel, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__Sergios_DualInletUptakePixel, parent,value=value, separator=separator
+function PMI__Button__Sergios_DualInletUptakePixel_Orig, parent,value=value, separator=separator
 
 	if n_elements(value) eq 0 then value = 'Fit dual input 2-compartment model (Pixel)'
 
 	id = widget_button(parent $
 	,	value 		= value	$
-	,	event_pro 	= 'PMI__Button__Event__Sergios_DualInletUptakePixel'	$
-	,	pro_set_value 	= 'PMI__Button__Control__Sergios_DualInletUptakePixel' $
+	,	event_pro 	= 'PMI__Button__Event__Sergios_DualInletUptakePixel_Orig'	$
+	,	pro_set_value 	= 'PMI__Button__Control__Sergios_DualInletUptakePixel_Orig' $
 	, 	separator 	= separator	)
 
 	return, id

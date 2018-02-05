@@ -1,7 +1,8 @@
-FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
+FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel_DualTR, ev $
 	,	Stdy		= Stdy $
 	,	status 		= status $
-	,	time 		= time $
+	,	timei 		= timei $
+	,	timet 		= timet $
 	,	pixelcurve 	= pcurve $
 	,	Roi			= Roi $
 	,	aif			= aif $
@@ -14,19 +15,22 @@ FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
 
 	in = PMI__Form(ev.top, Title='Perfusion analysis setup', [$
 		ptr_new({Type:'DROPLIST',Tag:'T1', Label:'Precontrast T1-map (msec)', Value:Stdy->Names(0), Select:Stdy->sel(0)}), $
-		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:Series, Select:sel}), $
+		ptr_new({Type:'DROPLIST',Tag:'seriesi', Label:'Dynamic series (input)', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Regions, Select:Stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'vif', Label:'Venous Region', Value:Regions, Select:Stdy->sel(1)}), $
+		ptr_new({Type:'DROPLIST',Tag:'seriest', Label:'Dynamic series (tissue)', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Tissue Region', Value:Regions, Select:Stdy->sel(1)}), $
-		ptr_new({Type:'VALUE'	,Tag:'nt' , Label:'Length of baseline (sec)', Value:5.0}),$
+		ptr_new({Type:'VALUE'	,Tag:'tb' , Label:'Length of baseline (sec)', Value:5.0}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct', Label:'Patients hematocrit', Value:0.45})])
 	IF in.cancel THEN return, 0
 
-	Series = Stdy->Obj(0,ind[in.ser])
-    time = Series->t() - Series->t(0)
-    nb = ceil(in.nt/time[1])
-	TR = series->GETVALUE('0018'x,'0080'x)
-	FA = series->GETVALUE('0018'x,'1314'x)
+	Seriesi = Stdy->Obj(0,ind[in.seriesi])
+    timei = Seriesi->t() - Seriesi->t(0)
+    Seriest = Stdy->Obj(0,ind[in.seriest])
+    timet = Seriest->t() - Seriest->t(0)
+
+	TR = seriesi->GETVALUE('0018'x,'0080'x)
+	FA = seriesi->GETVALUE('0018'x,'1314'x)
 	p = PMI__Form(ev.top, Title='Check sequence parameters', [$
 		ptr_new({Type:'VALUE', Tag:'TR' , Label:'Repetition Time (msec)', Value:TR}),$
 		ptr_new({Type:'VALUE', Tag:'FA' , Label:'Flip Angle (Degrees)', Value:FA}) $
@@ -36,17 +40,17 @@ FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
     Roi = Stdy->Obj(1,in.roi)
 	RoiName = Roi->Name()
 
-    Aif = PMI__RoiCurve(Stdy->DataPath(), Series, Stdy->Obj(1,in.aif), status, cnt=cnt)
+    Aif = PMI__RoiCurve(Stdy->DataPath(), Seriesi, Stdy->Obj(1,in.aif), status, cnt=cnt)
     if cnt eq 0 then begin
     	ok = dialog_message(/information,'Arterial ROI is empty!')
     	return, 0
     endif
-    Vif = PMI__RoiCurve(Stdy->DataPath(), Series, Stdy->Obj(1,in.vif), status, cnt=cnt)
+    Vif = PMI__RoiCurve(Stdy->DataPath(), Seriesi, Stdy->Obj(1,in.vif), status, cnt=cnt)
     if cnt eq 0 then begin
     	ok = dialog_message(/information,'Venous ROI is empty!')
     	return, 0
     endif
-	pcurve = PMI__PixelCurve(Stdy->DataPath(), Series, Roi, status, cnt=cnt)
+	pcurve = PMI__PixelCurve(Stdy->DataPath(), Seriest, Roi, status, cnt=cnt)
     if cnt eq 0 then begin
     	ok = dialog_message(/information,'Tissue ROI is empty!')
     	return, 0
@@ -54,6 +58,8 @@ FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
 
     T1series = Stdy->Obj(0,in.T1)
     Relaxivity = 3.6 ;value does not matter
+
+    nb = ceil(in.tb/timei[1])
 
     T10 = PMI__RoiValues(Stdy->DataPath(), T1Series, Stdy->Obj(1,in.aif), status, cnt=cnt)
     T10 = total(T10)/cnt
@@ -65,6 +71,7 @@ FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
     S0 = total(Vif[0:nb-1])/nb
     Vif =  Concentration_SPGRESS(Vif, S0, T10, p.FA, p.TR, Relaxivity)/(1-in.hct)
 
+	nb = ceil(in.tb/timet[1])
 	np = n_elements(pcurve[*,0])
 	T10 = PMI__RoiValues(Stdy->DataPath(), T1Series, Roi, status, cnt=np)
 	for i=0L,np-1 do begin
@@ -77,12 +84,13 @@ FUNCTION PMI__Button__Input__Sergios_DualInletUptakePixel, ev $
 
 END
 
-pro PMI__Button__Event__Sergios_DualInletUptakePixel, ev
+pro PMI__Button__Event__Sergios_DualInletUptakePixel_DualTR, ev
 
-	IF NOT PMI__Button__Input__Sergios_DualInletUptakePixel(ev $
+	IF NOT PMI__Button__Input__Sergios_DualInletUptakePixel_DualTR(ev $
 	,	Stdy		= Stdy $
 	,	status 		= status $
-	,	time 		= time $
+	, 	Timei=Time $
+	, 	Timet=Timet $
 	,	pixelcurve 	= p $
 	,	Roi			= Roi $
 	,	aif			= aif $
@@ -113,8 +121,9 @@ pro PMI__Button__Event__Sergios_DualInletUptakePixel, ev
 
 		PMI__Message, status, 'Fitting ' + Roi->name() + ' pixels to Dual-inlet 2-compartment uptake model', 	i/(n-1.0)
 
+		curve = interpol(reform(p[i,*]),timet,time)
 		Pars = [0.2*50/6000D,0.8*50/6000.,20.,0.2]
-		Fit = FitDualInletUptake(time,reform(p[i,*]),aif,vif,Pars=Pars,/noderivative,/quiet,/constrained)
+		Fit = FitDualInletUptake(time,curve,aif,vif,Pars=Pars,/noderivative,/quiet,/constrained)
 
 		FA[ind[i]] 	= 6000.0*Pars[0]
 		FV[ind[i]] 	= 6000.0*Pars[1]
@@ -155,25 +164,25 @@ pro PMI__Button__Event__Sergios_DualInletUptakePixel, ev
 	return:PMI__Message, status
 end
 
-pro PMI__Button__Control__Sergios_DualInletUptakePixel, id, v
+pro PMI__Button__Control__Sergios_DualInletUptakePixel_DualTR, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
 		Series = Stdy->Names(0,ns,DefDim=3)
 		Regions = Stdy->Names(1,nr)
-		sensitive = (ns gt 0) and (nr gt 2)
+		sensitive = (ns gt 1) and (nr gt 2)
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__Sergios_DualInletUptakePixel, parent,value=value, separator=separator
+function PMI__Button__Sergios_DualInletUptakePixel_DualTR, parent,value=value, separator=separator
 
 	if n_elements(value) eq 0 then value = 'Fit dual input 2-compartment model (Pixel)'
 
 	id = widget_button(parent $
 	,	value 		= value	$
-	,	event_pro 	= 'PMI__Button__Event__Sergios_DualInletUptakePixel'	$
-	,	pro_set_value 	= 'PMI__Button__Control__Sergios_DualInletUptakePixel' $
+	,	event_pro 	= 'PMI__Button__Event__Sergios_DualInletUptakePixel_DualTR'	$
+	,	pro_set_value 	= 'PMI__Button__Control__Sergios_DualInletUptakePixel_DualTR' $
 	, 	separator 	= separator	)
 
 	return, id
