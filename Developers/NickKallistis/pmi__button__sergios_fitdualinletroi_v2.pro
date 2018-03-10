@@ -216,12 +216,12 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2::Plot
 			Y = interpol(Y,timet,timei)
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(timet)], [min(Y),max(Y)] $
+			, 	[0,max(timei)], [min(Y),max(Y)] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'Time (sec)', ytitle=self.Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, timet, Y, color=6*16, linestyle=0, thick=2
+			oplot, timei, Y, color=6*16, linestyle=0, thick=2
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
@@ -256,13 +256,13 @@ PRO PMI__Button__Display__Sergios_FitDualInletRoi_v2::Plot
 			curve = interpol(curve,timet,timei)
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(timet)], [min([min(Curve),min(Fit)]),max([max(Curve),max(Fit)])] $
+			, 	[0,max(timei)], [min([min(Curve),min(Fit)]),max([max(Curve),max(Fit)])] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'Time (sec)', ytitle=self.Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, timet, Curve, color=6*16, linestyle=0, thick=2
-			oplot, timet, Fit, color=12*16, linestyle=0, thick=2
+			oplot, timei, Curve, color=6*16, linestyle=0, thick=2
+			oplot, timei, Fit, color=12*16, linestyle=0, thick=2
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
 			xyouts, x0, top-1*dy, 'Arterial Input Function: ' + AifName	, color=0, /normal, charsize=1.5, charthick=1.5
