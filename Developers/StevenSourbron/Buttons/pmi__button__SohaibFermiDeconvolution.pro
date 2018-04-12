@@ -19,7 +19,7 @@
 ;
 ;
 
-FUNCTION PMI__Button__Input__PKmotionCorrection, top, series, aif, in
+FUNCTION PMI__Button__Input__SohaibFermiDeconvolution, top, series, aif, in
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -27,7 +27,7 @@ FUNCTION PMI__Button__Input__PKmotionCorrection, top, series, aif, in
 
 	WHILE 1 DO BEGIN
 
-		in = PMI__Form(top, Title='Motion correction setup', [$
+		in = PMI__Form(top, Title='Perfusion analysis setup', [$
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
 		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb})])
@@ -47,7 +47,7 @@ FUNCTION PMI__Button__Input__PKmotionCorrection, top, series, aif, in
     			msg = ['Arterial region is not defined on every dynamic',$
     			'Please select another region and/or series'] $
     		ELSE BEGIN
-    			Aif = LMU__Enhancement(Aif,in.nb,relative=0)/(1-0.45)
+    			Aif = LMU__Enhancement(Aif,in.nb,relative=0)/0.55
 				return, 1
     		ENDELSE
     	ENDELSE
@@ -57,49 +57,52 @@ END
 
 
 
-pro PMI__Button__Event__PKmotionCorrection, ev
+pro PMI__Button__Event__SohaibFermiDeconvolution, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__PKmotionCorrection(ev.top,series,aif,in) THEN RETURN
+    IF NOT PMI__Button__Input__SohaibFermiDeconvolution(ev.top,series,aif,in) THEN RETURN
 
-	PMI__Message, status, 'Preparing calculation..'
+	PMI__Message, status, 'Calculating..'
 
-	pixel_spacing = Series -> GetValue('0028'x,'0030'x)
-	slice_gap = Series -> GetValue('0018'x,'0088'x)
-	if pixel_spacing eq 0 then begin
-	  tmp = PMI__Form(ev.top, Title='Please check defaults', [$
-		ptr_new({Type:'VALUE'	,Tag:'ps' , Label:'Pixel spacing', Value:3.125}), $
-		ptr_new({Type:'VALUE'	,Tag:'sg' , Label:'Slice gap', Value:4.0})])
-		IF tmp.cancel THEN begin
-		  PMI__Control, ev.top, /refresh
-		  return
-		endif
-		pixel_spacing = tmp.ps
-		slice_gap = tmp.sg
-	endif
-	voxel_sizes = [pixel_spacing, pixel_spacing, slice_gap]
-    matrix = Series->m()
-    d = Series->d()
+	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Blood Flow (ml/100ml/min)' )
+
+	d = Series->d()
 	time = Series->t() - Series->t(0)
-	Source = Series->Read(Stdy->DataPath())
 
-    PMI__Message, status, 'Calculating..'
+tt=systime(1)
 
-    SourceIso = resample_isotropic(Source, voxel_sizes, matrix)
-    DeformedIso = pkreg_mres(Time, aif, SourceIso, in.nb)
-    Deformed = resample_volumes(DeformedIso, d)
-    Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
-    Corr = Stdy->New('SERIES', Domain=Dom,  Name='Motion-free' )
-	Corr -> Write, Stdy->DataPath(), Deformed
-	Corr -> Trim, Series->Trim()
+	for j=0L,d[2]-1 do begin
+
+		PMI__Message, status, 'Calculating ', j/(d[2]-1E)
+
+		P = Series->Read(Stdy->DataPath(),z=Series->z(j))
+		P = reform(P,d[0]*d[1],d[3],/overwrite)
+		if in.nB eq 1 then P0 = reform(P[*,0]) else P0 = total(P[*,0:in.nB-1],2)/in.nB
+    	P = P - rebin(P0,d[0]*d[1],d[3])
+
+    	BF = fltarr(d[0],d[1])
+		for k=0L,d[0]*d[1]-1 do begin
+   			curve = reform(P[k,*])
+			Par = [0.015, 1.0, 0.5] ;[FP, a, b]
+			Fit = FitSingleInlet('Fermi',time, aif, curve, Par,/noderivative, /positivity)
+			BF[k] = 6000D*Par[0]/0.55
+		endfor
+
+		Sbf -> Write, Stdy->DataPath(), BF, j
+	endfor
+
+print, systime(1)-tt
+
+	Sbf -> Trim, 600, 1
 
     PMI__Control, ev.top, /refresh
 end
 
 
-pro PMI__Button__Control__PKmotionCorrection, id, v
+pro PMI__Button__Control__SohaibFermiDeconvolution, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -110,14 +113,16 @@ pro PMI__Button__Control__PKmotionCorrection, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__PKmotionCorrection, parent,value=value,separator=separator
+function PMI__Button__SohaibFermiDeconvolution, parent,value=value,separator=separator
 
-    if n_elements(value) eq 0 then value = 'PK motion correction'
+	SingleInletFermi
+
+    if n_elements(value) eq 0 then value = 'Fermi analysis (Pixel)'
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__PKmotionCorrection' $
-    ,	pro_set_value = 'PMI__Button__Control__PKmotionCorrection' $
+    ,  	event_pro = 'PMI__Button__Event__SohaibFermiDeconvolution' $
+    ,	pro_set_value = 'PMI__Button__Control__SohaibFermiDeconvolution' $
     ,  	separator = separator )
 
     return, id

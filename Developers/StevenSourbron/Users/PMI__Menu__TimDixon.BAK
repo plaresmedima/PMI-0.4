@@ -41,7 +41,7 @@ pro PMI__Menu__TimDixon, parent
 	Sid = PMI__Button__KidneyModelsROI(id, value = 'Kidney models (ROI)')
 	Sid = PMI__Button__FitDualInletRoi(id, value = 'Liver models (ROI)')
 
-    Sid = PMI__Button__pkreg_mres(id, value='Motion correction', /separator)
+    Sid = PMI__Button__PkReg_Mres(id, value='Motion correction', /separator)
 
 
 
