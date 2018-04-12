@@ -74,8 +74,6 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 	d = Series->d()
 	time = Series->t() - Series->t(0)
 
-ttt=systime(1)
-
 	for j=0L,d[2]-1 do begin
 
 		PMI__Message, status, 'Calculating ', j/(d[2]-1E)
@@ -102,12 +100,10 @@ ttt=systime(1)
 		Stt -> Write, Stdy->DataPath(), TT, j
 	endfor
 
-print, systime(1)-ttt
 
 	Sbf -> Trim, 600, 1
 	Sev -> Trim, 100, 1
 	Stt -> Trim, 10, 1
-	Std -> Trim, 10, 1
 
     PMI__Control, ev.top, /refresh
 end

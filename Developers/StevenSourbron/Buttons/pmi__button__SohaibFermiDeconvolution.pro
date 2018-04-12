@@ -19,17 +19,18 @@
 ;
 ;
 
-FUNCTION PMI__Button__Input__SohaibFermiDeconvolution, top, series, aif, in
+FUNCTION PMI__Button__Input__sohaibfermideconvolution, top, series, aif, roi, in
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, aif:stdy->sel(1), nb:1}
+	in = {ser:sel, aif:stdy->sel(1), roi:0L, nb:1}
 
 	WHILE 1 DO BEGIN
 
 		in = PMI__Form(top, Title='Perfusion analysis setup', [$
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
+		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Window', Value:['<entire image>',Stdy->names(1)], Select:in.roi}), $
 		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb})])
 		IF in.cancel THEN return, 0
 
@@ -48,6 +49,7 @@ FUNCTION PMI__Button__Input__SohaibFermiDeconvolution, top, series, aif, in
     			'Please select another region and/or series'] $
     		ELSE BEGIN
     			Aif = LMU__Enhancement(Aif,in.nb,relative=0)/0.55
+    			if in.roi gt 0 then Roi = Stdy->Obj(1,in.roi-1)
 				return, 1
     		ENDELSE
     	ENDELSE
@@ -57,12 +59,12 @@ END
 
 
 
-pro PMI__Button__Event__SohaibFermiDeconvolution, ev
+pro PMI__Button__Event__sohaibfermideconvolution, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__SohaibFermiDeconvolution(ev.top,series,aif,in) THEN RETURN
+    IF NOT PMI__Button__Input__sohaibfermideconvolution(ev.top,series,aif,roi,in) THEN RETURN
 
 	PMI__Message, status, 'Calculating..'
 
@@ -72,29 +74,45 @@ pro PMI__Button__Event__SohaibFermiDeconvolution, ev
 	d = Series->d()
 	time = Series->t() - Series->t(0)
 
-tt=systime(1)
-
 	for j=0L,d[2]-1 do begin
 
 		PMI__Message, status, 'Calculating ', j/(d[2]-1E)
 
-		P = Series->Read(Stdy->DataPath(),z=Series->z(j))
-		P = reform(P,d[0]*d[1],d[3],/overwrite)
-		if in.nB eq 1 then P0 = reform(P[*,0]) else P0 = total(P[*,0:in.nB-1],2)/in.nB
-    	P = P - rebin(P0,d[0]*d[1],d[3])
+		if obj_valid(Roi) then $
+			P = PMI__PixelCurve(Stdy->DataPath(),Series,Roi,z=Series->z(j),cnt=cnt,ind=k) $
+		else begin
+			cnt = d[0]*d[1]
+			P = Series->Read(Stdy->DataPath(),z=Series->z(j))
+			P = reform(P,cnt,d[3],/overwrite)
+			k = lindgen(d[0]*d[1])
+		endelse
 
-    	BF = fltarr(d[0],d[1])
-		for k=0L,d[0]*d[1]-1 do begin
-   			curve = reform(P[k,*])
-			Par = [0.015, 1.0, 0.5] ;[FP, a, b]
-			Fit = FitSingleInlet('Fermi',time, aif, curve, Par,/noderivative, /positivity)
-			BF[k] = 6000D*Par[0]/0.55
-		endfor
+ 		if cnt gt 0 then begin
 
-		Sbf -> Write, Stdy->DataPath(), BF, j
+			if in.nB eq 1 then P0 = reform(P[*,0]) else P0 = total(P[*,0:in.nB-1],2)/in.nB
+			nozero = where(P0 NE 0, cnt)
+
+			if cnt gt 0 then begin
+
+				P = P[nozero,*]
+    			P0 = rebin(P0[nozero],cnt,d[3])
+    			P = P-P0
+
+    			BF = fltarr(d[0],d[1])
+
+				for r=0L,cnt-1 do begin
+   					curve = reform(P[r,*])
+   					Par = [0.015, 1.0, 0.5] ;[FP, a, b]
+					Fit = FitSingleInlet('Fermi',time, aif, curve, Par, /noderivative, /positivity)
+					BF[k[nozero[r]]] = 6000D*Par[0]/0.55
+
+				endfor
+
+				Sbf -> Write, Stdy->DataPath(), BF, j
+
+			endif
+		endif
 	endfor
-
-print, systime(1)-tt
 
 	Sbf -> Trim, 600, 1
 
@@ -102,7 +120,7 @@ print, systime(1)-tt
 end
 
 
-pro PMI__Button__Control__SohaibFermiDeconvolution, id, v
+pro PMI__Button__Control__sohaibfermideconvolution, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -113,7 +131,7 @@ pro PMI__Button__Control__SohaibFermiDeconvolution, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__SohaibFermiDeconvolution, parent,value=value,separator=separator
+function PMI__Button__sohaibfermideconvolution, parent,value=value,separator=separator
 
 	SingleInletFermi
 
@@ -121,8 +139,8 @@ function PMI__Button__SohaibFermiDeconvolution, parent,value=value,separator=sep
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__SohaibFermiDeconvolution' $
-    ,	pro_set_value = 'PMI__Button__Control__SohaibFermiDeconvolution' $
+    ,  	event_pro = 'PMI__Button__Event__sohaibfermideconvolution' $
+    ,	pro_set_value = 'PMI__Button__Control__sohaibfermideconvolution' $
     ,  	separator = separator )
 
     return, id

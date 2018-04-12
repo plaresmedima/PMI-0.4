@@ -19,17 +19,18 @@
 ;
 ;
 
-FUNCTION PMI__Button__Input__sohaibcompartmentlineardelay, top, series, aif, in
+FUNCTION PMI__Button__Input__sohaibcompartmentlineardelay, top, series, aif, roi, in
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, aif:stdy->sel(1), nb:1}
+	in = {ser:sel, aif:stdy->sel(1), roi:0L, nb:1}
 
 	WHILE 1 DO BEGIN
 
 		in = PMI__Form(top, Title='Perfusion analysis setup', [$
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
+		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Window', Value:['<entire image>',Stdy->names(1)], Select:in.roi}), $
 		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb})])
 		IF in.cancel THEN return, 0
 
@@ -48,6 +49,7 @@ FUNCTION PMI__Button__Input__sohaibcompartmentlineardelay, top, series, aif, in
     			'Please select another region and/or series'] $
     		ELSE BEGIN
     			Aif = LMU__Enhancement(Aif,in.nb,relative=0)/0.55
+    			if in.roi gt 0 then Roi = Stdy->Obj(1,in.roi-1)
 				return, 1
     		ENDELSE
     	ENDELSE
@@ -62,7 +64,7 @@ pro PMI__Button__Event__sohaibcompartmentlineardelay, ev
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__sohaibcompartmentlineardelay(ev.top,series,aif,in) THEN RETURN
+    IF NOT PMI__Button__Input__sohaibcompartmentlineardelay(ev.top,series,aif,roi,in) THEN RETURN
 
 	PMI__Message, status, 'Calculating..'
 
@@ -75,38 +77,53 @@ pro PMI__Button__Event__sohaibcompartmentlineardelay, ev
 	d = Series->d()
 	time = Series->t() - Series->t(0)
 
-ttt=systime(1)
-
 	for j=0L,d[2]-1 do begin
 
 		PMI__Message, status, 'Calculating ', j/(d[2]-1E)
 
-		P = Series->Read(Stdy->DataPath(),z=Series->z(j))
-		P = reform(P,d[0]*d[1],d[3],/overwrite)
-		if in.nB eq 1 then P0 = reform(P[*,0]) else P0 = total(P[*,0:in.nB-1],2)/in.nB
-    	P = P - rebin(P0,d[0]*d[1],d[3])
+		if obj_valid(Roi) then $
+			P = PMI__PixelCurve(Stdy->DataPath(),Series,Roi,z=Series->z(j),cnt=cnt,ind=k) $
+		else begin
+			cnt = d[0]*d[1]
+			P = Series->Read(Stdy->DataPath(),z=Series->z(j))
+			P = reform(P,cnt,d[3],/overwrite)
+			k = lindgen(d[0]*d[1])
+		endelse
 
-    	BF = fltarr(d[0],d[1])
-    	VE = fltarr(d[0],d[1])
-    	TT = fltarr(d[0],d[1])
-    	TD = fltarr(d[0],d[1])
+ 		if cnt gt 0 then begin
 
-		for k=0L,d[0]*d[1]-1 do begin
-   			curve = reform(P[k,*])
-			FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans, DELAY_PAR=delay, DELAY_VALUES=[0,5,0.25]
-			BF[k] = 6000E*Ktrans/0.55
-			VE[k] = 100E*ecv
-			TT[k] = ecv/Ktrans
-			TD[k] = delay
-		endfor
+			if in.nB eq 1 then P0 = reform(P[*,0]) else P0 = total(P[*,0:in.nB-1],2)/in.nB
+			nozero = where(P0 NE 0, cnt)
 
-		Sbf -> Write, Stdy->DataPath(), BF, j
-		Sev -> Write, Stdy->DataPath(), VE, j
-		Stt -> Write, Stdy->DataPath(), TT, j
-		Std -> Write, Stdy->DataPath(), TD, j
+			if cnt gt 0 then begin
+
+				P = P[nozero,*]
+    			P0 = rebin(P0[nozero],cnt,d[3])
+    			P = P-P0
+
+    			BF = fltarr(d[0],d[1])
+    			VE = fltarr(d[0],d[1])
+    			TT = fltarr(d[0],d[1])
+    			TD = fltarr(d[0],d[1])
+
+				for r=0L,cnt-1 do begin
+   					curve = reform(P[r,*])
+					FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans, DELAY_PAR=delay, DELAY_VALUES=[0,5,0.25]
+					BF[k[nozero[r]]] = 6000E*Ktrans/0.55
+					VE[k[nozero[r]]] = 100E*ecv
+					TT[k[nozero[r]]] = ecv/Ktrans
+					TD[k[nozero[r]]] = delay
+				endfor
+
+				Sbf -> Write, Stdy->DataPath(), BF, j
+				Sev -> Write, Stdy->DataPath(), VE, j
+				Stt -> Write, Stdy->DataPath(), TT, j
+				Std -> Write, Stdy->DataPath(), TD, j
+
+			endif
+		endif
 	endfor
 
-print, systime(1)-ttt
 
 	Sbf -> Trim, 600, 1
 	Sev -> Trim, 100, 1
