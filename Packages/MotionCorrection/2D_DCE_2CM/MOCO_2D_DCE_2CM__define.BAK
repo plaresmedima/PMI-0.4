@@ -1,37 +1,91 @@
-PRO MOCO_2D_DCE_2CM::LLS_2CFM_FIT, S
+;PRO MOCO_2D_DCE_2CM::LLS_2CFM_FIT, S
+;
+;    IF norm(S) EQ 0. THEN RETURN
+;
+;    n = n_elements(S)
+;    X = *self.independent
+;    t = X[0:n-1]
+;    t2 = X[n:2*n-1]
+;    ca1 = X[2*n:3*n-1]
+;    ca2 = X[3*n:4*n-1]
+;
+;	dt = (t[1:n-1]-t[0:n-2])/2E
+;    S1 = [0, TOTAL( dt*(S[0:n-2]+S[1:n-1]) , /cumulative)]
+;    S2 = [0, TOTAL( dt*(S1[0:n-2]+S1[1:n-1]) , /cumulative)]
+;
+;	weight = 1/t2[1:*]
+;
+;	Sw = S[1:*]*weight
+;	S1 = S1[1:*]*weight
+;	S2 = S2[1:*]*weight
+;	ca1 = ca1[1:*]*weight
+;	ca2 = ca2[1:*]*weight
+;	t2 = t2[1:*]*weight
+;
+;	A = TRANSPOSE([[-S2],[-S1],[ca1],[ca2],[-t2]])
+;	SVDC, A, W, U, V
+;	X = TRANSPOSE(U) ## TRANSPOSE([Sw])
+;	kpos = where(W GT 0, npos, COMPLEMENT=kzero, NCOMPLEMENT=nzero)
+;	if npos GT 0 then X[kpos] /= W[kpos]
+;	if nzero GT 0 then X[kzero] = 0
+;
+;	S[1:*] = A ## (V ## X)
+;	S[1:*] /= weight
+;	S[0] = S[1]
+;
+;END
+;
+;PRO MOCO_2D_DCE_2CM::SIGNAL_FIT_2CFM, r
+;
+;	S = REFORM((*self.Deformed)[*,r[0],r[1]])
+;
+;    self->LLS_2CFM_FIT, S
+;
+;    (*self.Deformed)[*,r[0],r[1]] = S
+;
+;END
+;
+;PRO MOCO_2D_DCE_2CM::LLS_2CFM_FIT_PRECOMPUTE
+;
+;	X = *self.Independent
+;
+;	n = (n_elements(X)-1)/2
+;
+;	t = X[0:n-1]
+;	ca = X[n:2*n-1]
+;
+;    dt = (t[1:n-1]-t[0:n-2])/2E
+;    ca1 = [0, TOTAL( dt*(ca[0:n-2]+ca[1:n-1]) , /cumulative)]
+;    ca2 = [0, TOTAL( dt*(ca1[0:n-2]+ca1[1:n-1]) , /cumulative)]
+;    t1 = [0, TOTAL( dt*(t[0:n-2]+t[1:n-1]) , /cumulative)]
+;    t2 = [0, TOTAL( dt*(t1[0:n-2]+t1[1:n-1]) , /cumulative)]
+;
+;    *self.independent = [t,t2,ca1,ca2]
+;
+;END
 
-    IF norm(S) EQ 0. THEN RETURN
+FUNCTION MOCO_2D_DCE_2CM::LLS_2CFM_FIT, ct
 
-    n = n_elements(S)
+    IF norm(ct) EQ 0. THEN RETURN, ct
+
+    n = n_elements(ct)
     X = *self.independent
-    t = X[0:n-1]
-    t2 = X[n:2*n-1]
-    ca1 = X[2*n:3*n-1]
-    ca2 = X[3*n:4*n-1]
+    n0 = X[0]
+    dt = X[1:n-1]
+    ca1 = X[n:2*n-1]
+    ca2 = X[2*n:3*n-1]
 
-	dt = (t[1:n-1]-t[0:n-2])/2E
-    S1 = [0, TOTAL( dt*(S[0:n-2]+S[1:n-1]) , /cumulative)]
-    S2 = [0, TOTAL( dt*(S1[0:n-2]+S1[1:n-1]) , /cumulative)]
+    ct1 = [0, TOTAL( dt*(ct[0:n-2]+ct[1:n-1]) , /cumulative)]
+    ct2 = [0, TOTAL( dt*(ct1[0:n-2]+ct1[1:n-1]) , /cumulative)]
 
-	weight = 1/t2[1:*]
-
-	Sw = S[1:*]*weight
-	S1 = S1[1:*]*weight
-	S2 = S2[1:*]*weight
-	ca1 = ca1[1:*]*weight
-	ca2 = ca2[1:*]*weight
-	t2 = t2[1:*]*weight
-
-	A = TRANSPOSE([[-S2],[-S1],[ca1],[ca2],[-t2]])
+	A = TRANSPOSE([[-ct2],[-ct1],[ca1],[ca2]])
 	SVDC, A, W, U, V
-	X = TRANSPOSE(U) ## TRANSPOSE([Sw])
+	X = TRANSPOSE(U) ## TRANSPOSE([ct])
 	kpos = where(W GT 0, npos, COMPLEMENT=kzero, NCOMPLEMENT=nzero)
 	if npos GT 0 then X[kpos] /= W[kpos]
 	if nzero GT 0 then X[kzero] = 0
 
-	S[1:*] = A ## (V ## X)
-	S[1:*] /= weight
-	S[0] = S[1]
+	RETURN, A ## (V ## X)
 
 END
 
@@ -39,9 +93,14 @@ PRO MOCO_2D_DCE_2CM::SIGNAL_FIT_2CFM, r
 
 	S = REFORM((*self.Deformed)[*,r[0],r[1]])
 
-    self->LLS_2CFM_FIT, S
+    n0 = (*self.Independent)[0]
 
-    (*self.Deformed)[*,r[0],r[1]] = S
+    S0 = total(S[0:n0-1])/n0
+    C = S - S0
+    Cfit = self->LLS_2CFM_FIT(C)
+	Sfit = S0 + Cfit
+
+    (*self.Deformed)[*,r[0],r[1]] = Sfit
 
 END
 
@@ -53,74 +112,15 @@ PRO MOCO_2D_DCE_2CM::LLS_2CFM_FIT_PRECOMPUTE
 
 	t = X[0:n-1]
 	ca = X[n:2*n-1]
+	n0 = X[2*n]
 
     dt = (t[1:n-1]-t[0:n-2])/2E
     ca1 = [0, TOTAL( dt*(ca[0:n-2]+ca[1:n-1]) , /cumulative)]
     ca2 = [0, TOTAL( dt*(ca1[0:n-2]+ca1[1:n-1]) , /cumulative)]
-    t1 = [0, TOTAL( dt*(t[0:n-2]+t[1:n-1]) , /cumulative)]
-    t2 = [0, TOTAL( dt*(t1[0:n-2]+t1[1:n-1]) , /cumulative)]
 
-    *self.independent = [t,t2,ca1,ca2]
+    *self.independent = [n0,dt,ca1,ca2]
 
 END
-
-;FUNCTION MOCO_2D_DCE_2CM::LLS_2CFM_FIT, ct
-;
-;    IF norm(ct) EQ 0. THEN RETURN, ct
-;
-;    n = n_elements(ct)
-;    X = *self.independent
-;    n0 = X[0]
-;    dt = X[1:n-1]
-;    ca1 = X[n:2*n-1]
-;    ca2 = X[2*n:3*n-1]
-;
-;    ct1 = [0, TOTAL( dt*(ct[0:n-2]+ct[1:n-1]) , /cumulative)]
-;    ct2 = [0, TOTAL( dt*(ct1[0:n-2]+ct1[1:n-1]) , /cumulative)]
-;
-;	A = TRANSPOSE([[-ct2],[-ct1],[ca1],[ca2]])
-;	SVDC, A, W, U, V
-;	X = TRANSPOSE(U) ## TRANSPOSE([ct])
-;	kpos = where(W GT 0, npos, COMPLEMENT=kzero, NCOMPLEMENT=nzero)
-;	if npos GT 0 then X[kpos] /= W[kpos]
-;	if nzero GT 0 then X[kzero] = 0
-;
-;	RETURN, A ## (V ## X)
-;
-;END
-;
-;PRO MOCO_2D_DCE_2CM::SIGNAL_FIT_2CFM, r
-;
-;	S = REFORM((*self.Deformed)[*,r[0],r[1]])
-;
-;    n0 = (*self.Independent)[0]
-;
-;    S0 = total(S[0:n0-1])/n0
-;    C = S - S0
-;    Cfit = self->LLS_2CFM_FIT(C)
-;	Sfit = S0 + Cfit
-;
-;    (*self.Deformed)[*,r[0],r[1]] = Sfit
-;
-;END
-
-;PRO MOCO_2D_DCE_2CM::LLS_2CFM_FIT_PRECOMPUTE
-;
-;	X = *self.Independent
-;
-;	n = (n_elements(X)-1)/2
-;
-;	t = X[0:n-1]
-;	ca = X[n:2*n-1]
-;	n0 = X[2*n]
-;
-;    dt = (t[1:n-1]-t[0:n-2])/2E
-;    ca1 = [0, TOTAL( dt*(ca[0:n-2]+ca[1:n-1]) , /cumulative)]
-;    ca2 = [0, TOTAL( dt*(ca1[0:n-2]+ca1[1:n-1]) , /cumulative)]
-;
-;    *self.independent = [n0,dt,ca1,ca2]
-;
-;END
 
 FUNCTION MOCO_2D_DCE_2CM::ffd, D
 
