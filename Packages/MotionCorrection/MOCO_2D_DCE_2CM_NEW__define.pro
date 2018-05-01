@@ -1,59 +1,7 @@
-FUNCTION MOCO_2D_DCE_1CM::LLS_1CM_FIT, ct
 
-    IF norm(ct) EQ 0. THEN RETURN, ct
 
-    n = n_elements(ct)
-    X = *self.independent
-    n0 = X[0]
-    dt = X[1:n-1]
-    ca1 = X[n:2*n-1]
 
-    ct1 = [0, TOTAL( dt*(ct[0:n-2]+ct[1:n-1]) , /cumulative)]
-
-	A = TRANSPOSE([[ct1],[ca1]])
-	SVDC, A, W, U, V
-	X = TRANSPOSE(U) ## TRANSPOSE([ct])
-	kpos = where(W GT 0, npos, COMPLEMENT=kzero, NCOMPLEMENT=nzero)
-	if npos GT 0 then X[kpos] /= W[kpos]
-	if nzero GT 0 then X[kzero] = 0
-
-	RETURN, A ## (V ## X)
-
-END
-
-PRO MOCO_2D_DCE_1CM::SIGNAL_FIT_1CM, r
-
-	S = REFORM((*self.Deformed)[*,r[0],r[1]])
-
-    n0 = (*self.Independent)[0]
-
-    S0 = total(S[0:n0-1])/n0
-    C = S - S0
-    Cfit = self->LLS_1CM_FIT(C)
-	Sfit = S0 + Cfit
-
-    (*self.Deformed)[*,r[0],r[1]] = Sfit
-
-END
-
-PRO MOCO_2D_DCE_1CM::LLS_1CM_FIT_PRECOMPUTE
-
-	X = *self.Independent
-
-	n = (n_elements(X)-1)/2
-
-	t = X[0:n-1]
-	ca = X[n:2*n-1]
-	n0 = X[2*n]
-
-    dt = (t[1:n-1]-t[0:n-2])/2E
-    ca1 = [0, TOTAL( dt*(ca[0:n-2]+ca[1:n-1]) , /cumulative)]
-
-    *self.independent = [n0,dt,ca1]
-
-END
-
-FUNCTION MOCO_2D_DCE_1CM::ffd, D
+FUNCTION MOCO_2D_DCE_2CM_NEW::ffd, D
 
   Di = INTERPOLATE(D, *self.xc, *self.yc, /GRID)
 
@@ -64,7 +12,7 @@ FUNCTION MOCO_2D_DCE_1CM::ffd, D
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::FFD_GRAD
+FUNCTION MOCO_2D_DCE_2CM_NEW::FFD_GRAD
 
   Di = INTERPOLATE(*self.F, *self.xc, *self.yc, /GRID)
 
@@ -96,7 +44,7 @@ FUNCTION MOCO_2D_DCE_1CM::FFD_GRAD
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::FFD_LSEARCH
+FUNCTION MOCO_2D_DCE_2CM_NEW::FFD_LSEARCH
 
   scale_down = 1.5
   babystep = 0.1
@@ -144,7 +92,7 @@ FUNCTION MOCO_2D_DCE_1CM::FFD_LSEARCH
 END
 
 
-FUNCTION MOCO_2D_DCE_1CM::FFD_REG, t
+FUNCTION MOCO_2D_DCE_2CM_NEW::FFD_REG, t
 
  itmax = 100. ;emergency stop
  self.stepsize = 5.0 ;pixels
@@ -165,7 +113,7 @@ FUNCTION MOCO_2D_DCE_1CM::FFD_REG, t
 END
 
 
-PRO MOCO_2D_DCE_1CM::ffd_reg_precompute
+PRO MOCO_2D_DCE_2CM_NEW::ffd_reg_precompute
 
   ds = (self.nb-1E)/(self.nw-1E)
 
@@ -209,7 +157,7 @@ PRO MOCO_2D_DCE_1CM::ffd_reg_precompute
   ENDFOR
 END
 
-PRO MOCO_2D_DCE_1CM::PKREG
+PRO MOCO_2D_DCE_2CM_NEW::PKREG
 
   iter = 100 ;emergency stop
 
@@ -220,7 +168,7 @@ PRO MOCO_2D_DCE_1CM::PKREG
 
     FOR i=0L,nPixels-1 DO BEGIN
       r = array_indices(self.nw, i, /dimensions)
-      self -> SIGNAL_FIT_2CFM, r
+      self -> PIXEL_FIT, r
     ENDFOR
 
     converged = 1B
@@ -233,7 +181,7 @@ PRO MOCO_2D_DCE_1CM::PKREG
 END
 
 
-PRO MOCO_2D_DCE_1CM::SCALE_UP
+PRO MOCO_2D_DCE_2CM_NEW::SCALE_UP
 
   nold = size(*self.DefField, /dimensions)
   dr = (nold[2:*]-1E)/(self.nb-1E)
@@ -245,7 +193,7 @@ PRO MOCO_2D_DCE_1CM::SCALE_UP
 
 END
 
-PRO MOCO_2D_DCE_1CM::INITIALISE
+PRO MOCO_2D_DCE_2CM_NEW::INITIALISE
 
   db = (self.nw-1E)/(self.nb-1E)
   rb = fltarr([2,self.nb])
@@ -264,9 +212,7 @@ PRO MOCO_2D_DCE_1CM::INITIALISE
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::DEFORMED
-
-  self -> LLS_1CM_FIT_PRECOMPUTE
+FUNCTION MOCO_2D_DCE_2CM_NEW::DEFORMED
 
   xw = self.Win_p[0] + lindgen(self.nw[0])
   yw = self.Win_p[1] + lindgen(self.nw[1])
@@ -295,7 +241,66 @@ FUNCTION MOCO_2D_DCE_1CM::DEFORMED
   return, *self.Source
 END
 
-PRO MOCO_2D_DCE_1CM::CLEANUP
+
+FUNCTION MOCO_2D_DCE_2CM_NEW::FIT_CONC, ct
+
+    IF norm(ct) EQ 0. THEN RETURN, ct
+
+    n = n_elements(ct)
+    X = *self.independent
+    n0 = X[0]
+    dt = X[1:n-1]
+    ca1 = X[n:2*n-1]
+    ca2 = X[2*n:3*n-1]
+
+    ct1 = [0, TOTAL( dt*(ct[0:n-2]+ct[1:n-1]) , /cumulative)]
+    ct2 = [0, TOTAL( dt*(ct1[0:n-2]+ct1[1:n-1]) , /cumulative)]
+
+	A = TRANSPOSE([[-ct2],[-ct1],[ca1],[ca2]])
+	SVDC, A, W, U, V
+	X = TRANSPOSE(U) ## TRANSPOSE([ct])
+	kpos = where(W GT 0, npos, COMPLEMENT=kzero, NCOMPLEMENT=nzero)
+	if npos GT 0 then X[kpos] /= W[kpos]
+	if nzero GT 0 then X[kzero] = 0
+
+	RETURN, A ## (V ## X)
+
+END
+
+PRO MOCO_2D_DCE_2CM_NEW::PIXEL_FIT, r
+
+	S = REFORM((*self.Deformed)[*,r[0],r[1]])
+
+    n0 = (*self.Independent)[0]
+
+    S0 = total(S[0:n0-1])/n0
+    C = S - S0
+    Cfit = self->FIT_CONC(C)
+	Sfit = S0 + Cfit
+
+    (*self.Deformed)[*,r[0],r[1]] = Sfit
+
+END
+
+PRO MOCO_2D_DCE_2CM_NEW::PIXEL_FIT_PRECOMPUTE
+
+	X = *self.Independent
+
+	n = (n_elements(X)-1)/2
+
+	t = X[0:n-1]
+	ca = X[n:2*n-1]
+	n0 = X[2*n]
+
+    dt = (t[1:n-1]-t[0:n-2])/2E
+    ca1 = [0, TOTAL( dt*(ca[0:n-2]+ca[1:n-1]) , /cumulative)]
+    ca2 = [0, TOTAL( dt*(ca1[0:n-2]+ca1[1:n-1]) , /cumulative)]
+
+    *self.independent = [n0,dt,ca1,ca2]
+
+END
+
+PRO MOCO_2D_DCE_2CM_NEW::CLEANUP
 
   ptr_free, $
     self.source, $
@@ -316,7 +321,7 @@ PRO MOCO_2D_DCE_1CM::CLEANUP
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::INIT, $
+FUNCTION MOCO_2D_DCE_2CM_NEW::INIT, $
   Source, $
   Resolution, $
   Precision, $
@@ -347,12 +352,14 @@ FUNCTION MOCO_2D_DCE_1CM::INIT, $
     self.nw = Win.n
   endif else self.nw = self.ns[1:*]
 
+  self -> PIXEL_FIT_PRECOMPUTE
+
   return, 1
 END
 
-PRO MOCO_2D_DCE_1CM__DEFINE
+PRO MOCO_2D_DCE_2CM_NEW__DEFINE
 
-  struct = {MOCO_2D_DCE_1CM, $
+  struct = {MOCO_2D_DCE_2CM_NEW, $
   	source: ptr_new(), $
   	Independent: ptr_new(), $
   	DefField: ptr_new(), $

@@ -2,10 +2,10 @@
 ;
 ;    Copyright (C) 2018 Steven Sourbron
 ;
-
+;
 ;
 
-FUNCTION PMI__Button__Input__MOCO_2D_DCE_2CM, top, series, aif, in, Win
+FUNCTION PMI__Button__Input__MOCO_2D_DCE_1CMD, top, series, aif, in, Win
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -89,13 +89,13 @@ END
 
 
 
-pro PMI__Button__Event__MOCO_2D_DCE_2CM, ev
+pro PMI__Button__Event__MOCO_2D_DCE_1CMD, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 
-    IF NOT PMI__Button__Input__MOCO_2D_DCE_2CM(ev.top,series,aif,in,win) THEN RETURN
+    IF NOT PMI__Button__Input__MOCO_2D_DCE_1CMD(ev.top,series,aif,in,win) THEN RETURN
 
-	PMI__Message, status, 'Calculating', k/(d[2]-1E)
+	PMI__Message, status, 'Calculating'
 
 	time = Series->t() - Series->t(0)
 	d = Series -> d()
@@ -109,9 +109,9 @@ tt = systime(1)
   		Source = Series->Read(Stdy->DataPath(), k, -1)
     	if product(win[k].n) gt 0 then begin
 			Source = TRANSPOSE(Source, [2,0,1])
-    		MOCO_2D_DCE_2CM = OBJ_NEW('MOCO_2D_DCE_2CM', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
-    		Source = TRANSPOSE(MOCO_2D_DCE_2CM->deformed(), [1,2,0])
-    		OBJ_DESTROY, MOCO_2D_DCE_2CM
+    		MOCO_2D_DCE_1CMD = OBJ_NEW('MOCO_2D_DCE_1CMD', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
+    		Source = TRANSPOSE(MOCO_2D_DCE_1CMD->deformed(), [1,2,0])
+    		OBJ_DESTROY, MOCO_2D_DCE_1CMD
 		endif
 		Corr -> Write, Stdy->DataPath(), Source, k, -1
 	endfor
@@ -122,7 +122,7 @@ print,(systime(1)-tt)/60.
 end
 
 
-pro PMI__Button__Control__MOCO_2D_DCE_2CM, id, v
+pro PMI__Button__Control__MOCO_2D_DCE_1CMD, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -133,14 +133,14 @@ pro PMI__Button__Control__MOCO_2D_DCE_2CM, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__MOCO_2D_DCE_2CM, parent,value=value,separator=separator
+function PMI__Button__MOCO_2D_DCE_1CMD, parent,value=value,separator=separator
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__MOCO_2D_DCE_2CM' $
-    ,	pro_set_value = 'PMI__Button__Control__MOCO_2D_DCE_2CM' $
+    ,  	event_pro = 'PMI__Button__Event__MOCO_2D_DCE_1CMD' $
+    ,	pro_set_value = 'PMI__Button__Control__MOCO_2D_DCE_1CMD' $
     ,  	separator = separator )
 
     return, id

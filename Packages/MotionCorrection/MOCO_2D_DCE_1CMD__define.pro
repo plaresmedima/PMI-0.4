@@ -1,14 +1,15 @@
-FUNCTION MOCO_2D_DCE_1CM::LLS_1CM_FIT, ct
+FUNCTION MOCO_2D_DCE_1CMD::FIT_CONC, ct, delay
 
     IF norm(ct) EQ 0. THEN RETURN, ct
 
-    n = n_elements(ct)
-    X = *self.independent
-    n0 = X[0]
-    dt = X[1:n-1]
-    ca1 = X[n:2*n-1]
+	X = *self.Independent
+	n = (n_elements(X)-1)/2
+	t = X[0:n-1]
+ 	ca = ShiftAif(X[n:2*n-1],t,Delay)
 
-    ct1 = [0, TOTAL( dt*(ct[0:n-2]+ct[1:n-1]) , /cumulative)]
+    dt = (t[1:n-1]-t[0:n-2])/2E
+    ca1 = [0, TOTAL( dt*(ca[0:n-2]+ca[1:n-1]), /cumulative)]
+    ct1 = [0, TOTAL( dt*(ct[0:n-2]+ct[1:n-1]), /cumulative)]
 
 	A = TRANSPOSE([[ct1],[ca1]])
 	SVDC, A, W, U, V
@@ -21,39 +22,39 @@ FUNCTION MOCO_2D_DCE_1CM::LLS_1CM_FIT, ct
 
 END
 
-PRO MOCO_2D_DCE_1CM::SIGNAL_FIT_1CM, r
+PRO MOCO_2D_DCE_1CMD::PIXEL_FIT, r
+
+	dDelay = 0.25 ;sec
+	maxDelay = 15.0 ;sec
+	nDelay = 1+ceil(maxDelay/dDelay)
+	Delay = dDelay*findgen(nDelay)
 
 	S = REFORM((*self.Deformed)[*,r[0],r[1]])
 
-    n0 = (*self.Independent)[0]
-
+	X = *self.Independent
+    n0 = X[n_elements(X)-1]
     S0 = total(S[0:n0-1])/n0
     C = S - S0
-    Cfit = self->LLS_1CM_FIT(C)
+
+    Error = fltarr(nDelay)
+    for i=0L, nDelay-1 do begin
+    	Cfit = self->FIT_CONC(C, Delay[i])
+    	Error[i] = total((Cfit-C)^2)
+    endfor
+    tmp = min(Error,i)
+	Cfit = self->FIT_CONC(C, Delay[i])
+
 	Sfit = S0 + Cfit
 
     (*self.Deformed)[*,r[0],r[1]] = Sfit
 
 END
 
-PRO MOCO_2D_DCE_1CM::LLS_1CM_FIT_PRECOMPUTE
-
-	X = *self.Independent
-
-	n = (n_elements(X)-1)/2
-
-	t = X[0:n-1]
-	ca = X[n:2*n-1]
-	n0 = X[2*n]
-
-    dt = (t[1:n-1]-t[0:n-2])/2E
-    ca1 = [0, TOTAL( dt*(ca[0:n-2]+ca[1:n-1]) , /cumulative)]
-
-    *self.independent = [n0,dt,ca1]
+PRO MOCO_2D_DCE_1CMD::PIXEL_FIT_PRECOMPUTE
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::ffd, D
+FUNCTION MOCO_2D_DCE_1CMD::ffd, D
 
   Di = INTERPOLATE(D, *self.xc, *self.yc, /GRID)
 
@@ -64,7 +65,7 @@ FUNCTION MOCO_2D_DCE_1CM::ffd, D
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::FFD_GRAD
+FUNCTION MOCO_2D_DCE_1CMD::FFD_GRAD
 
   Di = INTERPOLATE(*self.F, *self.xc, *self.yc, /GRID)
 
@@ -96,7 +97,7 @@ FUNCTION MOCO_2D_DCE_1CM::FFD_GRAD
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::FFD_LSEARCH
+FUNCTION MOCO_2D_DCE_1CMD::FFD_LSEARCH
 
   scale_down = 1.5
   babystep = 0.1
@@ -144,7 +145,7 @@ FUNCTION MOCO_2D_DCE_1CM::FFD_LSEARCH
 END
 
 
-FUNCTION MOCO_2D_DCE_1CM::FFD_REG, t
+FUNCTION MOCO_2D_DCE_1CMD::FFD_REG, t
 
  itmax = 100. ;emergency stop
  self.stepsize = 5.0 ;pixels
@@ -165,7 +166,7 @@ FUNCTION MOCO_2D_DCE_1CM::FFD_REG, t
 END
 
 
-PRO MOCO_2D_DCE_1CM::ffd_reg_precompute
+PRO MOCO_2D_DCE_1CMD::ffd_reg_precompute
 
   ds = (self.nb-1E)/(self.nw-1E)
 
@@ -209,7 +210,7 @@ PRO MOCO_2D_DCE_1CM::ffd_reg_precompute
   ENDFOR
 END
 
-PRO MOCO_2D_DCE_1CM::PKREG
+PRO MOCO_2D_DCE_1CMD::PKREG
 
   iter = 100 ;emergency stop
 
@@ -220,7 +221,7 @@ PRO MOCO_2D_DCE_1CM::PKREG
 
     FOR i=0L,nPixels-1 DO BEGIN
       r = array_indices(self.nw, i, /dimensions)
-      self -> SIGNAL_FIT_1CM, r
+      self -> PIXEL_FIT, r
     ENDFOR
 
     converged = 1B
@@ -233,7 +234,7 @@ PRO MOCO_2D_DCE_1CM::PKREG
 END
 
 
-PRO MOCO_2D_DCE_1CM::SCALE_UP
+PRO MOCO_2D_DCE_1CMD::SCALE_UP
 
   nold = size(*self.DefField, /dimensions)
   dr = (nold[2:*]-1E)/(self.nb-1E)
@@ -245,7 +246,7 @@ PRO MOCO_2D_DCE_1CM::SCALE_UP
 
 END
 
-PRO MOCO_2D_DCE_1CM::INITIALISE
+PRO MOCO_2D_DCE_1CMD::INITIALISE
 
   db = (self.nw-1E)/(self.nb-1E)
   rb = fltarr([2,self.nb])
@@ -264,9 +265,9 @@ PRO MOCO_2D_DCE_1CM::INITIALISE
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::DEFORMED
+FUNCTION MOCO_2D_DCE_1CMD::DEFORMED
 
-  self -> LLS_1CM_FIT_PRECOMPUTE
+  self -> PIXEL_FIT_PRECOMPUTE
 
   xw = self.Win_p[0] + lindgen(self.nw[0])
   yw = self.Win_p[1] + lindgen(self.nw[1])
@@ -295,7 +296,7 @@ FUNCTION MOCO_2D_DCE_1CM::DEFORMED
   return, *self.Source
 END
 
-PRO MOCO_2D_DCE_1CM::CLEANUP
+PRO MOCO_2D_DCE_1CMD::CLEANUP
 
   ptr_free, $
     self.source, $
@@ -316,7 +317,7 @@ PRO MOCO_2D_DCE_1CM::CLEANUP
 
 END
 
-FUNCTION MOCO_2D_DCE_1CM::INIT, $
+FUNCTION MOCO_2D_DCE_1CMD::INIT, $
   Source, $
   Resolution, $
   Precision, $
@@ -350,9 +351,9 @@ FUNCTION MOCO_2D_DCE_1CM::INIT, $
   return, 1
 END
 
-PRO MOCO_2D_DCE_1CM__DEFINE
+PRO MOCO_2D_DCE_1CMD__DEFINE
 
-  struct = {MOCO_2D_DCE_1CM, $
+  struct = {MOCO_2D_DCE_1CMD, $
   	source: ptr_new(), $
   	Independent: ptr_new(), $
   	DefField: ptr_new(), $

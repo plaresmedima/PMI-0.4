@@ -34,6 +34,7 @@ pro PMI__Menu__MoCo, parent
     Sid = PMI__Button__MOCO_2D_DCE_2CM(id, value='2D DCE 2CM')
     Sid = PMI__Button__MOCO_2D_DCE_1CM(id, value='2D DCE 1CM')
     Sid = PMI__Button__MOCO_2D_DCE_1CMD(id, value='2D DCE 1CM + Delay')
+    Sid = PMI__Button__MOCO_3D_DYN(id, value='3D Dynamic')
 
 
 
