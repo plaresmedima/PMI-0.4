@@ -12,5 +12,6 @@ pro PMI__Menu__Sohaib, parent
 	Sid = PMI__Button__SohaibFermiDeconvolution(id,value='Map: Fermi model')
 
 	Sid = PMI__Button__CardiacSingleInletRoiSlider(id, value='ROI: Model-based', /separator)
+	Sid = PMI__Button__SeriesExportDicom(id, value='DICOM export', /separator)
 
 end
