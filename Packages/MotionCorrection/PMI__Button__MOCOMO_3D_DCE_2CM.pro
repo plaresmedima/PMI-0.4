@@ -1,11 +1,4 @@
-;
-;
-;    Copyright (C) 2018 Steven Sourbron
-;
-;
-;
-
-FUNCTION PMI__Button__Input__MOCOMO_2D_DCE_1CMD, top, series, aif, in, Win
+FUNCTION PMI__Button__Input__MOCOMO_3D_DCE_2CM, top, series, aif, in, Win
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -33,29 +26,35 @@ FUNCTION PMI__Button__Input__MOCOMO_2D_DCE_1CMD, top, series, aif, in, Win
     	  msg = 'Deformation Field Precision must be > 0'
     	  goto, jump
     	ENDIF
+
     	Series = Stdy->Obj(0,ind[in.ser])
     	d = Series->d()
-    	Win = replicate({p:[0L,0L], n:d[0:1]}, d[2])
+    	Win = {p:[0L,0L,0L], n:d[0:2]}
     	IF in.roi GT 0 THEN BEGIN
-    	  Win.n *= 0
     	  Region = Stdy->Obj(1,in.roi-1)
     	  dim = Region->d()
     	  if dim[3] gt 1 then begin
     	    msg = 'Region of interest must be drawn on a static image'
     	    goto, jump
     	  endif
-    	  for k=0L, d[2]-1 do begin
-    	    Indices = Region->Where(Stdy->DataPath(), k, n=cnt)
-			if cnt gt 0 then begin
-    	    	Pos = ARRAY_INDICES(d[0:1], Indices, /DIMENSIONS)
-    	    	Win[k].p = [$
-    	      		min(Pos[0,*]),$
-    	      		min(Pos[1,*])]
-    	    	Win[k].n = [$
-    	      		1+max(Pos[0,*])-min(Pos[0,*]),$
-    	      		1+max(Pos[1,*])-min(Pos[1,*])]
-    	    endif
-    	  endfor
+    	  Indices = Region->Where(Stdy->DataPath(), n=cnt)
+    	  if cnt eq 0 then begin
+    	    msg = 'Region is not defined on this series'
+    	    goto, jump
+    	  endif
+    	  Pos = ARRAY_INDICES(dim[0:2], Indices, /DIMENSIONS)
+    	  Win.p = [$
+    	    min(Pos[0,*]),$
+    	    min(Pos[1,*]),$
+    	    min(Pos[2,*])]
+    	  Win.n = [$
+    	    1+max(Pos[0,*])-min(Pos[0,*]),$
+    	    1+max(Pos[1,*])-min(Pos[1,*]),$
+    	    1+max(Pos[2,*])-min(Pos[2,*])]
+    	  if min(Win.n) le 1 then begin
+    	    msg = 'Region of interest must cover more than 1 slice'
+    	    goto, jump
+    	  endif
     	ENDIF
     	IF in.nb LT 1 THEN BEGIN
     	  in.nb = 10
@@ -89,40 +88,37 @@ END
 
 
 
-pro PMI__Button__Event__MOCOMO_2D_DCE_1CMD, ev
+pro PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
+	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__MOCOMO_2D_DCE_1CMD(ev.top,series,aif,in,win) THEN RETURN
+    IF NOT PMI__Button__Input__MOCOMO_3D_DCE_2CM(ev.top,series,aif,in,win) THEN RETURN
 
-	PMI__Message, status, 'Calculating'
+	PMI__Message, status, 'Preparing calculation..'
 
 	time = Series->t() - Series->t(0)
-	d = Series -> d()
-    Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Motion-free]' )
+	Source = Series->Read(Stdy->DataPath())
 
-tt = systime(1)
-
-    for k=0L,d[2]-1 do begin
-
-		PMI__Message, status, 'Calculating', k/(d[2]-1E)
-  		Source = Series->Read(Stdy->DataPath(), k, -1)
-    	if product(win[k].n) gt 0 then begin
-			Source = TRANSPOSE(Source, [2,0,1])
-    		MOCOMO = OBJ_NEW('MOCOMO_2D_DCE_1CMD', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
-    		Source = TRANSPOSE(MOCOMO->deformed(), [1,2,0])
-    		OBJ_DESTROY, MOCOMO
-		endif
-		Corr -> Write, Stdy->DataPath(), Source, k, -1
-	endfor
-
+    PMI__Message, status, 'Calculating..'
+tt=systime(1)
+	Source = TRANSPOSE(Source, [3,0,1,2])
+    MOCOMO = OBJ_NEW('MOCOMO_3D_DCE_2CM', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win)
+    Source = TRANSPOSE(MOCOMO->deformed(), [1,2,3,0])
+    OBJ_DESTROY, MOCOMO
+    Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
+    Corr = Stdy->New('SERIES', Domain=Dom,  Name=Series->name() + '[Motion-free]' )
+	Corr -> Write, Stdy->DataPath(), Source
+	Corr -> Trim, Series->Trim()
 print,(systime(1)-tt)/60.
 
     PMI__Control, ev.top, /refresh
 end
 
 
-pro PMI__Button__Control__MOCOMO_2D_DCE_1CMD, id, v
+pro PMI__Button__Control__MOCOMO_3D_DCE_2CM, id, v
+
+	MOCOMO_3D_DCE_2CM__DEFINE
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -133,16 +129,14 @@ pro PMI__Button__Control__MOCOMO_2D_DCE_1CMD, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__MOCOMO_2D_DCE_1CMD, parent,value=value,separator=separator
-
-	MOCOMO_2D_DCE_1CMD__DEFINE
+function PMI__Button__MOCOMO_3D_DCE_2CM, parent,value=value,separator=separator
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__MOCOMO_2D_DCE_1CMD' $
-    ,	pro_set_value = 'PMI__Button__Control__MOCOMO_2D_DCE_1CMD' $
+    ,  	event_pro = 'PMI__Button__Event__MOCOMO_3D_DCE_2CM' $
+    ,	pro_set_value = 'PMI__Button__Control__MOCOMO_3D_DCE_2CM' $
     ,  	separator = separator )
 
     return, id

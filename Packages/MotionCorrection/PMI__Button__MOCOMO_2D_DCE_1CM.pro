@@ -109,9 +109,9 @@ tt = systime(1)
   		Source = Series->Read(Stdy->DataPath(), k, -1)
     	if product(win[k].n) gt 0 then begin
 			Source = TRANSPOSE(Source, [2,0,1])
-    		MOCOMO_2D_DCE_1CM = OBJ_NEW('MOCOMO_2D_DCE_1CM', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
-    		Source = TRANSPOSE(MOCOMO_2D_DCE_1CM->deformed(), [1,2,0])
-    		OBJ_DESTROY, MOCOMO_2D_DCE_1CM
+    		MOCOMO = OBJ_NEW('MOCOMO_2D_DCE_1CM', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
+    		Source = TRANSPOSE(MOCOMO->deformed(), [1,2,0])
+    		OBJ_DESTROY, MOCOMO
 		endif
 		Corr -> Write, Stdy->DataPath(), Source, k, -1
 	endfor
@@ -134,6 +134,8 @@ pro PMI__Button__Control__MOCOMO_2D_DCE_1CM, id, v
 end
 
 function PMI__Button__MOCOMO_2D_DCE_1CM, parent,value=value,separator=separator
+
+	MOCOMO_2D_DCE_1CM__DEFINE
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 

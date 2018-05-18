@@ -109,9 +109,9 @@ tt = systime(1)
   		Source = Series->Read(Stdy->DataPath(), k, -1)
     	if product(win[k].n) gt 0 then begin
 			Source = TRANSPOSE(Source, [2,0,1])
-    		MOCOMO_2D_DCE_2CM = OBJ_NEW('MOCOMO_2D_DCE_2CM', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
-    		Source = TRANSPOSE(MOCOMO_2D_DCE_2CM->deformed(), [1,2,0])
-    		OBJ_DESTROY, MOCOMO_2D_DCE_2CM
+    		MOCOMO = OBJ_NEW('MOCOMO_2D_DCE_2CM', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
+    		Source = TRANSPOSE(MOCOMO->deformed(), [1,2,0])
+    		OBJ_DESTROY, MOCOMO
 		endif
 		Corr -> Write, Stdy->DataPath(), Source, k, -1
 	endfor
@@ -132,6 +132,7 @@ pro PMI__Button__Control__MOCOMO_2D_DCE_2CM, id, v
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
 end
+
 
 function PMI__Button__MOCOMO_2D_DCE_2CM, parent,value=value,separator=separator
 

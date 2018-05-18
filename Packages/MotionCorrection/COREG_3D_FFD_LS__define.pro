@@ -1,15 +1,4 @@
-
-
-PRO MOCO_3D_DYN::PIXEL_FIT, r
-
-	S = REFORM((*self.Deformed)[*,r[0],r[1],r[2]])
-    Sfit = S*0 + total(S)/n_elements(S)
-    (*self.Deformed)[*,r[0],r[1],r[2]] = Sfit
-
-END
-
-
-FUNCTION MOCO_3D_DYN::ffd, D
+FUNCTION COREG_3D_FFD_LS::DEF, D
 
   Di = INTERPOLATE(D, *self.xc, *self.yc, *self.zc, /GRID)
 
@@ -21,7 +10,7 @@ FUNCTION MOCO_3D_DYN::ffd, D
 
 END
 
-FUNCTION MOCO_3D_DYN::FFD_GRAD
+FUNCTION COREG_3D_FFD_LS::GRAD
 
   Di = INTERPOLATE(*self.F, *self.xc, *self.yc, *self.zc, /GRID)
 
@@ -57,13 +46,13 @@ FUNCTION MOCO_3D_DYN::FFD_GRAD
 
 END
 
-FUNCTION MOCO_3D_DYN::FFD_LSEARCH
+FUNCTION COREG_3D_FFD_LS::LSEARCH
 
   scale_down = 1.5
   babystep = 0.1
   stepsize_max = 100.;emergency stop
 
-  Grad = self->ffd_grad()
+  Grad = self->GRAD()
   Grad /= sqrt(max(total(Grad^2,1)))
   ChiSq_curr = total((*self.T - *self.D)^2.)
 
@@ -72,7 +61,7 @@ FUNCTION MOCO_3D_DYN::FFD_LSEARCH
   WHILE 1 DO BEGIN
 
 	F_try = *self.F + self.stepsize*Grad
-	D_try = self->ffd(F_try)
+	D_try = self->DEF(F_try)
 	ChiSq_try = total((*self.T-D_try)^2.)
 
 	IF ChiSq_try LT ChiSq_curr THEN BREAK
@@ -94,7 +83,7 @@ FUNCTION MOCO_3D_DYN::FFD_LSEARCH
 
     self.stepsize += babystep
     F_try += Grad
-    D_try = self->ffd(F_try)
+    D_try = self->DEF(F_try)
 	ChiSq_try = total((*self.T-D_try)^2.)
 
     IF ChiSq_try GE ChiSq_curr THEN RETURN, 0B
@@ -105,29 +94,27 @@ FUNCTION MOCO_3D_DYN::FFD_LSEARCH
 END
 
 
-FUNCTION MOCO_3D_DYN::FFD_REG, t
+FUNCTION COREG_3D_FFD_LS::SOLVE, nS, S, T, F
 
  itmax = 100. ;emergency stop
  self.stepsize = 5.0 ;pixels
 
- *self.S = REFORM((*self.Source)[t,*,*,*],/overwrite)
- *self.T = REFORM((*self.Deformed)[t,*,*,*],/overwrite)
- *self.F = REFORM((*self.DefField)[t,*,*,*,*],/overwrite)
- *self.sx = (*self.S)[1:self.ns[1]-1,*,*] - (*self.S)[0:self.ns[1]-2,*,*]
- *self.sy = (*self.S)[*,1:self.ns[2]-1,*] - (*self.S)[*,0:self.ns[2]-2,*]
- *self.sz = (*self.S)[*,*,1:self.ns[3]-1] - (*self.S)[*,*,0:self.ns[3]-2]
+ *self.S = S
+ *self.T = T
+ *self.F = F
+
+ *self.Sx = S[1:ns[0]-1,*,*] - S[0:ns[0]-2,*,*]
+ *self.Sy = S[*,1:ns[1]-1,*] - S[*,0:ns[1]-2,*]
+ *self.Sz = S[*,1:ns[1]-1,*] - S[*,0:ns[1]-2,*]
 
  FOR iterations=1L, itmax DO $
-   IF self->ffd_lsearch() THEN BREAK
-
- (*self.Deformed)[t,*,*,*] = *self.D
- (*self.DefField)[t,*,*,*,*] = *self.F
+   IF self->LSEARCH() THEN BREAK
 
  return, iterations EQ 1B
+
 END
 
-
-PRO MOCO_3D_DYN::ffd_reg_precompute
+PRO COREG_3D_FFD_LS::PRECOMPUTE
 
   ds = (self.nb-1E)/(self.nw-1E)
 
@@ -176,102 +163,10 @@ PRO MOCO_3D_DYN::ffd_reg_precompute
   ENDFOR
 END
 
-PRO MOCO_3D_DYN::MODEL_REG
 
-  iter = 100 ;emergency stop
-
-  self -> ffd_reg_precompute
-
-  nPixels = Product(self.nw)
-  FOR it=1L,iter DO BEGIN
-
-    FOR i=0L,nPixels-1 DO BEGIN
-      r = array_indices(self.nw, i, /dimensions)
-      self -> PIXEL_FIT, r
-    ENDFOR
-
-    converged = 1B
-    FOR t=0L,self.ns[0]-1 DO converged *= self->ffd_reg(t)
-
-    IF converged THEN BREAK
-
-  ENDFOR
-
-END
-
-
-PRO MOCO_3D_DYN::SCALE_UP
-
-  nold = size(*self.DefField, /dimensions)
-  dr = (nold[2:*]-1E)/(self.nb-1E)
-
-  X = dr[0] * findgen(self.nb[0])
-  Y = dr[1] * findgen(self.nb[1])
-  Z = dr[2] * findgen(self.nb[2])
-
-  *self.DefField = INTERPOLATE(*self.DefField, X, Y, Z, /GRID)
-
-END
-
-PRO MOCO_3D_DYN::INITIALISE
-
-  db = (self.nw-1E)/(self.nb-1E)
-  rb = fltarr([3,self.nb])
-
-  FOR i=0L, self.nb[0]-1 DO BEGIN
-  FOR j=0L, self.nb[1]-1 DO BEGIN
-  FOR k=0L, self.nb[2]-1 DO BEGIN
-    rb[0,i,j,k] = self.Win_p[0] + db[0]*i
-    rb[1,i,j,k] = self.Win_p[1] + db[1]*j
-    rb[2,i,j,k] = self.Win_p[2] + db[2]*k
-  ENDFOR
-  ENDFOR
-  ENDFOR
-
-  P = fltarr([self.ns[0],3,self.nb])
-  for t=0L,self.ns[0]-1 do P[t,*,*,*,*] = rb
-
-  *self.DefField = P
-
-END
-
-FUNCTION MOCO_3D_DYN::DEFORMED
-
-  xw = self.Win_p[0] + lindgen(self.nw[0])
-  yw = self.Win_p[1] + lindgen(self.nw[1])
-  zw = self.Win_p[2] + lindgen(self.nw[2])
-
-  *self.Deformed = (*self.Source)[*, xw, yw, zw]
-
-  nCells = ceil(float(max(self.nw))/self.Resolution)
-  Order = 0L
-  While 2L^Order LT nCells DO Order += 1
-  nCells = 2L^lindgen(Order)
-  FOVnorm = float(self.nw)/max(self.nw)
-
-  it = 0L
-  self.nB = 1 + ceil(FOVnorm*nCells[it])
-  self -> initialise
-  self -> model_reg
-
-  FOR it=1L,Order-1 DO BEGIN
-  	  self.nB = 1 + ceil(FOVnorm*nCells[it])
-  	  self -> scale_up
-  	  self -> model_reg
-  ENDFOR
-
-  (*self.Source)[*, xw, yw, zw] = *self.Deformed
-
-  return, *self.Source
-END
-
-PRO MOCO_3D_DYN::CLEANUP
+PRO COREG_3D_FFD_LS::CLEANUP
 
   ptr_free, $
-    self.source, $
-    self.independent, $
-    self.DefField, $
-    self.Deformed, $
     self.S, $
     self.T, $
     self.F, $
@@ -285,21 +180,12 @@ PRO MOCO_3D_DYN::CLEANUP
     self.Weight, $
     self.Weight_loc, $
     self.Weight_cnt
-
 END
 
-FUNCTION MOCO_3D_DYN::INIT, $
-  Source, $
-  Resolution, $
-  Precision, $
-  Independent, $
-  WIN=Win
 
-  self.nS = size(*source, /Dimensions)
-  self.source = source
-  self.independent = ptr_new(independent)
-  self.DefField = ptr_new(/allocate_heap)
-  self.Deformed = ptr_new(/allocate_heap)
+FUNCTION COREG_3D_FFD_LS::INIT, $
+  Precision, nw
+
   self.S = ptr_new(/allocate_heap)
   self.T = ptr_new(/allocate_heap)
   self.F = ptr_new(/allocate_heap)
@@ -314,23 +200,16 @@ FUNCTION MOCO_3D_DYN::INIT, $
   self.Weight_cnt = ptr_new(/allocate_heap)
   self.Weight_loc = ptr_new(/allocate_heap)
   self.stepsize = 0E
-  self.resolution = resolution
   self.precision = precision
-  if n_elements(Win) ne 0 then begin
-    self.Win_p = Win.p
-    self.nw = Win.n
-  endif else self.nw = self.ns[1:*]
+  self.nw = nw
+  self.nb = nw
 
   return, 1
 END
 
-PRO MOCO_3D_DYN__DEFINE
+PRO COREG_3D_FFD_LS__DEFINE
 
-  struct = {MOCO_3D_DYN, $
-  	source: ptr_new(), $
-  	Independent: ptr_new(), $
-  	DefField: ptr_new(), $
-  	Deformed: ptr_new(), $
+  struct = {COREG_3D_FFD_LS, $
   	S: ptr_new(), $
   	T: ptr_new(), $
   	F: ptr_new(), $
@@ -344,11 +223,9 @@ PRO MOCO_3D_DYN__DEFINE
   	Weight: ptr_new(), $
   	Weight_cnt: ptr_new(), $
   	Weight_loc: ptr_new(), $
-  	stepsize: 0E, $
-  	Resolution: 0E, $
+  	Stepsize: 0E, $
   	Precision: 0E, $
-  	Win_p:lonarr(3), $
-  	ns: lonarr(4), $
   	nb: lonarr(3), $
   	nw: lonarr(3) }
+
 END
