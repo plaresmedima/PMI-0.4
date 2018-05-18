@@ -47,11 +47,13 @@ pro PMI__Button__Event__SeriesExportDicom, ev
 	PMI__Message, status
 end
 
+
 pro PMI__Button__Control__SeriesExportDicom, id, v
 
 	PMI__Info, tlb(id), Series=Series
 	widget_control, id, sensitive = obj_valid(Series)
 end
+
 function PMI__Button__SeriesExportDicom, parent, separator = separator, value=value
 
 	if n_elements(value) eq 0 then value = 'DICOM'

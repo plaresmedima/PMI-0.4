@@ -158,6 +158,7 @@ PRO HEADER::SETIMAGE, im
 	self -> set, obj_new('DATA_ELEMENT','0028'x,'1053'x,vr='DS',value=rb)
 	self -> set, obj_new('DATA_ELEMENT','7FE0'x,'0010'x,vr='OW',value=im)
 END
+
 PRO HEADER::SETVALUE, gr, el, value
 
 	v = value
@@ -345,6 +346,7 @@ PRO HEADER::COPYHEADER, Hdr
 		self->SetValue, de->gr(), de->el(), de->value()
 	endfor
 END
+
 PRO HEADER::SORT
 
 	if not ptr_valid(self.de) then return
