@@ -87,7 +87,13 @@ FUNCTION PMI__Button__Input__MOCOMO_2D_DCE_1CMD, top, series, aif, in, Win
   	ENDWHILE
 END
 
+PRO PMI__Button__Obj__MOCOMO_2D_DCE_1CMD__DEFINE
 
+  struct = {PMI__Button__Obj__MOCOMO_2D_DCE_1CMD, $
+   	INHERITS MOCOMO_2D, $
+   	INHERITS MOCOMO_DCE_1CMD }
+
+END
 
 pro PMI__Button__Event__MOCOMO_2D_DCE_1CMD, ev
 
@@ -109,7 +115,8 @@ tt = systime(1)
   		Source = Series->Read(Stdy->DataPath(), k, -1)
     	if product(win[k].n) gt 0 then begin
 			Source = TRANSPOSE(Source, [2,0,1])
-    		MOCOMO = OBJ_NEW('MOCOMO_2D_DCE_1CMD', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
+    		MOCOMO = OBJ_NEW('PMI__Button__Obj__MOCOMO_2D_DCE_1CMD', $
+    		  ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
     		Source = TRANSPOSE(MOCOMO->deformed(), [1,2,0])
     		OBJ_DESTROY, MOCOMO
 		endif
@@ -134,8 +141,6 @@ pro PMI__Button__Control__MOCOMO_2D_DCE_1CMD, id, v
 end
 
 function PMI__Button__MOCOMO_2D_DCE_1CMD, parent,value=value,separator=separator
-
-	MOCOMO_2D_DCE_1CMD__DEFINE
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 

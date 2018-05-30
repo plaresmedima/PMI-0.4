@@ -66,7 +66,12 @@ FUNCTION PMI__Button__Input__MOCOMO_3D_CONST, top, series, in, Win
   	ENDWHILE
 END
 
+PRO PMI__Button__Obj__MOCOMO_3D_CONST__DEFINE
 
+  struct = {PMI__Button__Obj__MOCOMO_3D_CONST, $
+  	INHERITS MOCOMO_3D, $
+  	INHERITS MOCOMO_CONST }
+END
 
 pro PMI__Button__Event__MOCOMO_3D_CONST, ev
 
@@ -83,7 +88,8 @@ pro PMI__Button__Event__MOCOMO_3D_CONST, ev
     PMI__Message, status, 'Calculating..'
 tt=systime(1)
 	Source = TRANSPOSE(Source, [3,0,1,2])
-    MOCOMO = OBJ_NEW('MOCOMO_3D_CONST', ptr_new(Source), in.res, in.prec, 0B, Win=win)
+    MOCOMO = OBJ_NEW('PMI__Button__Obj__MOCOMO_3D_CONST', $
+      ptr_new(Source), in.res, in.prec, 0B, Win=win)
     Source = TRANSPOSE(MOCOMO->deformed(), [1,2,3,0])
     OBJ_DESTROY, MOCOMO
     Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
@@ -107,8 +113,6 @@ pro PMI__Button__Control__MOCOMO_3D_CONST, id, v
 end
 
 function PMI__Button__MOCOMO_3D_CONST, parent,value=value,separator=separator
-
-	MOCOMO_3D_CONST__DEFINE
 
     if n_elements(value) eq 0 then value = 'Dynamic motion correction'
 
