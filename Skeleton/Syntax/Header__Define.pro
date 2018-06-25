@@ -150,7 +150,7 @@ PRO HEADER::SETIMAGE, im
 		rb = min
 	endelse
 
-	im = reverse(uint(im),2)
+	im = reverse(fix(im),2)
 
 	self -> set, obj_new('DATA_ELEMENT','0028'x,'0010'x,vr='US',value=uint(d[1]))
 	self -> set, obj_new('DATA_ELEMENT','0028'x,'0011'x,vr='US',value=uint(d[0]))

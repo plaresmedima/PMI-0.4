@@ -24,7 +24,7 @@ pro PMI__Button__Event__SeriesExportDicom, ev
 
 
 	dcm = LMU__DicomTemplate('PMI output') ;Fill in default values for the most essential dicom header elements
-;	dcm -> CopyHeader, Data
+	dcm -> CopyHeader, Data
 
 	d = data -> d()
 

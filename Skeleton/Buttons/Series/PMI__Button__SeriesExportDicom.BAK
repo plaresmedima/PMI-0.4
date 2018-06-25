@@ -54,11 +54,11 @@ pro PMI__Button__Control__SeriesExportDicom, id, v
 end
 function PMI__Button__SeriesExportDicom, parent, separator = separator, value=value
 
-	if n_elements(value) eq 0 then value = 'DICOM export'
+	if n_elements(value) eq 0 then value = 'DICOM'
 
   	return, widget_button(parent	$
   	, 	separator = separator $
-  	, 	value = 'DICOM' $
+  	, 	value = value $
 	, 	event_pro = 'PMI__Button__Event__SeriesExportDicom' $
 	,	pro_set_value 	= 'PMI__Button__Control__SeriesExportDicom' $
 	)
