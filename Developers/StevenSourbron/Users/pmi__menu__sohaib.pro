@@ -10,8 +10,11 @@ pro PMI__Menu__Sohaib, parent
 	Sid = PMI__Button__SohaibCompartmentLinear(id,value='Map: One compartment')
 	Sid = PMI__Button__SohaibCompartmentLinearDelay(id,value='Map: One compartment + delay')
 	Sid = PMI__Button__SohaibFermiDeconvolution(id,value='Map: Fermi model')
+	Sid = PMI__Button__SohaibDistributedParameter(id,value='Map: DistributedParameter')
 
 	Sid = PMI__Button__CardiacSingleInletRoiSlider(id, value='ROI: Model-based', /separator)
+
 	Sid = PMI__Button__SeriesExportDicom(id, value='DICOM export', /separator)
+	Sid = PMI__Button__DumpDicom(id)
 
 end

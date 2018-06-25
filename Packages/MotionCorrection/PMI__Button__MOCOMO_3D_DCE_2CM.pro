@@ -87,6 +87,13 @@ FUNCTION PMI__Button__Input__MOCOMO_3D_DCE_2CM, top, series, aif, in, Win
 END
 
 
+PRO PMI__Button__Obj__MOCOMO_3D_DCE_2CM__DEFINE
+
+  struct = {PMI__Button__Obj__MOCOMO_3D_DCE_2CM, $
+   	INHERITS MOCOMO_3D, $
+   	INHERITS MOCOMO_DCE_2CM }
+
+END
 
 pro PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
 
@@ -103,7 +110,8 @@ pro PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
     PMI__Message, status, 'Calculating..'
 tt=systime(1)
 	Source = TRANSPOSE(Source, [3,0,1,2])
-    MOCOMO = OBJ_NEW('MOCOMO_3D_DCE_2CM', ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win)
+    MOCOMO = OBJ_NEW('PMI__Button__Obj__MOCOMO_3D_DCE_2CM', $
+      ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win)
     Source = TRANSPOSE(MOCOMO->deformed(), [1,2,3,0])
     OBJ_DESTROY, MOCOMO
     Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
@@ -117,8 +125,6 @@ end
 
 
 pro PMI__Button__Control__MOCOMO_3D_DCE_2CM, id, v
-
-	MOCOMO_3D_DCE_2CM__DEFINE
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
