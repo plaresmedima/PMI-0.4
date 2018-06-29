@@ -1,5 +1,6 @@
-PRO MOCOMO_2D::PIXEL_FIT, r
+PRO MOCOMO_2D::OPTIMISE_MODEL_TARGET, i
 
+  r = array_indices(self.nw, i, /dimensions)
   S = REFORM((*self.Deformed)[*,r[0],r[1]])
   S = self->FIT_SIGNAL(S)
   (*self.Deformed)[*,r[0],r[1]] = S
@@ -7,7 +8,7 @@ PRO MOCOMO_2D::PIXEL_FIT, r
 END
 
 
-FUNCTION MOCOMO_2D::FFD_REG, t
+FUNCTION MOCOMO_2D::OPTIMISE_DEFORMATION_FIELD, t
 
  converged = self -> COREG_2D_FFD_LS::SOLVE(self.ns[1:*], $
  	REFORM((*self.Source)[t,*,*],/overwrite), $
@@ -22,23 +23,21 @@ FUNCTION MOCOMO_2D::FFD_REG, t
 END
 
 
-PRO MOCOMO_2D::MODEL_REG
+PRO MOCOMO_2D::JOINT_OPTIMISATION
 
   iter = 100 ;emergency stop
 
-  self -> COREG_2D_FFD_LS::PRECOMPUTE
+  self -> COREG_2D_FFD_LS::CALCULATE_INTERPOLATION_WEIGHTS
 
   nPixels = Product(self.nw)
   FOR it=1L,iter DO BEGIN
 
-    FOR i=0L,nPixels-1 DO BEGIN
-      r = array_indices(self.nw, i, /dimensions)
-      self -> PIXEL_FIT, r
-    ENDFOR
+    FOR i=0L,nPixels-1 DO $
+      self -> OPTIMISE_MODEL_TARGET, i
 
     converged = 1B
     FOR t=0L,self.ns[0]-1 DO $
-      converged *= self->ffd_reg(t)
+      converged *= self -> OPTIMISE_DEFORMATION_FIELD(t)
 
     IF converged THEN BREAK
 
@@ -47,7 +46,7 @@ PRO MOCOMO_2D::MODEL_REG
 END
 
 
-PRO MOCOMO_2D::SCALE_UP
+PRO MOCOMO_2D::SCALE_UP_DEFORMATION_FIELDS
 
   nold = size(*self.DefField, /dimensions)
   dr = (nold[2:*]-1E)/(self.nb-1E)
@@ -59,7 +58,9 @@ PRO MOCOMO_2D::SCALE_UP
 
 END
 
-PRO MOCOMO_2D::INITIALISE
+PRO MOCOMO_2D::INITIALISE_DEFORMATION_FIELDS
+
+;Define D(x,k) = x
 
   db = (self.nw-1E)/(self.nb-1E)
   rb = fltarr([2,self.nb])
@@ -93,13 +94,13 @@ FUNCTION MOCOMO_2D::DEFORMED
 
   it = 0L
   self.nB = 1 + ceil(FOVnorm*nCells[it])
-  self -> initialise
-  self -> MODEL_REG
+  self -> initialise_deformation_fields
+  self -> JOINT_OPTIMISATION
 
   FOR it=1L,Order-1 DO BEGIN
   	  self.nB = 1 + ceil(FOVnorm*nCells[it])
-  	  self -> scale_up
-  	  self -> MODEL_REG
+  	  self -> scale_up_deformation_fields
+  	  self -> JOINT_OPTIMISATION
   ENDFOR
 
   (*self.Source)[*, xw, yw] = *self.Deformed
