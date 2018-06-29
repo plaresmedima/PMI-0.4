@@ -92,6 +92,48 @@ FUNCTION PMI__Module__StandardDraw::ShiftRegion, ev
 	ev.id=self.id & RETURN, ev
 END
 
+
+
+FUNCTION PMI__Module__StandardDraw::AHASegment, ev
+
+	if ev.type eq 6 then return, self->KeyBoardNavigator(ev)
+	if ev.type eq 5 then return, 0B
+
+	p1 = self -> GetPosition(ev.x,ev.y,scr_r=r1)
+
+	case ev.type of
+	0: if ev.clicks eq 2 then begin ;Press
+		d = Self.Series->d()
+		bin = Self.Region -> Read(Self.Stdy->DataPath(),Self.CursorPos[2],Self.CursorPos[3])
+		r0 = Centroid(bin)
+		print, r0
+
+	;	r0 = [0,0]
+	;	split_into_six_segments, bin, r0, r1, seg1=bin1, seg2=bin2, seg3=bin3, seg4=bin4, seg5=bin5, seg6=bin6
+		image = Self.Series->Read(Self.Stdy->DataPath(),Self.CursorPos[2],Self.CursorPos[3])
+
+;		v=fltarr(6)
+;		ind1 = where(bin1 EQ 1, cnt) & if cnt GT 2 then v1 = mean(image[ind1])
+;
+;		v[0] = mean(image[where(bin1 EQ 1, cnt)])
+;		v[1] = mean(image[where(bin2 EQ 1)])
+;		v[2] = mean(image[where(bin3 EQ 1)])
+;		v[3] = mean(image[where(bin4 EQ 1)])
+;		v[4] = mean(image[where(bin5 EQ 1)])
+;		v[5] = mean(image[where(bin6 EQ 1)])
+;
+;		pmi__write_csv, filename, string(v)
+
+		bin[p1[0],p1[1]] = 1B
+		self -> SetRegion, Bin
+		plots, [r0[0],r1[0]], [r0[1],r1[1]], /device
+		endif
+	1: ;Release
+	2: self.CursorPos[0:1] = p1 ;Motion
+	endcase
+	ev.id=self.id & RETURN, ev
+END
+
 FUNCTION PMI__Module__StandardDraw::RegionPixel, ev
 
 	if ev.type eq 6 then return, self->KeyBoardNavigator(ev)

@@ -130,6 +130,7 @@ FUNCTION PMI__Module__CursorTools::Init, parent, ysize=ysize, all=all, scroll=sc
 		id = widget_button(CursorTools,/no_release,xsize=s,ysize=s,/bitmap,uname='RegionCircle'		,uvalue={crsr:32649},value='region_circle.bmp', tooltip='Circular Region')
   		id = widget_button(CursorTools,/no_release,xsize=s,ysize=s,/bitmap,uname='RegionRectangle'	,uvalue={crsr:32649},value='region_rectangle.bmp', tooltip='Rectangular Region')
 		id = widget_button(CursorTools,/no_release,xsize=s,ysize=s,/bitmap,uname='RegionPixel'		,uvalue={crsr:32649},value='region_pixel.bmp',tooltip='Pixel Region')
+		id = widget_button(CursorTools,/no_release,xsize=s,ysize=s,/bitmap,uname='AHASegment'		,uvalue={crsr:32649},value='cardiac.bmp',tooltip='AHA segmentation')
 
 		RoiModes = widget_base(self.id,/column,/exclusive)
 
