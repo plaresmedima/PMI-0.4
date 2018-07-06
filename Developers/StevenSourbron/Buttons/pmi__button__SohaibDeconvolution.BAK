@@ -19,17 +19,18 @@
 ;
 ;
 
-FUNCTION PMI__Button__Input__SohaibDeconvolution, top, series, aif, in
+FUNCTION PMI__Button__Input__SohaibDeconvolution, top, series, aif, roi, in
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, aif:stdy->sel(1), nb:1}
+	in = {ser:sel, aif:stdy->sel(1), roi:0L, nb:1}
 
 	WHILE 1 DO BEGIN
 
 		in = PMI__Form(top, Title='Perfusion analysis setup', [$
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
+		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Window', Value:['<entire image>',Stdy->names(1)], Select:in.roi}), $
 		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb})])
 		IF in.cancel THEN return, 0
 
@@ -48,6 +49,7 @@ FUNCTION PMI__Button__Input__SohaibDeconvolution, top, series, aif, in
     			'Please select another region and/or series'] $
     		ELSE BEGIN
     			Aif = LMU__Enhancement(Aif,in.nb,relative=0)/0.55
+    			if in.roi gt 0 then Roi = Stdy->Obj(1,in.roi-1)
 				return, 1
     		ENDELSE
     	ENDELSE
@@ -62,14 +64,14 @@ pro PMI__Button__Event__SohaibDeconvolution, ev
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__SohaibDeconvolution(ev.top,series,aif,in) THEN RETURN
+    IF NOT PMI__Button__Input__SohaibDeconvolution(ev.top,series,aif, roi, in) THEN RETURN
 
 	PMI__Message, status, 'Preparing calculation..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Blood Flow (ml/100ml/min)' )
-    Svd = Stdy->New('SERIES', Domain= Dom,  Name= 'Extracellular Volume (ml/100ml)')
-    Stt = Stdy->New('SERIES', Domain= Dom,  Name= 'Mean Transit Time (sec)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Blood Flow (ml/100ml/min)' )
+    Svd = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Extracellular Volume (ml/100ml)')
+    Stt = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Mean Transit Time (sec)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)

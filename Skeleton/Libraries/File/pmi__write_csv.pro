@@ -18,9 +18,10 @@
 
 ;Writes a 1- or 2-dimensional string array to file in comma-separated-value format
 
-pro PMI__write_csv, file, array
+pro PMI__write_csv, file, array, ERROR=Err
 
-	Openw, 1, file
+	Openw, 1, file, ERROR=Err
+	If Err ne 0 then return
 
 	n = size(array,/n_dimensions)
 	d = size(array,/dimensions)

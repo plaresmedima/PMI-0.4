@@ -89,7 +89,7 @@ FUNCTION COREG_2D_FFD_LS::LSEARCH
 END
 
 
-FUNCTION COREG_2D_FFD_LS::SOLVE, nS, S, T, F
+FUNCTION COREG_2D_FFD_LS::COREGISTER, nS, S, T, F
 
  itmax = 100. ;emergency stop
  self.stepsize = 5.0 ;pixels

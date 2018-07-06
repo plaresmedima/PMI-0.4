@@ -7,17 +7,19 @@
 ;V = VP+VE	(Total Extracellular Volume)
 ;F (Plasma Flow)
 ;v = VE/(VP+VE)  (Extravascular Volume Fraction)
-;f = FE/(FE+FP)  (Exchange Fraction)
+;f = PS/(PS+FP)  (Exchange Fraction)
 
 ;FITTED FUNCTION
 
 ;C(t) = FP Amin exp(-tKmin)*Ca(t) + FP (1-Amin) exp(-tKplus)*Ca(t)
 
-;FIT PARAMETERS
+;REPLACE BY:
 
-;FP, Amin, Kmin, Kplus
+;C(t) = FP R(t) * Ca(t)
 
-;DEFINED AS FOLLOWS IN TERMS OF THE MODEL PARAMETERS (see paper)
+;with R(t) as defined in Sourbron Buckley 2012
+
+
 
 
 

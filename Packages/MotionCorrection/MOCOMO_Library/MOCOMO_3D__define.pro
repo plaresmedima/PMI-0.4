@@ -10,7 +10,7 @@ END
 
 FUNCTION MOCOMO_3D::OPTIMISE_DEFORMATION_FIELD, t
 
- converged = self -> COREG_3D_FFD_LS::SOLVE(self.ns[1:*], $
+ converged = self -> COREGISTER(self.ns[1:*], $
  	REFORM((*self.Source)[t,*,*,*],/overwrite), $
  	REFORM((*self.Deformed)[t,*,*,*],/overwrite), $
  	REFORM((*self.DefField)[t,*,*,*,*],/overwrite) )
@@ -27,7 +27,7 @@ PRO MOCOMO_3D::JOINT_OPTIMISATION
 
   iter = 100 ;emergency stop
 
-  self -> COREG_3D_FFD_LS::CALCULATE_INTERPOLATION_WEIGHTS
+  self -> CALCULATE_INTERPOLATION_WEIGHTS
 
   nPixels = Product(self.nw)
   FOR it=1L,iter DO BEGIN

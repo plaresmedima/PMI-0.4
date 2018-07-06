@@ -19,7 +19,7 @@
 ;
 ;
 
-FUNCTION PMI__Button__Input__sohaibcompartmentlinear, top, series, aif, roi, in
+FUNCTION PMI__Button__Input__sohaibcompartmentlineardelay, top, series, aif, roi, in
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -59,19 +59,20 @@ END
 
 
 
-pro PMI__Button__Event__sohaibcompartmentlinear, ev
+pro PMI__Button__Event__sohaibcompartmentlineardelay, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__sohaibcompartmentlinear(ev.top,series,aif,roi,in) THEN RETURN
+    IF NOT PMI__Button__Input__sohaibcompartmentlineardelay(ev.top,series,aif,roi,in) THEN RETURN
 
 	PMI__Message, status, 'Calculating..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Blood Flow (ml/100ml/min)' )
-    Sev = Stdy->New('SERIES', Domain= Dom,  Name= 'Extracellular Volume (ml/100ml)' )
-    Stt = Stdy->New('SERIES', Domain= Dom,  Name= 'Mean Transit Time (sec)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Blood Flow (ml/100ml/min)' )
+    Sev = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Extracellular Volume (ml/100ml)' )
+    Stt = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Mean Transit Time (sec)' )
+    Std = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Arterial Delay Time (sec)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
@@ -103,18 +104,21 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
     			BF = fltarr(d[0],d[1])
     			VE = fltarr(d[0],d[1])
     			TT = fltarr(d[0],d[1])
+    			TD = fltarr(d[0],d[1])
 
 				for r=0L,cnt-1 do begin
    					curve = reform(P[r,*])
-					FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans
+					FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans, DELAY_PAR=delay, DELAY_VALUES=[0,5,0.25]
 					BF[k[nozero[r]]] = 6000E*Ktrans/0.55
 					VE[k[nozero[r]]] = 100E*ecv
 					TT[k[nozero[r]]] = ecv/Ktrans
+					TD[k[nozero[r]]] = delay
 				endfor
 
 				Sbf -> Write, Stdy->DataPath(), BF, j
 				Sev -> Write, Stdy->DataPath(), VE, j
 				Stt -> Write, Stdy->DataPath(), TT, j
+				Std -> Write, Stdy->DataPath(), TD, j
 
 			endif
 		endif
@@ -124,12 +128,13 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 	Sbf -> Trim, 600, 1
 	Sev -> Trim, 100, 1
 	Stt -> Trim, 10, 1
+	Std -> Trim, 10, 1
 
     PMI__Control, ev.top, /refresh
 end
 
 
-pro PMI__Button__Control__sohaibcompartmentlinear, id, v
+pro PMI__Button__Control__sohaibcompartmentlineardelay, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -140,14 +145,14 @@ pro PMI__Button__Control__sohaibcompartmentlinear, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__sohaibcompartmentlinear, parent,value=value,separator=separator
+function PMI__Button__sohaibcompartmentlineardelay, parent,value=value,separator=separator
 
     if n_elements(value) eq 0 then value = 'Fermi analysis (Pixel)'
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__sohaibcompartmentlinear' $
-    ,	pro_set_value = 'PMI__Button__Control__sohaibcompartmentlinear' $
+    ,  	event_pro = 'PMI__Button__Event__sohaibcompartmentlineardelay' $
+    ,	pro_set_value = 'PMI__Button__Control__sohaibcompartmentlineardelay' $
     ,  	separator = separator )
 
     return, id

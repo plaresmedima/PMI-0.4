@@ -69,9 +69,10 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 	PMI__Message, status, 'Calculating..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Blood Flow (ml/100ml/min)' )
-    Sev = Stdy->New('SERIES', Domain= Dom,  Name= 'Extracellular Volume (ml/100ml)' )
-    Stt = Stdy->New('SERIES', Domain= Dom,  Name= 'Mean Transit Time (sec)' )
+
+    Sev = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Extracellular Volume (ml/100ml)' )
+    Stt = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Mean Transit Time (sec)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Blood Flow (ml/100ml/min)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)

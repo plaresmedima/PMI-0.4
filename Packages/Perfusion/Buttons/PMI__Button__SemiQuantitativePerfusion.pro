@@ -42,9 +42,10 @@ pro PMI__Button__Event__SemiQuantitativePerfusion, ev
 	;CREATE OUTPUT
 
 	U = ['a.u.','%','dimensionless'] & U = U[v.units]
-	MAX = Stdy->New('SERIES',Default=Series,Name=Series->Name()+'[Maximum ('+U+')]') 					& MAX->t, Series->t(0)
+
 	AUC = Stdy->New('SERIES',Default=Series,Name=Series->Name()+'[Area under the Curve ('+U+'*sec)]')	& AUC->t, Series->t(0)
 	MTT = Stdy->New('SERIES',Default=Series,Name=Series->Name()+'[Area:Maximum (sec)]')					& MTT->t, Series->t(0)
+	MAX = Stdy->New('SERIES',Default=Series,Name=Series->Name()+'[Maximum ('+U+')]') 					& MAX->t, Series->t(0)
 
 	MAX->Trim, 0E, 1
 	AUC->Trim, 0E, 1

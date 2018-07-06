@@ -69,7 +69,7 @@ pro PMI__Button__Event__sohaibfermideconvolution, ev
 	PMI__Message, status, 'Calculating..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Blood Flow (ml/100ml/min)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Fermi: Blood Flow (ml/100ml/min)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)

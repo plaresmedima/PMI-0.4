@@ -69,9 +69,10 @@ pro PMI__Button__Event__SohaibDeconvolution, ev
 	PMI__Message, status, 'Preparing calculation..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Blood Flow (ml/100ml/min)' )
-    Svd = Stdy->New('SERIES', Domain= Dom,  Name= 'Extracellular Volume (ml/100ml)')
-    Stt = Stdy->New('SERIES', Domain= Dom,  Name= 'Mean Transit Time (sec)' )
+
+    Svd = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Extracellular Volume (ml/100ml)')
+    Stt = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Mean Transit Time (sec)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Blood Flow (ml/100ml/min)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
