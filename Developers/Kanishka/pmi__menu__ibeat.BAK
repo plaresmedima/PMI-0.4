@@ -25,7 +25,7 @@
 
 
 
-pro PMI__Menu__Beat, parent
+pro PMI__Menu__iBeat, parent
 
 	PMI__Menu__Skeleton, parent
 	PMI__Menu__Slices, parent
@@ -33,6 +33,6 @@ pro PMI__Menu__Beat, parent
 
     id = widget_button(parent, value='iBEAT',/menu)
 
-	Sid = PMI__Button__FitT1SaturationRecoveryPixel(id, value = 'T1-mapping')
+	Sid = PMI__Button__iBeat_Siemens_T1mapping(id, value = 'T1-mapping')
 
 end
