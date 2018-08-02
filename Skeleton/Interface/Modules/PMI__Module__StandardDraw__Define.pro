@@ -113,7 +113,14 @@ FUNCTION PMI__Module__StandardDraw::AHASegment, ev
 		endif
 
 		bin = Self.Region -> Read(Self.Stdy->DataPath(),Self.CursorPos[2],Self.CursorPos[3])
-		split_into_six_segments, bin, p1, seg1=bin1, seg2=bin2, seg3=bin3, seg4=bin4, seg5=bin5, seg6=bin6
+		case ev.press of
+			4: begin
+			   split_into_four_segments, bin, p1, seg1=bin1, seg2=bin2, seg3=bin3, seg4=bin4
+			   bin5 = bin*0
+			   bin6 = bin*0
+			end
+			else: split_into_six_segments, bin, p1, seg1=bin1, seg2=bin2, seg3=bin3, seg4=bin4, seg5=bin5, seg6=bin6
+		endcase
 
 		;EXPORT STATISTICS
 
@@ -126,6 +133,7 @@ FUNCTION PMI__Module__StandardDraw::AHASegment, ev
 
         d = Self.Series->d()
         v = strarr(1+d[2],1+6)
+        for i=0L, n_elements(v)-1 do v[i] = 'TBD'
         for i=1L, 6 do v[0,i] = 'Segment ' + strcompress(i,/remove_all)
         for i=1L, d[2] do v[i,0] = 'Slice ' + strcompress(i-1,/remove_all)
 
@@ -148,27 +156,45 @@ FUNCTION PMI__Module__StandardDraw::AHASegment, ev
 		if cnt1 GT 0 then begin
 			v_avr[1+Self.CursorPos[2],1] = strcompress(total(image[ind1])/cnt1,/remove_all)
 			v_med[1+Self.CursorPos[2],1] = strcompress(median(image[ind1]),/remove_all)
-		endif
+		endif else begin
+			v_avr[1+Self.CursorPos[2],1] = 'N/A'
+			v_med[1+Self.CursorPos[2],1] = 'N/A'
+		endelse
 		if cnt2 GT 0 then begin
 			v_avr[1+Self.CursorPos[2],2] = strcompress(total(image[ind2])/cnt2,/remove_all)
 			v_med[1+Self.CursorPos[2],2] = strcompress(median(image[ind2]),/remove_all)
-		endif
+		endif else begin
+			v_avr[1+Self.CursorPos[2],2] = 'N/A'
+			v_med[1+Self.CursorPos[2],2] = 'N/A'
+		endelse
 		if cnt3 GT 0 then begin
 			v_avr[1+Self.CursorPos[2],3] = strcompress(total(image[ind3])/cnt3,/remove_all)
 			v_med[1+Self.CursorPos[2],3] = strcompress(median(image[ind3]),/remove_all)
-		endif
+		endif else begin
+			v_avr[1+Self.CursorPos[2],3] = 'N/A'
+			v_med[1+Self.CursorPos[2],3] = 'N/A'
+		endelse
 		if cnt4 GT 0 then begin
 			v_avr[1+Self.CursorPos[2],4] = strcompress(total(image[ind4])/cnt4,/remove_all)
 			v_med[1+Self.CursorPos[2],4] = strcompress(median(image[ind4]),/remove_all)
-		endif
+		endif else begin
+			v_avr[1+Self.CursorPos[2],4] = 'N/A'
+			v_med[1+Self.CursorPos[2],4] = 'N/A'
+		endelse
 		if cnt5 GT 0 then begin
 			v_avr[1+Self.CursorPos[2],5] = strcompress(total(image[ind5])/cnt5,/remove_all)
 			v_med[1+Self.CursorPos[2],5] = strcompress(median(image[ind5]),/remove_all)
-		endif
+		endif else begin
+			v_avr[1+Self.CursorPos[2],5] = 'N/A'
+			v_med[1+Self.CursorPos[2],5] = 'N/A'
+		endelse
 		if cnt6 GT 0 then begin
 			v_avr[1+Self.CursorPos[2],6] = strcompress(total(image[ind6])/cnt6,/remove_all)
 			v_med[1+Self.CursorPos[2],6] = strcompress(median(image[ind6]),/remove_all)
-		endif
+		endif else begin
+			v_avr[1+Self.CursorPos[2],6] = 'N/A'
+			v_med[1+Self.CursorPos[2],6] = 'N/A'
+		endelse
 
 		pmi__write_csv, FilenameMEAN, v_avr, ERROR=Err
 		If Err ne 0 then begin
@@ -201,10 +227,10 @@ FUNCTION PMI__Module__StandardDraw::AHASegment, ev
 		Roi4 = Self.Stdy -> New('REGION', $
 		  Name = self.Region->Name() + '_[slice_'+strcompress(Self.CursorPos[2], /remove_all) + '_seg_'+strcompress(4, /remove_all) + ']', $
 		  Domain = self.Region->dom(), Color = self.Region->Clr())
-		Roi5 = Self.Stdy -> New('REGION', $
+		if ev.press ne 4 then Roi5 = Self.Stdy -> New('REGION', $
 		  Name = self.Region->Name() + '_[slice_'+strcompress(Self.CursorPos[2], /remove_all) + '_seg_'+strcompress(5, /remove_all) + ']', $
 		  Domain = self.Region->dom(), Color = self.Region->Clr())
-		Roi6 = Self.Stdy -> New('REGION', $
+		if ev.press ne 4 then Roi6 = Self.Stdy -> New('REGION', $
 		  Name = self.Region->Name() + '_[slice_'+strcompress(Self.CursorPos[2], /remove_all) + '_seg_'+strcompress(6, /remove_all) + ']', $
 		  Domain = self.Region->dom(), Color = self.Region->Clr())
 
@@ -212,8 +238,8 @@ FUNCTION PMI__Module__StandardDraw::AHASegment, ev
 		Roi2 -> Write, Self.Stdy->DataPath(), Bin2, self.CursorPos[2], self.CursorPos[3]
 		Roi3 -> Write, Self.Stdy->DataPath(), Bin3, self.CursorPos[2], self.CursorPos[3]
 		Roi4 -> Write, Self.Stdy->DataPath(), Bin4, self.CursorPos[2], self.CursorPos[3]
-		Roi5 -> Write, Self.Stdy->DataPath(), Bin5, self.CursorPos[2], self.CursorPos[3]
-		Roi6 -> Write, Self.Stdy->DataPath(), Bin6, self.CursorPos[2], self.CursorPos[3]
+		if ev.press ne 4 then Roi5 -> Write, Self.Stdy->DataPath(), Bin5, self.CursorPos[2], self.CursorPos[3]
+		if ev.press ne 4 then Roi6 -> Write, Self.Stdy->DataPath(), Bin6, self.CursorPos[2], self.CursorPos[3]
 
         self.Stdy -> Saved, 0
         Self.Stdy->sel, 1, roi_sel
@@ -221,8 +247,10 @@ FUNCTION PMI__Module__StandardDraw::AHASegment, ev
 
 		;VISUAL FEEDBACK - PLOT STAR ON IMAGE
 
-  		c = cos(60*!PI/180)
-  		s = sin(60*!PI/180)
+        if ev.press eq 4 then angle=90. else angle=60.
+
+  		c = cos(angle*!PI/180)
+  		s = sin(angle*!PI/180)
 
 		p0 = centroid(bin)
 
@@ -230,25 +258,25 @@ FUNCTION PMI__Module__StandardDraw::AHASegment, ev
   		v2 = [c*v1[0]-s*v1[1], s*v1[0]+c*v1[1]]
   		v3 = [c*v2[0]-s*v2[1], s*v2[0]+c*v2[1]]
   		v4 = [c*v3[0]-s*v3[1], s*v3[0]+c*v3[1]]
-  		v5 = [c*v4[0]-s*v4[1], s*v4[0]+c*v4[1]]
-  		v6 = [c*v5[0]-s*v5[1], s*v5[0]+c*v5[1]]
+  		if ev.press ne 4 then v5 = [c*v4[0]-s*v4[1], s*v4[0]+c*v4[1]]
+  		if ev.press ne 4 then v6 = [c*v5[0]-s*v5[1], s*v5[0]+c*v5[1]]
 
 		r0 = self -> ScreenPosition(p0)
 ;		r1 = self -> ScreenPosition(p0+v1)
 		r2 = self -> ScreenPosition(p0+v2)
 		r3 = self -> ScreenPosition(p0+v3)
 		r4 = self -> ScreenPosition(p0+v4)
-		r5 = self -> ScreenPosition(p0+v5)
-		r6 = self -> ScreenPosition(p0+v6)
+		if ev.press ne 4 then r5 = self -> ScreenPosition(p0+v5)
+		if ev.press ne 4 then r6 = self -> ScreenPosition(p0+v6)
 
 		plots, [r0[0],r1[0]], [r0[1],r1[1]], /device
 		plots, [r0[0],r2[0]], [r0[1],r2[1]], /device
 		plots, [r0[0],r3[0]], [r0[1],r3[1]], /device
 		plots, [r0[0],r4[0]], [r0[1],r4[1]], /device
-		plots, [r0[0],r5[0]], [r0[1],r5[1]], /device
-		plots, [r0[0],r6[0]], [r0[1],r6[1]], /device
+		if ev.press ne 4 then plots, [r0[0],r5[0]], [r0[1],r5[1]], /device
+		if ev.press ne 4 then plots, [r0[0],r6[0]], [r0[1],r6[1]], /device
 
-		endif
+	endif
 	1: ;Release
 	2: self.CursorPos[0:1] = p1 ;Motion
 	endcase
