@@ -22,11 +22,11 @@ END
 
 ;returns: coregistered source image
 
-FUNCTION MOCOMO_2D_DCE_2CM, Source, resolution, precision, time, aif, nbaseline
+FUNCTION MOCOMO_2D_DCE_2CM, Source, resolution, precision, time, aif, nbaseline, Win=Win
 
 	Source = TRANSPOSE(Source, [2,0,1])
     MOCOMO = OBJ_NEW('MOCOMO_2D_DCE_2CM', $
-    	ptr_new(Source), resolution, precision, [Time, aif, nbaseline])
+    	ptr_new(Source), resolution, precision, [Time, aif, nbaseline], Win=Win)
     Deformed = TRANSPOSE(MOCOMO->deformed(), [1,2,0])
     OBJ_DESTROY, MOCOMO
 
