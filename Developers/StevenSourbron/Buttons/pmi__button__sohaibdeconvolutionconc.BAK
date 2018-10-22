@@ -19,11 +19,11 @@
 ;
 ;
 
-FUNCTION PMI__Button__Input__sohaibcompartmentlinear, top, series, aif, roi, in
+FUNCTION PMI__Button__Input__SohaibDeconvolutionConc, top, series, aif, roi, in
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, aif:stdy->sel(1), roi:0L, nb:1}
+	in = {ser:sel, aif:stdy->sel(1), roi:0L, nb:1, T1b:1725.0, T1t:1106.0}
 
 	WHILE 1 DO BEGIN
 
@@ -31,7 +31,9 @@ FUNCTION PMI__Button__Input__sohaibcompartmentlinear, top, series, aif, roi, in
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Window', Value:['<entire image>',Stdy->names(1)], Select:in.roi}), $
-		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb})])
+		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb}), $
+		ptr_new({Type:'VALUE'	,Tag:'T1b' , Label:'Blood T1 (msec)', Value:in.T1b}), $
+		ptr_new({Type:'VALUE'	,Tag:'T1t' , Label:'Tissue T1 (msec)', Value:in.T1t})])
 		IF in.cancel THEN return, 0
 
     	Series = Stdy->Obj(0,ind[in.ser])
@@ -48,7 +50,6 @@ FUNCTION PMI__Button__Input__sohaibcompartmentlinear, top, series, aif, roi, in
     			msg = ['Arterial region is not defined on every dynamic',$
     			'Please select another region and/or series'] $
     		ELSE BEGIN
-    			Aif = LMU__Enhancement(Aif,in.nb,relative=0)/0.55
     			if in.roi gt 0 then Roi = Stdy->Obj(1,in.roi-1)
 				return, 1
     		ENDELSE
@@ -59,23 +60,33 @@ END
 
 
 
-pro PMI__Button__Event__sohaibcompartmentlinear, ev
+pro PMI__Button__Event__SohaibDeconvolutionConc, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__sohaibcompartmentlinear(ev.top,series,aif,roi,in) THEN RETURN
+    IF NOT PMI__Button__Input__SohaibDeconvolutionConc(ev.top,series,aif, roi, in) THEN RETURN
 
-	PMI__Message, status, 'Calculating..'
+	PMI__Message, status, 'Preparing calculation..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
 
-    Sev = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Extracellular Volume (ml/100ml)' )
-    Stt = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Mean Transit Time (sec)' )
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Blood Flow (ml/min/g)' )
+    Svd = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free-Gd: Extracellular Volume (ml/100ml)')
+    Stt = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free-Gd: Mean Transit Time (sec)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free-Gd: Blood Flow (ml/min/g)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
+
+	Hct = 0.55
+	relaxivity = 3.8 ;Hz/mM
+	TD = 100.0 ;msec
+	TR = 2.0 ;msec
+	FA = 11.0 ;deg
+	Nphase = 48.
+
+	Aif0 = total(Aif[0:in.nB-1])/in.nB
+	Aif = Concentration_SR_SpGRE(Aif, Aif0, in.T1b, relaxivity, TD, FA, TR, Nphase)/Hct
 
 	for j=0L,d[2]-1 do begin
 
@@ -90,7 +101,7 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 			k = lindgen(d[0]*d[1])
 		endelse
 
- 		if cnt gt 0 then begin
+		if cnt gt 0 then begin
 
 			if in.nB eq 1 then P0 = reform(P[*,0]) else P0 = total(P[*,0:in.nB-1],2)/in.nB
 			nozero = where(P0 NE 0, cnt)
@@ -98,43 +109,37 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 			if cnt gt 0 then begin
 
 				P = P[nozero,*]
-    			P0 = rebin(P0[nozero],cnt,d[3])
+    			P0 = P0[nozero]
 
-    			P = P-P0
+ 				for r=0L,cnt-1 do P[r,*] = Concentration_SR_SpGRE(reform(P[r,*]), P0[r], in.T1t, relaxivity, TD, FA, TR, Nphase)
 
-    			BF = fltarr(d[0],d[1])
-    			VE = fltarr(d[0],d[1])
-    			TT = fltarr(d[0],d[1])
+				RegridDeconvolutionPixelData,time,P,aif,time_regr=t,aif_regr=a
+				InvertIllPosedFast, P, (t[1]-t[0])*convolution_matrix(a), REGPAR=0.15
 
-				for r=0L,cnt-1 do begin
-   					curve = reform(P[r,*])
-					FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans
-					BF[k[nozero[r]]] = 60E*Ktrans/0.55
-					VE[k[nozero[r]]] = 100E*ecv
-					TT[k[nozero[r]]] = ecv/Ktrans
-				endfor
+				BF = fltarr(d[0]*d[1]) & BF[k[nozero]] = 60*remove_inf(max(P,dimension=2))/0.55
+    			VD = fltarr(d[0]*d[1]) & VD[k[nozero]] = 100*remove_inf((t[1]-t[0])*total(P,2))
+    			TT = fltarr(d[0]*d[1]) & TT[k[nozero]] = 60E*remove_inf(VD[k[nozero]]/BF[k[nozero]])/0.55
 
-				Sbf -> Write, Stdy->DataPath(), BF, j
-				Sev -> Write, Stdy->DataPath(), VE, j
-				Stt -> Write, Stdy->DataPath(), TT, j
+				Sbf->Write, Stdy->DataPath(), BF, j
+				Svd->Write, Stdy->DataPath(), VD, j
+				Stt->Write, Stdy->DataPath(), TT, j
 
 			endif
 		endif
 	endfor
 
+	Sbf->Trim, 8, 1
+	Svd->Trim, 100, 1
+	Stt->Trim, 10, 1
 
-	Sbf -> Trim, 8, 1
-	Sev -> Trim, 100, 1
-	Stt -> Trim, 10, 1
-
-	ColourTable, 1, Red=R, Green=G, Blue=B
+    ColourTable, 1, Red=R, Green=G, Blue=B
 	Sbf -> Clr, R, G, B
 
     PMI__Control, ev.top, /refresh
 end
 
 
-pro PMI__Button__Control__sohaibcompartmentlinear, id, v
+pro PMI__Button__Control__SohaibDeconvolutionConc, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -145,14 +150,14 @@ pro PMI__Button__Control__sohaibcompartmentlinear, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__sohaibcompartmentlinear, parent,value=value,separator=separator
+function PMI__Button__SohaibDeconvolutionConc, parent,value=value,separator=separator
 
-    if n_elements(value) eq 0 then value = 'One-compartment analysis (Pixel)'
+    if n_elements(value) eq 0 then value = 'Fast deconvolution analysis (Pixel)'
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__sohaibcompartmentlinear' $
-    ,	pro_set_value = 'PMI__Button__Control__sohaibcompartmentlinear' $
+    ,  	event_pro = 'PMI__Button__Event__SohaibDeconvolutionConc' $
+    ,	pro_set_value = 'PMI__Button__Control__SohaibDeconvolutionConc' $
     ,  	separator = separator )
 
     return, id

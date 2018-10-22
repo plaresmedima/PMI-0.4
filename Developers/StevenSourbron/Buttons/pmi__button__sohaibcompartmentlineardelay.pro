@@ -73,7 +73,7 @@ pro PMI__Button__Event__sohaibcompartmentlineardelay, ev
     Sev = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Extracellular Volume (ml/100ml)' )
     Stt = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Mean Transit Time (sec)' )
     Std = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Arterial Delay Time (sec)' )
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Blood Flow (ml/100ml/min)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del: Blood Flow (ml/min/g)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
@@ -110,7 +110,7 @@ pro PMI__Button__Event__sohaibcompartmentlineardelay, ev
 				for r=0L,cnt-1 do begin
    					curve = reform(P[r,*])
 					FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans, DELAY_PAR=delay, DELAY_VALUES=[0,5,0.25]
-					BF[k[nozero[r]]] = 6000E*Ktrans/0.55
+					BF[k[nozero[r]]] = 60E*Ktrans/0.55
 					VE[k[nozero[r]]] = 100E*ecv
 					TT[k[nozero[r]]] = ecv/Ktrans
 					TD[k[nozero[r]]] = delay
@@ -125,11 +125,13 @@ pro PMI__Button__Event__sohaibcompartmentlineardelay, ev
 		endif
 	endfor
 
-
-	Sbf -> Trim, 600, 1
+	Sbf -> Trim, 8, 1
 	Sev -> Trim, 100, 1
 	Stt -> Trim, 10, 1
 	Std -> Trim, 10, 1
+
+    ColourTable, 1, Red=R, Green=G, Blue=B
+	Sbf -> Clr, R, G, B
 
     PMI__Control, ev.top, /refresh
 end

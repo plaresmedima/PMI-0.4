@@ -69,7 +69,7 @@ pro PMI__Button__Event__sohaibfermideconvolution, ev
 	PMI__Message, status, 'Calculating..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Fermi: Blood Flow (ml/100ml/min)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Fermi: Blood Flow (ml/min/g)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
@@ -104,7 +104,7 @@ pro PMI__Button__Event__sohaibfermideconvolution, ev
    					curve = reform(P[r,*])
    					Par = [0.015, 1.0, 0.5] ;[FP, a, b]
 					Fit = FitSingleInlet('Fermi',time, aif, curve, Par, /noderivative, /positivity)
-					BF[k[nozero[r]]] = 6000D*Par[0]/0.55
+					BF[k[nozero[r]]] = 60D*Par[0]/0.55
 
 				endfor
 
@@ -114,7 +114,10 @@ pro PMI__Button__Event__sohaibfermideconvolution, ev
 		endif
 	endfor
 
-	Sbf -> Trim, 600, 1
+	Sbf -> Trim, 8, 1
+
+	ColourTable, 1, Red=R, Green=G, Blue=B
+	Sbf -> Clr, R, G, B
 
     PMI__Control, ev.top, /refresh
 end

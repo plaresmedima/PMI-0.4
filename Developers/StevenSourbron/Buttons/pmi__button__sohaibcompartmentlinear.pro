@@ -72,7 +72,7 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 
     Sev = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Extracellular Volume (ml/100ml)' )
     Stt = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Mean Transit Time (sec)' )
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Blood Flow (ml/100ml/min)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Blood Flow (ml/min/g)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
@@ -99,6 +99,7 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 
 				P = P[nozero,*]
     			P0 = rebin(P0[nozero],cnt,d[3])
+
     			P = P-P0
 
     			BF = fltarr(d[0],d[1])
@@ -108,7 +109,7 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 				for r=0L,cnt-1 do begin
    					curve = reform(P[r,*])
 					FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans
-					BF[k[nozero[r]]] = 6000E*Ktrans/0.55
+					BF[k[nozero[r]]] = 60E*Ktrans/0.55
 					VE[k[nozero[r]]] = 100E*ecv
 					TT[k[nozero[r]]] = ecv/Ktrans
 				endfor
@@ -121,10 +122,12 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 		endif
 	endfor
 
-
-	Sbf -> Trim, 600, 1
+	Sbf -> Trim, 8, 1
 	Sev -> Trim, 100, 1
 	Stt -> Trim, 10, 1
+
+	ColourTable, 1, Red=R, Green=G, Blue=B
+	Sbf -> Clr, R, G, B
 
     PMI__Control, ev.top, /refresh
 end
@@ -143,7 +146,7 @@ end
 
 function PMI__Button__sohaibcompartmentlinear, parent,value=value,separator=separator
 
-    if n_elements(value) eq 0 then value = 'Fermi analysis (Pixel)'
+    if n_elements(value) eq 0 then value = 'One-compartment analysis (Pixel)'
 
     id = widget_button(parent $
     ,   value = value  $

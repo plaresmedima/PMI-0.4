@@ -19,11 +19,11 @@
 ;
 ;
 
-FUNCTION PMI__Button__Input__sohaibcompartmentlinear, top, series, aif, roi, in
+FUNCTION PMI__Button__Input__sohaibcompartmentlineardelayconc, top, series, aif, roi, in
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, aif:stdy->sel(1), roi:0L, nb:1}
+	in = {ser:sel, aif:stdy->sel(1), roi:0L, nb:1, T1b:1725.0, T1t:1106.0}
 
 	WHILE 1 DO BEGIN
 
@@ -31,7 +31,9 @@ FUNCTION PMI__Button__Input__sohaibcompartmentlinear, top, series, aif, roi, in
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Window', Value:['<entire image>',Stdy->names(1)], Select:in.roi}), $
-		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb})])
+		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb}), $
+		ptr_new({Type:'VALUE'	,Tag:'T1b' , Label:'Blood T1 (msec)', Value:in.T1b}), $
+		ptr_new({Type:'VALUE'	,Tag:'T1t' , Label:'Tissue T1 (msec)', Value:in.T1t})])
 		IF in.cancel THEN return, 0
 
     	Series = Stdy->Obj(0,ind[in.ser])
@@ -48,7 +50,6 @@ FUNCTION PMI__Button__Input__sohaibcompartmentlinear, top, series, aif, roi, in
     			msg = ['Arterial region is not defined on every dynamic',$
     			'Please select another region and/or series'] $
     		ELSE BEGIN
-    			Aif = LMU__Enhancement(Aif,in.nb,relative=0)/0.55
     			if in.roi gt 0 then Roi = Stdy->Obj(1,in.roi-1)
 				return, 1
     		ENDELSE
@@ -59,23 +60,31 @@ END
 
 
 
-pro PMI__Button__Event__sohaibcompartmentlinear, ev
+pro PMI__Button__Event__sohaibcompartmentlineardelayconc, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__sohaibcompartmentlinear(ev.top,series,aif,roi,in) THEN RETURN
+    IF NOT PMI__Button__Input__sohaibcompartmentlineardelayconc(ev.top,series,aif,roi,in) THEN RETURN
 
 	PMI__Message, status, 'Calculating..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
 
-    Sev = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Extracellular Volume (ml/100ml)' )
-    Stt = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Mean Transit Time (sec)' )
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C: Blood Flow (ml/min/g)' )
+    Sev = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del-Gd: Extracellular Volume (ml/100ml)' )
+    Stt = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del-Gd: Mean Transit Time (sec)' )
+    Std = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del-Gd: Arterial Delay Time (sec)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= '1C+Del-Gd: Blood Flow (ml/min/g)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
+
+	Hct = 0.55
+	relaxivity = 3.8 ;Hz/mM
+	TD = 100.0 ;msec
+	TR = 1.85 ;msec
+	FA = 11.0 ;deg
+	Nphase = 36.
 
 	for j=0L,d[2]-1 do begin
 
@@ -98,43 +107,44 @@ pro PMI__Button__Event__sohaibcompartmentlinear, ev
 			if cnt gt 0 then begin
 
 				P = P[nozero,*]
-    			P0 = rebin(P0[nozero],cnt,d[3])
-
-    			P = P-P0
+    			P0 = P0[nozero]
 
     			BF = fltarr(d[0],d[1])
     			VE = fltarr(d[0],d[1])
     			TT = fltarr(d[0],d[1])
+    			TD = fltarr(d[0],d[1])
 
 				for r=0L,cnt-1 do begin
-   					curve = reform(P[r,*])
-					FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans
+   					curve = Concentration_SR_SpGRE(reform(P[r,*]), P0[r], in.T1t, relaxivity, TD, FA, TR, Nphase)
+					FitToftsLinear, time, aif, curve, ve=ecv, Ktrans=Ktrans, DELAY_PAR=delay, DELAY_VALUES=[0,5,0.25]
 					BF[k[nozero[r]]] = 60E*Ktrans/0.55
 					VE[k[nozero[r]]] = 100E*ecv
 					TT[k[nozero[r]]] = ecv/Ktrans
+					TD[k[nozero[r]]] = delay
 				endfor
 
 				Sbf -> Write, Stdy->DataPath(), BF, j
 				Sev -> Write, Stdy->DataPath(), VE, j
 				Stt -> Write, Stdy->DataPath(), TT, j
+				Std -> Write, Stdy->DataPath(), TD, j
 
 			endif
 		endif
 	endfor
 
-
 	Sbf -> Trim, 8, 1
 	Sev -> Trim, 100, 1
 	Stt -> Trim, 10, 1
+	Std -> Trim, 10, 1
 
-	ColourTable, 1, Red=R, Green=G, Blue=B
+    ColourTable, 1, Red=R, Green=G, Blue=B
 	Sbf -> Clr, R, G, B
 
     PMI__Control, ev.top, /refresh
 end
 
 
-pro PMI__Button__Control__sohaibcompartmentlinear, id, v
+pro PMI__Button__Control__sohaibcompartmentlineardelayconc, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -145,14 +155,14 @@ pro PMI__Button__Control__sohaibcompartmentlinear, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__sohaibcompartmentlinear, parent,value=value,separator=separator
+function PMI__Button__sohaibcompartmentlineardelayconc, parent,value=value,separator=separator
 
-    if n_elements(value) eq 0 then value = 'One-compartment analysis (Pixel)'
+    if n_elements(value) eq 0 then value = 'Fermi analysis (Pixel)'
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__sohaibcompartmentlinear' $
-    ,	pro_set_value = 'PMI__Button__Control__sohaibcompartmentlinear' $
+    ,  	event_pro = 'PMI__Button__Event__sohaibcompartmentlineardelayconc' $
+    ,	pro_set_value = 'PMI__Button__Control__sohaibcompartmentlineardelayconc' $
     ,  	separator = separator )
 
     return, id

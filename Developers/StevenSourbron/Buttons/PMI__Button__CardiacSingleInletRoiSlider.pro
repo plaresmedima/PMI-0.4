@@ -13,7 +13,7 @@ PRO PMI__Display__CardiacSingleInletRoiSlider::Fit
 		Fit = FitSingleInlet('Uptake',time,aif,curve,P, INDICES=ti, $
 			DELAY_PAR=Pd, DELAY_VALUES=steps, AKAIKE_ERROR=aic, /POSITIVITY, LIMITED_ABOVE=[0], /noderivative)
 		Parameters = $
-			[{Name:'Blood Flow'		,Units:'ml/100ml/min'	,Value:6000D*P[0]/0.55	,Nr: 0}]
+			[{Name:'Blood Flow'		,Units:'ml/min/g'	,Value:60D*P[0]/0.55	,Nr: 0}]
 	ENDIF
 
 	IF Model EQ 'Compartment' THEN BEGIN
@@ -22,7 +22,7 @@ PRO PMI__Display__CardiacSingleInletRoiSlider::Fit
 		Fit = FitSingleInlet('Compartment',time,aif,curve,P, INDICES=ti, $
 			DELAY_PAR=Pd, DELAY_VALUES=steps, AKAIKE_ERROR=aic, /POSITIVITY, LIMITED_ABOVE=[1,0], /noderivative)
 		Parameters = $
-			[{Name:'Blood Flow'		,Units:'ml/100ml/min'	,Value:6000D*P[1]/0.55	,Nr: 0} $
+			[{Name:'Blood Flow'		,Units:'ml/min/g'	,Value:60D*P[1]/0.55	,Nr: 0} $
 			,{Name:'Extracellular Volume'	,Units:'ml/100ml'	,Value:100D*P[0]		,Nr: 1} $
 			,{Name:'Extracellular MTT'	,Units:'sec'				,Value:1D*P[0]/P[1]			,Nr: 2} ]
 	ENDIF
@@ -33,7 +33,7 @@ PRO PMI__Display__CardiacSingleInletRoiSlider::Fit
 		Fit = FitSingleInlet('Exchange',time,aif,curve,P, INDICES=ti, $
 			DELAY_PAR=Pd, DELAY_VALUES=steps, AKAIKE_ERROR=aic, /POSITIVITY, LIMITED_ABOVE=[1,0,1,1], /noderivative)
 		Parameters = $
-			[{Name:'Blood Flow'		,Units:'ml/100ml/min'	,Value:6000D*P[1]/0.55	,Nr: 0} $
+			[{Name:'Blood Flow'		,Units:'ml/min/g'	,Value:60D*P[1]/0.55	,Nr: 0} $
 			,{Name:'Blood MTT'		,Units:'sec'			,Value:1D*P[0]*(1-P[2])*(1-P[3])/P[1] 			,Nr: 1} $
 			,{Name:'Blood Volume'	,Units:'ml/100ml'		,Value:100D*P[0]*(1-P[2])/0.55			,Nr: 2}  $
 			,{Name:'Interstitial MTT'		,Units:'sec'			,Value:1D*(1-P[3])*P[0]*P[2]/(P[1]*P[3])			,Nr: 3}$
@@ -49,7 +49,7 @@ PRO PMI__Display__CardiacSingleInletRoiSlider::Fit
 		Fit = FitSingleInlet('Fermi',time,aif,curve,P, INDICES=ti, $
 			DELAY_PAR=Pd, DELAY_VALUES=steps, AKAIKE_ERROR=aic, /noderivative)
 		Parameters = $
-			[{Name:'Blood Flow'		,Units:'ml/100ml/min'	,Value:6000D*P[0]/0.55	,Nr: 0} $
+			[{Name:'Blood Flow'		,Units:'ml/min/g'	,Value:60D*P[0]/0.55	,Nr: 0} $
 			,{Name:'Exponent (a)'	,Units:'1/sec'			,Value:1D*P[1]			,Nr: 1} $
 			,{Name:'Amplitude (b)'	,Units:''				,Value:1D*P[2]			,Nr: 2} ]
 	ENDIF

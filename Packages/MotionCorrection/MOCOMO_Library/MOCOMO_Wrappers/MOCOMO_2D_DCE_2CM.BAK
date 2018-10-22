@@ -24,9 +24,9 @@ END
 
 FUNCTION MOCOMO_2D_DCE_2CM, Source, resolution, precision, time, aif, nbaseline, Win=Win
 
-	pS = ptr_new(TRANSPOSE(Source, [2,0,1]))
+	Source = TRANSPOSE(Source, [2,0,1])
     MOCOMO = OBJ_NEW('MOCOMO_2D_DCE_2CM', $
-    	pS, resolution, precision, [Time, aif, nbaseline], Win=Win)
+    	ptr_new(Source), resolution, precision, [Time, aif, nbaseline], Win=Win)
     Deformed = TRANSPOSE(MOCOMO->deformed(), [1,2,0])
     OBJ_DESTROY, MOCOMO
 

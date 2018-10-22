@@ -26,29 +26,20 @@ Pro DualInletUptake, X, P, F, Fi
 
 	;P = [FA,FV,EV,E]
 
-	KT = (P[0]+P[1])/P[2]
+	KI = (P[0]+P[1])*P[3]/(1-P[3])
+	KT = (P[0]+P[1]+KI)/P[2]
 
 	ni=X[0] & n=n_elements(X[ni+1:*])/3
 	ti=X[1:ni] & time=X[ni+1:ni+n]
-	inputA=X[ni+n+1:ni+2*n] & inputV=X[ni+2*n+1:*]
+	cA=X[ni+n+1:ni+2*n] & cV=X[ni+2*n+1:*]
 
-	I0 	= IntVector(time,inputA)
-	I1 	= IntVector(time,inputV)
-	X0 	= ExpConvolution(KT,[time,inputA])
-	X1 	= ExpConvolution(KT,[time,inputV])
+	Jin = P[0]*cA + P[1]*cV
 
-	I0=I0[ti] & I1=I1[ti]
-	X0=X0[ti] & X1=X1[ti]
-;	D0=D0[ti] & D1=D1[ti]
+	cE 	= ExpConvolution(KT,[time,Jin])/P[2]
+	CH 	= IntVector(time,cE)*KI
 
-	F = P[0]*(1-P[3])*X0 + P[1]*(1-P[3])*X1 + P[0]*P[3]*I0 + P[1]*P[3]*I1
+	F = P[2]*cE[ti] + CH[ti]
 
 	IF n_params() LT 4 THEN RETURN
 
-;	F0 = (1-P[3])*X0 + P[3]*I0
-;	F1 = (1-P[3])*X1 + P[3]*I1
-;	F2 = P[0]*(1-P[3])*D0 + P[1]*(1-P[3])*D1
-;	F3 = -P[0]*X0 - P[1]*X1 + P[0]*I0 + P[1]*I1
-;
-;	Fi = [[F0],[F1],[F2],[F3]]
 end

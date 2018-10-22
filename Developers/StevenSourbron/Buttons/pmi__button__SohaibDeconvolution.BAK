@@ -69,9 +69,10 @@ pro PMI__Button__Event__SohaibDeconvolution, ev
 	PMI__Message, status, 'Preparing calculation..'
 
 	Dom = {z:Series->z(), t:Series->t(0), m:Series->m()}
-    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Blood Flow (ml/100ml/min)' )
+
     Svd = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Extracellular Volume (ml/100ml)')
     Stt = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Mean Transit Time (sec)' )
+    Sbf = Stdy->New('SERIES', Domain= Dom,  Name= 'Model-free: Blood Flow (ml/min/g)' )
 
 	d = Series->d()
 	time = Series->t() - Series->t(0)
@@ -103,7 +104,7 @@ pro PMI__Button__Event__SohaibDeconvolution, ev
 				RegridDeconvolutionPixelData,time,P,aif,time_regr=t,aif_regr=a
 				InvertIllPosedFast, P, (t[1]-t[0])*convolution_matrix(a), REGPAR=0.15
 
-				BF = fltarr(d[0]*d[1]) & BF[k[nozero]] = 6000*remove_inf(max(P,dimension=2))/0.55
+				BF = fltarr(d[0]*d[1]) & BF[k[nozero]] = 60*remove_inf(max(P,dimension=2))/0.55
     			VD = fltarr(d[0]*d[1]) & VD[k[nozero]] = 100*remove_inf((t[1]-t[0])*total(P,2))
     			TT = fltarr(d[0]*d[1]) & TT[k[nozero]] = 60E*remove_inf(VD[k[nozero]]/BF[k[nozero]])/0.55
 
@@ -115,9 +116,12 @@ pro PMI__Button__Event__SohaibDeconvolution, ev
 		endif
 	endfor
 
-	Sbf->Trim, 600, 1
+	Sbf->Trim, 8, 1
 	Svd->Trim, 100, 1
 	Stt->Trim, 10, 1
+
+    ColourTable, 1, Red=R, Green=G, Blue=B
+	Sbf -> Clr, R, G, B
 
     PMI__Control, ev.top, /refresh
 end
