@@ -49,8 +49,11 @@ pro PMI__Menu__iBeat, parent
     Sid = PMI__Button__MOCOMO_2D_DCE_1CMD(id, value='2D DCE 1CM + Delay')
     Sid = PMI__Button__MOCOMO_2D_CONST(id, value='2D Constant')
 
-    id = widget_button(parent, value='iBEAT',/menu)
+    id = widget_button(parent, value='iBEAt',/menu)
 
-	Sid = PMI__Button__iBeat_Siemens_T1mapping(id, value = 'T1-mapping')
+	Sid = PMI__Button__iBEAt_Import(id, value = 'Import DICOM')
+	Sid = PMI__Button__DumpDicom(id, /separator)
+
+;	Sid = PMI__Button__iBeat_Siemens_T1mapping(id, value = 'T1-mapping')
 
 end
