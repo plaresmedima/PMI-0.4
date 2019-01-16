@@ -25,7 +25,7 @@
 
 
 
-pro PMI__Menu__TimDixon, parent
+pro PMI__Menu__Christian, parent
 
 	PMI__Menu__Skeleton, parent
 	PMI__Menu__Slices, parent
@@ -41,8 +41,8 @@ pro PMI__Menu__TimDixon, parent
 	Sid = PMI__Button__KidneyModelsROI(id, value = 'Kidney models (ROI)')
 	Sid = PMI__Button__FitDualInletRoi(id, value = 'Liver models (ROI)')
 
-    Sid = PMI__Button__PkReg_Mres(id, value='Motion correction', /separator)
+	id = widget_button(parent, value='Christian',/menu)
 
-
+	Sid = PMI__Button__KidneyModelsROI(id, value = 'Christian kidney models (ROI)')
 
 end
