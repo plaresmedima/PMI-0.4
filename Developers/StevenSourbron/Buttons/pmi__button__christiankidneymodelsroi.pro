@@ -304,7 +304,7 @@ FUNCTION PMI__Display__ChristianKidneyModelsROI::Conc, Region
 	If SignalModel eq 1 then begin
 		C = 100*(Signal-S0)/S0
 		if Region eq 'AIF' then begin
-			AIF_area = 100. ; determined from reference case (dummy)
+			AIF_area = 475. ; determined from reference case (JL_rats_1)
 			C_area = total(C[0:n-2]*dt)
 			C = AIF_area*C/Carea
 		endif
