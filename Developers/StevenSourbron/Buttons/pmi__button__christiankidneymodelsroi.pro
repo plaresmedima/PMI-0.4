@@ -25,7 +25,7 @@ PRO PMI__Display__ChristianKidneyModelsROI::Fit
 	Self->GET, Model=Model, Delay=Delay, Time=Time, AifCurve=Aif, RoiCurve=Curve, RoiVolume=Vol
 	Self->SET, Message='Fitting...', Sensitive=0
 
-	IF Delay NE 0 THEN DELAY_VALUES=[0,10,time[1]/2]
+	IF Delay NE 0 THEN DELAY_VALUES=[0,10,time[1]/5]
 
 	CASE Model OF
 
@@ -290,23 +290,23 @@ FUNCTION PMI__Display__ChristianKidneyModelsROI::Conc, Region
 	endcase
 	Self -> GET, SignalModel=SignalModel, Time=Time
 	nt = n_elements(time)
-	dt = time[1:n-1] - time[0:n-2]
+	dt = time[1:nt-1] - time[0:nt-2]
 	S0 = total(Signal[0:self.baseline-1])/self.baseline
 	If SignalModel eq 0 then begin
 		C = Signal-S0
 		if Region eq 'AIF' then begin
 			AIF_area = 100. ; determined from reference case (dummy)
-			C_area = total(C[0:n-2]*dt)
-			C = AIF_area*C/Carea
+			C_area = total(C[0:nt-2]*dt)
+			C = AIF_area*C/C_area
 		endif
 		return, C
 	endif
 	If SignalModel eq 1 then begin
 		C = 100*(Signal-S0)/S0
 		if Region eq 'AIF' then begin
-			AIF_area = 475. ; determined from reference case (JL_rats_1)
-			C_area = total(C[0:n-2]*dt)
-			C = AIF_area*C/Carea
+			AIF_area = self.AIF_area ; determined from reference case (JL_rats_1)
+			C_area = total(C[0:nt-2]*dt)
+			C = AIF_area*C/C_area
 		endif
 		return, C
 	endif
@@ -319,8 +319,8 @@ FUNCTION PMI__Display__ChristianKidneyModelsROI::Conc, Region
 		C = (1000*R10/relaxivity)*(Signal-S0)/S0
 		if Region eq 'AIF' then begin
 			AIF_area = 100. ; determined from reference case (dummy)
-			C_area = total(C[0:n-2]*dt)
-			C = AIF_area*C/Carea
+			C_area = total(C[0:nt-2]*dt)
+			C = AIF_area*C/C_area
 		endif
 		return, C
 	endif
@@ -340,8 +340,8 @@ FUNCTION PMI__Display__ChristianKidneyModelsROI::Conc, Region
 	C = Concentration_SPGRESS(Signal, S0, 1/R10, self.FA, self.TR, relaxivity)
 	if Region eq 'AIF' then begin
 		AIF_area = 100. ; determined from reference case (dummy)
-		C_area = total(C[0:n-2]*dt)
-		C = AIF_area*C/Carea
+		C_area = total(C[0:nt-2]*dt)
+		C = AIF_area*C/C_area
 	endif
 	return, C
 END
@@ -452,7 +452,7 @@ PRO PMI__Display__ChristianKidneyModelsROI::SET, $
 	Message=Message, Sensitive=Sensitive, $
 	xsize=xsize, ysize=ysize, $
 	Set_droplist_select = Set_droplist_select, $
-	Series=Series, Baseline=Baseline, Hematocrit=Hematocrit, $
+	Series=Series, Baseline=Baseline, Hematocrit=Hematocrit, AIF_area = area, $
 	OnDisplay=OnDisplay
 
 	if keyword_set(pmi_resize) then begin
@@ -464,6 +464,7 @@ PRO PMI__Display__ChristianKidneyModelsROI::SET, $
 	if n_elements(Series) 	ne 0 then Self.Series = Series
 	if n_elements(Baseline) 	ne 0 then self.Baseline = Baseline
 	if n_elements(Hematocrit) 	ne 0 then self.Hematocrit = Hematocrit
+	if n_elements(Hematocrit) 	ne 0 then self.AIF_area = area
 	if n_elements(Message) 	ne 0 then begin
 		Self->Set, /Erase
 		xyouts, 0.1,0.9, Message, color=0,/normal,charsize=1.5,charthick=2.0
@@ -574,6 +575,7 @@ PRO PMI__Display__ChristianKidneyModelsROI__Define
 	,	Series: obj_new() $
 	,	Baseline: 0L $
 	,	Hematocrit: 0E $
+	,	AIF_Area: 0E $
 	,	TR: 0E $
 	,	FA: 0E $
 	}
@@ -591,8 +593,9 @@ pro PMI__Button__Event__ChristianKidneyModelsROI, ev
 		ptr_new({Type:'DROPLIST',Tag:'series', Label:'Dynamic series', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif'	 , Label:'Arterial Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)}), $
-		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Length of baseline (# of dynamics)', Value:1L}),$
-		ptr_new({Type:'VALUE'	,Tag:'hct'	 , Label:'Patients hematocrit', Value:0.45})])
+		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Length of baseline (# of dynamics)', Value:5L}),$
+		ptr_new({Type:'VALUE'	,Tag:'hct'	 , Label:'Patients hematocrit', Value:0.45}),$
+		ptr_new({Type:'VALUE'	,Tag:'area'	 , Label:'AIF area (% sec)', Value:150000.0})])
 	IF v.cancel THEN return
 
 	PMI__Control, ev.top, Viewer = 'PMI__Display__ChristianKidneyModelsROI', Display=Display
@@ -601,6 +604,7 @@ pro PMI__Button__Event__ChristianKidneyModelsROI, ev
 		Series = Stdy->Obj(0,ind[v.series]), $
 		Baseline = v.nbase, $
 		Hematocrit = v.hct, $
+		AIF_area = v.area, $
 		set_droplist_select = [v.roi,v.aif]
 end
 
