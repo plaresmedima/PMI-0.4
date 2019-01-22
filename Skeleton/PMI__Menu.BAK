@@ -30,7 +30,7 @@
 	;Please name all your menus "PMI__Menu__XXXXX"
 
 
-	PMI__Menu__iBEAt, mbar
+	PMI__Menu__Christian, mbar
 
 
 end
