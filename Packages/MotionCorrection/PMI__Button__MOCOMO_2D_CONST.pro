@@ -62,12 +62,6 @@ FUNCTION PMI__Button__Input__MOCOMO_2D_CONST, top, series, aif, in, Win
   	ENDWHILE
 END
 
-PRO PMI__Button__Obj__MOCOMO_2D_CONST__DEFINE
-
-  struct = {PMI__Button__Obj__MOCOMO_2D_CONST, $
-  	INHERITS MOCOMO_2D, $
-  	INHERITS MOCOMO_CONST }
-END
 
 pro PMI__Button__Event__MOCOMO_2D_CONST, ev
 
@@ -89,11 +83,9 @@ tt = systime(1)
 		PMI__Message, status, 'Calculating', k/(d[2]-1E)
   		Source = Series->Read(Stdy->DataPath(), k, -1)
     	if product(win[k].n) gt 0 then begin
-			Source = TRANSPOSE(Source, [2,0,1])
-    		MOCOMO = OBJ_NEW('PMI__Button__Obj__MOCOMO_2D_CONST', $
-    		  ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win[k])
-    		Source = TRANSPOSE(MOCOMO->deformed(), [1,2,0])
-    		OBJ_DESTROY, MOCOMO
+   	        Source = TRANSPOSE(Source, [2,0,1])
+	        Source = MOCOMO_2D(Source, 'QIM_CONST', 0B, in.res, in.prec, Win=win[k])
+            Source = TRANSPOSE(Source, [1,2,0])
 		endif
 		Corr -> Write, Stdy->DataPath(), Source, k, -1
 	endfor
@@ -116,6 +108,8 @@ pro PMI__Button__Control__MOCOMO_2D_CONST, id, v
 end
 
 function PMI__Button__MOCOMO_2D_CONST, parent,value=value,separator=separator
+
+	QIM_CONST
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 

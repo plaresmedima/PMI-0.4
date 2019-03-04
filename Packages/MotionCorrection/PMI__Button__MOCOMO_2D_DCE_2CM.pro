@@ -105,8 +105,11 @@ tt = systime(1)
 
 		PMI__Message, status, 'Calculating', k/(d[2]-1E)
   		Source = Series->Read(Stdy->DataPath(), k, -1)
-    	if product(win[k].n) gt 0 then $
-    	    Source = MOCOMO_2D_DCE_2CM(Source, in.res, in.prec, time, aif, in.nb, Win=Win[k])
+    	if product(win[k].n) gt 0 then begin
+	        Source = TRANSPOSE(Source, [2,0,1])
+	        Source = MOCOMO_2D(Source, 'QIM_DCE_2CM', [Time, aif, in.nb], in.res, in.prec, Win=win[k])
+            Source = TRANSPOSE(Source, [1,2,0])
+    	endif
 		Corr -> Write, Stdy->DataPath(), Source, k, -1
 	endfor
 
@@ -129,6 +132,8 @@ end
 
 
 function PMI__Button__MOCOMO_2D_DCE_2CM, parent,value=value,separator=separator
+
+	QIM_DCE_2CM ;Model to fit
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 

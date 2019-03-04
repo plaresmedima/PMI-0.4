@@ -86,15 +86,6 @@ FUNCTION PMI__Button__Input__MOCOMO_3D_DCE_2CM, top, series, aif, in, Win
   	ENDWHILE
 END
 
-
-PRO PMI__Button__Obj__MOCOMO_3D_DCE_2CM__DEFINE
-
-  struct = {PMI__Button__Obj__MOCOMO_3D_DCE_2CM, $
-   	INHERITS MOCOMO_3D, $
-   	INHERITS MOCOMO_DCE_2CM }
-
-END
-
 pro PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
@@ -110,10 +101,8 @@ pro PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
     PMI__Message, status, 'Calculating..'
 tt=systime(1)
 	Source = TRANSPOSE(Source, [3,0,1,2])
-    MOCOMO = OBJ_NEW('PMI__Button__Obj__MOCOMO_3D_DCE_2CM', $
-      ptr_new(Source), in.res, in.prec, [Time, aif, in.nb], Win=win)
-    Source = TRANSPOSE(MOCOMO->deformed(), [1,2,3,0])
-    OBJ_DESTROY, MOCOMO
+	Source = MOCOMO_3D(Source, 'QIM_DCE_2CM', [Time, aif, in.nb], in.res, in.prec, Win=win)
+    Source = TRANSPOSE(Source, [1,2,3,0])
     Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
     Corr = Stdy->New('SERIES', Domain=Dom,  Name=Series->name() + '[Motion-free]' )
 	Corr -> Write, Stdy->DataPath(), Source
@@ -136,6 +125,8 @@ pro PMI__Button__Control__MOCOMO_3D_DCE_2CM, id, v
 end
 
 function PMI__Button__MOCOMO_3D_DCE_2CM, parent,value=value,separator=separator
+
+	QIM_DCE_2CM ;Model to fit
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 
