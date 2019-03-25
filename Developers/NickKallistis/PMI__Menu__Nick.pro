@@ -32,18 +32,33 @@ pro PMI__Menu__Nick, parent
 	PMI__Menu__Slices, parent
 	PMI__Menu__Dynamic, parent
 
-	id = widget_button(parent, value='TACE Treatment Evaluation',/menu)
+	id = widget_button(parent, value='Cirrhosis Evaluation',/menu)
+
+	Sid = PMI__Button__Sergios_SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')
+   	Sid = PMI__Button__Sergios_FastDeconvolutionAnalysis(id, value='Model-free quantitative (Pixel)')
+
+	Sid = widget_button(id,value='Single-inlet two compartment model', /menu, /separator)
+	SSid = PMI__Button__FitFiltrationDimitraLLS(Sid, value = 'Filtration Pixel-based - Linear Least Squares')
+
+   	Sid = PMI__Button__Sergios_DualInletUptakePixel_Orig(id, value='Dual-inlet uptake model (Pixel)',/separator)
+   	Sid = PMI__Button__Sergios_DualInletUptakePixel_delayAIF(id, value='Dual-inlet uptake model with delay AIF (Pixel)')
+   	Sid = PMI__Button__Sergios_DualInletUptakePixel_DualTR_linear(id, value='Dual-inlet uptake model, dual TR (Pixel)')
+   	Sid = PMI__Button__Sergios_DualInletUptakePixel(id, value='Dual-inlet uptake model non-linear (Pixel)')
+   	Sid = PMI__Button__Sergios_DualInletUptakePixel_DualTR(id, value='Dual-inlet uptake model non-linear, dual-TR (Pixel)')
+
+	Sid = PMI__Button__Sergios_FitDualInletRoi(id, value = 'Dual-inlet models (ROI)', /separator)
+	Sid = PMI__Button__Sergios_FitDualInletRoi_V2(id, value = 'Dual-inlet models dual-TR (ROI)')
+
 ;	Sid = PMI__Button__SemiQuantitativePerfusionN(id	, value='Semi-quantitative (Pixel)')
 ;	Sid = PMI__Button__SemiQuantitativePerfusion100sec(id, value='Semi-quantitative over 100sec (Pixel)')
 ;
-;   	Sid = PMI__Button__FastDeconvolutionAnalysisN(id, value='Model-free (Pixel)',/separator)
+;   Sid = PMI__Button__FastDeconvolutionAnalysisN(id, value='Model-free (Pixel)',/separator)
 ;
 ;	Sid = widget_button(parent,value='Dual-inlet two compartment model', /menu, /separator)
 ;	SSid = PMI__Button__FitDualInletRoiN(Sid, value = 'ROI-based')
 ;	SSid = PMI__Button__DualInletUptakePixel(Sid, value='Pixel-based')
 
-	Sid = widget_button(id,value='Single-inlet two compartment model', /menu, /separator)
-	SSid = PMI__Button__FitFiltrationDimitraLLS(Sid, value = 'Pixel-based - Linear Least Squares')
+
 
 
 end
