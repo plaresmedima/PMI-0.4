@@ -83,7 +83,6 @@ pro PMI__Button__Event__MOCOMO_3D_CONST, ev
 tt=systime(1)
 	Source = TRANSPOSE(Source, [3,0,1,2])
 	Source = MOCOMO_3D(Source, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
-;	Source = MOCOMO_3D(Source, 'VFA', {TR:3.0, FA:[2,5,10,15,20,25]}, in.res, in.prec, Win=win)
     Source = TRANSPOSE(Source, [1,2,3,0])
     Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
     Corr = Stdy->New('SERIES', Domain=Dom,  Name=Series->name() + '[Motion-free]' )
