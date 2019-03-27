@@ -36,7 +36,7 @@ pro PMI__Menu__Nick, parent
 
 	Sid = PMI__Button__Sergios_SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')
    	Sid = PMI__Button__Sergios_FastDeconvolutionAnalysis(id, value='Model-free quantitative (Pixel)')
-   	Sid = PMI__Button__LinearVFA(id, value='Variable Flip Angle T1-mapping (Pixel)')
+   	Sid = PMI__Button__NickLinearVFA(id, value='Variable Flip Angle T1-mapping (Pixel)')
 
 
 	Sid = widget_button(id,value='Single-inlet two compartment model', /menu, /separator)
