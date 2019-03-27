@@ -7,63 +7,67 @@ pro PMI__Button__Event__NickLinearVfa, ev
     SeriesNames = Stdy->Names(0)
 
 	in = PMI__Form(ev.top, Title='VFA T1-mapping input', [$
-		ptr_new({Type:'DROPLIST',Tag:'FA02', Label:'RAVE FA 2', Value:SeriesNames, Select:0}), $
-		ptr_new({Type:'DROPLIST',Tag:'FA05', Label:'RAVE FA 5', Value:SeriesNames, Select:0}), $
-		ptr_new({Type:'DROPLIST',Tag:'FA10', Label:'RAVE FA 10', Value:SeriesNames, Select:0}), $
-		ptr_new({Type:'DROPLIST',Tag:'FA12', Label:'RAVE FA 12', Value:SeriesNames, Select:0}), $
-		ptr_new({Type:'DROPLIST',Tag:'FA15', Label:'RAVE FA 15', Value:SeriesNames, Select:0})])
+		ptr_new({Type:'LIST',Tag:'VFA', Label:'Select VFA series', Value:SeriesNames, Select:0})])
 	IF in.cancel THEN goto, exit
 
-    SeriesFA02 = Stdy->Obj(0,in.FA02)
-    SeriesFA05 = Stdy->Obj(0,in.FA05)
-    SeriesFA10 = Stdy->Obj(0,in.FA10)
-    SeriesFA12 = Stdy->Obj(0,in.FA12)
-    SeriesFA15 = Stdy->Obj(0,in.FA15)
+	sel = in.VFA
+	nFA = n_elements(sel)
 
-	Dom = {z:SeriesFA02->z(), t:SeriesFA02->t(0), m:SeriesFA02->m()}
+    SeriesFA0 = Stdy->Obj(0,sel[0])
+    SeriesFA1 = Stdy->Obj(0,sel[1])
+    SeriesFA2 = Stdy->Obj(0,sel[2])
+    SeriesFA3 = Stdy->Obj(0,sel[3])
+    SeriesFA4 = Stdy->Obj(0,sel[4])
+
+	Dom = {z:SeriesFA0->z(), t:SeriesFA0->t(0), m:SeriesFA0->m()}
     S0_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_S0')
     R1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_R1 (s-1)')
+    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_T1 (s)')
 
-	TR = seriesFA02->GETVALUE('0018'x,'0080'x)/1000.0 ;sec
+	TR = seriesFA0->GETVALUE('0018'x,'0080'x)/1000.0 ;sec
 
-	FA = [seriesFA02->GETVALUE('0018'x,'1314'x), $
-		seriesFA05->GETVALUE('0018'x,'1314'x), $
-		seriesFA10->GETVALUE('0018'x,'1314'x), $
-		seriesFA12->GETVALUE('0018'x,'1314'x), $
-		seriesFA15->GETVALUE('0018'x,'1314'x)]
+	FA = [seriesFA0->GETVALUE('0018'x,'1314'x), $
+		seriesFA1->GETVALUE('0018'x,'1314'x), $
+		seriesFA2->GETVALUE('0018'x,'1314'x), $
+		seriesFA3->GETVALUE('0018'x,'1314'x), $
+		seriesFA4->GETVALUE('0018'x,'1314'x)]
 
-	d = SeriesFA02->d()
+	d = SeriesFA0->d()
 
 	for j=0L,d[2]-1 do begin ;loop over slices
 
 		PMI__Message, status, 'Calculating ', j/(d[2]-1E)
 
-		S02 = SeriesFA02->Read(Stdy->DataPath(),z=SeriesFA02->z(j))
-		S05 = SeriesFA05->Read(Stdy->DataPath(),z=SeriesFA05->z(j))
-		S10 = SeriesFA10->Read(Stdy->DataPath(),z=SeriesFA10->z(j))
-		S12 = SeriesFA12->Read(Stdy->DataPath(),z=SeriesFA12->z(j))
-		S15 = SeriesFA15->Read(Stdy->DataPath(),z=SeriesFA15->z(j))
+		S0 = SeriesFA0->Read(Stdy->DataPath(),z=SeriesFA0->z(j))
+		S1 = SeriesFA1->Read(Stdy->DataPath(),z=SeriesFA1->z(j))
+		S2 = SeriesFA2->Read(Stdy->DataPath(),z=SeriesFA2->z(j))
+		S3 = SeriesFA3->Read(Stdy->DataPath(),z=SeriesFA3->z(j))
+		S4 = SeriesFA4->Read(Stdy->DataPath(),z=SeriesFA4->z(j))
 
 		S0_slice = fltarr(d[0]*d[1])
 		R1_slice = fltarr(d[0]*d[1])
+		T1_slice = fltarr(d[0]*d[1])
 
 		for i=0L,d[0]*d[1]-1 do begin
 
-			S_VFA = [S02[i],S05[i],S10[i],S12[i],S15[i]]
+			S_VFA = [S0[i],S1[i],S2[i],S3[i],S4[i]]
 
 			PAR = VFA_Linear_T1fit(TR, FA, S_VFA)
 
 			S0_slice[i] = PAR[1]
 			R1_slice[i] = Par[0]
+			T1_slice[i] = 1/Par[0]
 		endfor
 
 		S0_series->Write, Stdy->DataPath(), S0_slice, j
 		R1_series->Write, Stdy->DataPath(), R1_slice, j
+		T1_series->Write, Stdy->DataPath(), T1_slice, j
 
 	endfor
 
-	S0_series->Trim, [0E, max(S0_slice)]
-	R1_series->Trim, [0E, 1.0]
+	S0_series->Trim, [0E, max(S0_slice,/NAN)]
+	R1_series->Trim, [0E, 2.0]
+	T1_series->Trim, [0E, 2.0]
 
     exit: PMI__Control, ev.top, /refresh
 end
