@@ -1,5 +1,5 @@
 
-pro PMI__Button__Event__LinearVfa, ev
+pro PMI__Button__Event__NickLinearVfa, ev
 
 	PMI__Info, ev.top, Stdy=Stdy, Status=Status
 	PMI__Message, status, 'Getting user input..'
@@ -21,8 +21,8 @@ pro PMI__Button__Event__LinearVfa, ev
     SeriesFA15 = Stdy->Obj(0,in.FA15)
 
 	Dom = {z:SeriesFA02->z(), t:SeriesFA02->t(0), m:SeriesFA02->m()}
-    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= Series->name() + '_S0')
-    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= Series->name() + '_R1 (s-1)')
+    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_S0')
+    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_R1 (s-1)')
 
 	TR = seriesFA02->GETVALUE('0018'x,'0080'x)/1000.0 ;sec
 
@@ -69,7 +69,7 @@ pro PMI__Button__Event__LinearVfa, ev
 end
 
 
-pro PMI__Button__Control__LinearVfa, id, v
+pro PMI__Button__Control__NickLinearVfa, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -79,7 +79,7 @@ pro PMI__Button__Control__LinearVfa, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__LinearVfa, parent, value=value,separator=separator
+function PMI__Button__NickLinearVfa, parent, value=value,separator=separator
 
 	PMI__FitT1SaturationRecovery
 
@@ -87,8 +87,8 @@ function PMI__Button__LinearVfa, parent, value=value,separator=separator
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__LinearVfa' $
-    ,	pro_set_value = 'PMI__Button__Control__LinearVfa' $
+    ,  	event_pro = 'PMI__Button__Event__NickLinearVfa' $
+    ,	pro_set_value = 'PMI__Button__Control__NickLinearVfa' $
     ,  	separator = separator )
 
     return, id
