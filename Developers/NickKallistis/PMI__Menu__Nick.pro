@@ -32,11 +32,13 @@ pro PMI__Menu__Nick, parent
 	PMI__Menu__Slices, parent
 	PMI__Menu__Dynamic, parent
 
-	id = widget_button(parent, value='Cirrhosis Evaluation',/menu)
+	id = widget_button(parent, value='Cirrhosis',/menu)
 
-	Sid = PMI__Button__Sergios_SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')
-   	Sid = PMI__Button__Sergios_FastDeconvolutionAnalysis(id, value='Model-free quantitative (Pixel)')
+	Sid = PMI__Button__Sergios_SemiQuantitativePerfusion(id	, value='Semi-quantitative analysis (Pixel)')
+   	Sid = PMI__Button__Sergios_FastDeconvolutionAnalysis(id, value='Model-free quantitative analysis (Pixel)')
    	Sid = PMI__Button__NickLinearVFA(id, value='Variable Flip Angle T1-mapping (Pixel)')
+   	Sid = PMI__Button__DualInletFiltrationPixel(id, value='Dual-inlet filtration model (Pixel)')
+   	Sid = PMI__Button__Sergios_FitDualInletRoi(id, value = 'Dual-inlet models (ROI)')
 
 	Sid = widget_button(id,value='Single-inlet two compartment model', /menu, /separator)
 	SSid = PMI__Button__FitFiltrationDimitraLLS(Sid, value = 'Filtration Pixel-based - Linear Least Squares')
@@ -45,10 +47,7 @@ pro PMI__Menu__Nick, parent
    	Sid = PMI__Button__Sergios_DualInletUptakePixel_delayAIF(id, value='Dual-inlet uptake model with delay AIF (Pixel)')
    	Sid = PMI__Button__Sergios_DualInletUptakePixel_DualTR_linear(id, value='Dual-inlet uptake model, dual TR (Pixel)')
    	Sid = PMI__Button__Sergios_DualInletUptakePixel(id, value='Dual-inlet uptake model non-linear (Pixel)')
-   	Sid = PMI__Button__DualInletFiltrationPixel(id, value='Dual-inlet filtration model non-linear (Pixel)')
    	Sid = PMI__Button__Sergios_DualInletUptakePixel_DualTR(id, value='Dual-inlet uptake model non-linear, dual-TR (Pixel)')
-
-	Sid = PMI__Button__Sergios_FitDualInletRoi(id, value = 'Dual-inlet models (ROI)', /separator)
 	Sid = PMI__Button__Sergios_FitDualInletRoi_V2(id, value = 'Dual-inlet models dual-TR (ROI)')
 
 ;	Sid = PMI__Button__SemiQuantitativePerfusionN(id	, value='Semi-quantitative (Pixel)')
