@@ -55,5 +55,6 @@ pro PMI__Menu__TRISTAN, parent
 
 	Sid = PMI__Button__TRISTAN_Import(id, value = 'Import DICOM')
 	Sid = PMI__Button__NickLinearVFA(id, value='Variable Flip Angle T1-mapping (Pixel)')
+	Sid = PMI__Button__DumpDicom(id,/separator)
 
 end
