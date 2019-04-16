@@ -41,13 +41,12 @@ pro PMI__Button__Event__NickLinearVfa, ev
 
 		for i=0L,d[0]*d[1]-1 do begin
 
-			Signal_i = reform(SVA_slice[*,i])
-			PAR = VFA_Linear_T1fit(TR, FA, Signal_i, FIT=Signal_i_fit)
+			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]), RMS = rms)
 
 			S0_slice[i] = PAR[1]
 			R1_slice[i] = Par[0]
 			T1_slice[i] = 1/Par[0]
-			Fit_slice[i] = 100*sqrt(total((Signal_i - Signal_i_fit)^2)/nFA)/sqrt(total(Signal_i^2)/nFA)
+			Fit_slice[i] = rms
 
 		endfor
 
