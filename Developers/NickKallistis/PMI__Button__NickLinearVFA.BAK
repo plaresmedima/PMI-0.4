@@ -17,10 +17,10 @@ pro PMI__Button__Event__NickLinearVfa, ev
 
 	Dom = {z:Default->z(), t:Default->t(0), m:Default->m()}
     S0_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_S0')
-    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_R1 (s-1)')
-    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_T1 (s)')
+    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_R1 (ms-1)')
+    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'RAVE_VFA_T1 (ms)')
 
-	TR = Default->GETVALUE('0018'x,'0080'x)/1000.0 ;sec
+	TR = Default->GETVALUE('0018'x,'0080'x) ;msec
 
 	FA = fltarr(nFA)
 	For k=0L, nFA-1 do FA[k] = (Stdy->Obj(0,sel[k]))->GETVALUE('0018'x,'1314'x)
@@ -53,8 +53,8 @@ pro PMI__Button__Event__NickLinearVfa, ev
 	endfor
 
 	S0_series->Trim, [0E, max(S0_slice,/NAN)]
-	R1_series->Trim, [0E, 2.0]
-	T1_series->Trim, [0E, 2.0]
+	R1_series->Trim, [0E, 0.002]
+	T1_series->Trim, [0E, 2000.0]
 
     exit: PMI__Control, ev.top, /refresh
 end
