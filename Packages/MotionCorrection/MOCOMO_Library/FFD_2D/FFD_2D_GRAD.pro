@@ -1,20 +1,19 @@
 ;Source,Sx,Sy,DefField,Target,xc,yc, Weight_cnt, Weight_loc, Weight_val, DEF=Deformed
 
-FUNCTION FFD_2D_GRAD,Source,Sx,Sy,DefField,Target,xc,yc, W_cnt, W_loc, W_val,DEF=Def
+FUNCTION FFD_2D_GRAD,Source,Sx,Sy,DefField,Target,xc,yc, W_cnt, W_loc, W_val,DEF=Deformed
 
 ;Perform the warping to calculate S_Deformed (see FFD_2D)
   Di = INTERPOLATE(DefField, xc, yc, /GRID)
   x = REFORM(Di[0,*,*],/OVERWRITE)
   y = REFORM(Di[1,*,*],/OVERWRITE)
-  S_Deformed = INTERPOLATE(Source, x, y)
+  Deformed = INTERPOLATE(Source, x, y)
 
 ;Calculate the residual
-  Res = Target - S_Deformed
+  Res = Target - Deformed
 
 ;Deform the gradients and multiply with residual
   Dx = Res*INTERPOLATE(Sx, long(x), y)
   Dy = Res*INTERPOLATE(Sy, x, long(y))
-
 
   Dx = W_val*Dx[W_loc]
   Dy = W_val*Dy[W_loc]
