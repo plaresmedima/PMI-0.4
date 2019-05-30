@@ -1,24 +1,47 @@
 
 pro TRISTAN_Import_Siemens3T__LoadDynamics_MoCo, Sequence, Stdy, files, Series, status
 
-	time = Series->t() - Series->t(0)
-	Source = Series->Read(Stdy->DataPath())
+	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
+	t = PMI__Dicom__Read(files,'0008'x,'0032'x) ;Array of Acquisition times
+	files = PMI__Dicom__Sort(files, z, t) ; returns a 2D string array of file names
 
-	; Set parameters for MoCoMo
-	in.res = 1E
-	in.prec = 1E
-	; Set window
-	win = {p:[0L,0L,0L], n:d[0:2]}
+	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)  ;nr of rows
+	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)  ;nr of columns
+	nz = n_elements(z)
+	nt = n_elements(t)
 
-	; Calculate
-	Source = TRANSPOSE(Source, [3,0,1,2])
-	Source = MOCOMO_3D(Source, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
-;	Source = MOCOMO_3D(Source, 'VFA', {TR:3.0, FA:[2,5,10,15,20,25]}, in.res, in.prec, Win=win)
-    Source = TRANSPOSE(Source, [1,2,3,0])
-    Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
-    Corr = Stdy->New('SERIES', Domain=Dom,  Name=Series->name() + '[Motion-free]' )
-	Corr -> Write, Stdy->DataPath(), Source
-	Corr -> Trim, Series->Trim()
+	FA = PMI__Dicom__Read(files[0],'0018'x,'1314'x)
+
+	d = [nx,ny,nz,nt] ;dimensions of the series
+
+	image = fltarr(nx,ny,nz,nt) ;array holding the data
+
+	for k=0L,d[3]-1 do begin ;loop over all slices and times
+		for j=0L,d[2]-1 do begin
+			ind = j + d[2]*k
+			image[*,*,j,k] = PMI__Dicom__ReadImage(files[ind]) ;read image data from file
+		endfor
+	endfor
+
+	; Perform motion correction only for free breathing dataset
+	if STRMATCH(Sequence,'*FB') then begin
+		print, 'in moco'
+		; Set parameters for MoCoMo
+		in = {res:1E, prec:1E}
+		; Set window
+		win = {p:[0L,0L,0L], n:d[0:2]}
+
+		; Calculate
+		image = TRANSPOSE(image, [3,0,1,2])
+		image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
+	    image = TRANSPOSE(image, [1,2,3,0])
+
+	endif
+
+    Dcm = Stdy -> New('SERIES', Name=Sequence+ '_dynamic_'+STRING(ROUND(FA))+'[Motion-free]', Domain = {z:z, t:t, m:[nx,ny]}) ;new series object in display
+	Dcm -> Write, Stdy->DataPath(), image  ;write raw data to disk
+	Dcm -> Trim, [min(image),0.8*max(image)]  ;set default grey scale ranges
+	Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
 
 end
 
@@ -28,6 +51,7 @@ pro TRISTAN_Import_Siemens3T__LoadVFA, Sequence, Stdy, files, Series, status
 	sort_t = ['0008'x,'0032'x]
 	z = PMI__Dicom__Read(files,sort_z[0],sort_z[1])
   	t = PMI__Dicom__Read(files,sort_t[0],sort_t[1])
+
   	files = PMI__Dicom__Sort(files, z, t)
 
   	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
@@ -100,14 +124,12 @@ pro TRISTAN_Import_Siemens3T__Load3DSPGR, Sequence, Stdy, files, Series, status
 	i = where(Series eq Sequence, cnt)
 
 	if cnt eq 0 then return
-	print, n_elements(files)
 
 	files_all = files[i]
 
 	; Separate the breath-hold and free-breathing series using number of rows
 	jBH = where(PMI__Dicom__Read(files_all,'0028'x,'0010'x) eq 256)
 	jFB = where(PMI__Dicom__Read(files_all,'0028'x,'0010'x) eq 96)
-	;print, PMI__Dicom__Read(files_all[0],'0028'x,'0010'x)
 
 	files_BH = files_all[jBH]
 	files_FB = files_all[jFB]
@@ -124,9 +146,10 @@ pro TRISTAN_Import_Siemens3T__Load3DSPGR, Sequence, Stdy, files, Series, status
 
 	j = where(PMI__Dicom__Read(files_BH,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
 	files_SEQ = files_BH[j]
-	TRISTAN_Import_Siemens3T__LoadDynamics, Sequence+'_BH', Stdy, files_SEQ, Series, status
+	TRISTAN_Import_Siemens3T__LoadDynamics_MoCo, Sequence+'_BH', Stdy, files_SEQ, Series, status
 
 	; Process FB dataset
+	print, 'FB'
 	seriesNumbers = PMI__Dicom__Read(files_FB,'0020'x,'0011'x)
 	uniqueSeries = seriesNumbers[UNIQ(seriesNumbers, SORT(seriesNumbers))]
 
@@ -445,7 +468,7 @@ pro TRISTAN_Import_Siemens3T, Stdy, files, first, status=status
 
 	;TRISTAN_Import_Siemens3T__LoadInversionRecovery, seq4, Stdy, files, Series, status
 
-	;TRISTAN_Import_Siemens3T__Load3DSPGR, seq6, Stdy, files, Series, status
-	TRISTAN_Import_Siemens3T__LoadRAVE, seq5, Stdy, files, Series, status
+	TRISTAN_Import_Siemens3T__Load3DSPGR, seq6, Stdy, files, Series, status
+	;TRISTAN_Import_Siemens3T__LoadRAVE, seq5, Stdy, files, Series, status
 
 end
