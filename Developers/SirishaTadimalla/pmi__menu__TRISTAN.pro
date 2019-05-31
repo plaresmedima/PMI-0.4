@@ -55,7 +55,9 @@ pro PMI__Menu__TRISTAN, parent
     id = widget_button(parent, value='TRISTAN',/menu)
 
 	Sid = PMI__Button__TRISTAN_Import(id, value = 'Import DICOM')
-	Sid = PMI__Button__NickLinearVFA(id, value='Variable Flip Angle T1-mapping (Pixel)')
+	Sid = PMI__Button__TRISTAN_LinearVFA_T1mapping(id, value='Variable Flip Angle T1-mapping (Pixel)')
+	Sid = PMI__Button__TRISTAN_MOLLI_T1mapping(id, value='MOLLI T1-mapping (Pixel)')
+	Sid = PMI__Button__FitT1SaturationRecoveryPixel(id, value='Saturation Recovery T1-mapping (Pixel)')
 	Sid = PMI__Button__DumpDicom(id,/separator)
 
 end

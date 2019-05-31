@@ -16,7 +16,7 @@ FUNCTION QIM_VFA_FIT, S, X, P
 ;TR (ms), FA (deg)
 
 	nP = 2
-	parinfo = replicate({limited:bytarr(2), limits:dindgen(2), nP)
+	parinfo = replicate({limited:bytarr(2), limits:dindgen(2)}, nP)
 	parinfo[*].limited[0] = 1
 
 	P = [2*max(S), 1/1000.0]

@@ -16,9 +16,10 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 	Default = Stdy->Obj(0,sel[0])
 
 	Dom = {z:Default->z(), t:Default->t(0), m:Default->m()}
-    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= 'Linear_VFA_S0')
-    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'Linear_VFA_R1 (ms-1)')
-    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'Linear_VFA_T1 (ms)')
+    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= 'VFA_S0')
+    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'VFA_R1 (ms-1)')
+    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'VFA_T1 (ms)')
+    FIT_series = Stdy->New('SERIES', Domain= Dom,  Name= 'VFA_RMS (%)')
 
 	TR = Default->GETVALUE('0018'x,'0080'x) ;msec
 
@@ -30,6 +31,7 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 	S0_slice = fltarr(d[0]*d[1])
 	R1_slice = fltarr(d[0]*d[1])
 	T1_slice = fltarr(d[0]*d[1])
+	FIT_slice = fltarr(d[0]*d[1])
 
 	for j=0L,d[2]-1 do begin ;loop over slices
 
@@ -39,22 +41,26 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 
 		for i=0L,d[0]*d[1]-1 do begin
 
-			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]))
+			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]), RMS = rms)
 
 			S0_slice[i] = PAR[1]
 			R1_slice[i] = Par[0]
 			T1_slice[i] = 1/Par[0]
+			Fit_slice[i] = rms
+
 		endfor
 
 		S0_series->Write, Stdy->DataPath(), S0_slice, j
 		R1_series->Write, Stdy->DataPath(), R1_slice, j
 		T1_series->Write, Stdy->DataPath(), T1_slice, j
+		FIT_series->Write, Stdy->DataPath(), Fit_slice, j
 
 	endfor
 
 	S0_series->Trim, [0E, max(S0_slice,/NAN)]
 	R1_series->Trim, [0E, 0.002]
 	T1_series->Trim, [0E, 2000.0]
+	FIT_series->Trim, [0E, 50.0]
 
     exit: PMI__Control, ev.top, /refresh
 end
