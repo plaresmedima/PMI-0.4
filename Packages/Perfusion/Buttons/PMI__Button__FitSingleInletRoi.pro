@@ -136,7 +136,7 @@ PRO PMI__Button__FitSingleInletRoi__Display::Fit
 			end
 
 		'2C Exchange':begin
- 			P = [0.3, 0.02, 2.0/3, 0.1] ;[VP+VE, FP, VE/(VP+VE), FE/(FP+FE)]
+ 			P = [0.3, 120.0/6000, 2.0/3, 0.1] ;[VP+VE, FP, VE/(VP+VE), FE/(FP+FE)]
 			Fit = FitSingleInlet('Exchange', time, aif, curve, P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, AKAIKE_ERROR=aic, POSITIVITY=Pos, /NODERIVATIVE, LIMITED_ABOVE=[1,0,1,1])
 			Parameters = $
 			    [{Name:'Plasma Flow'                        ,Units:'ml/100ml/min' ,Value:6000D*P[1]                         ,Nr: 0} $
