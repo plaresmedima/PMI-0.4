@@ -40,7 +40,7 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
 		T1_slice = fltarr(d[0]*d[1])
 		T1_corr_slice = fltarr(d[0]*d[1])
 
-		for i=19000,19010 do begin ;0L,d[0]*d[1]-1
+		for i=0L,d[0]*d[1]-1 do begin
 			Sig = reform(P[i,*])
 
 			Pars = [max(Sig), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1]

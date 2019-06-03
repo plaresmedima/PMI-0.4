@@ -26,7 +26,7 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
 
 	d = Series->d()
 	time = Series->t()
-	ExpectedT1 = max(time)/2.0
+	ExpectedT1 = max(time)/4.0
 
 	for j=0L,d[2]-1 do begin
 
@@ -42,10 +42,13 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
 
 		for i=0L,d[0]*d[1]-1 do begin
 			Sig = reform(P[i,*])
+			; Identify the minimum and its index and reverse signs of all elements upto this index
+			minS = min(Sig,ind)
+			Sig[0:ind] = -Sig[0:ind]
 
 			Pars = [max(Sig), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1]
 			Fit = mpcurvefit(Time, Sig, 1+0E*Sig, Pars, function_name='PMI__TRISTAN_MOLLI_T1mapping',/quiet,NODERIVATIVE=1)
-			print, Pars
+
 			Sinf_slice[i] = Pars[0]
 			Sratio_slice[i] = Pars[1]
 			T1_slice[i] = 1/Pars[2]
