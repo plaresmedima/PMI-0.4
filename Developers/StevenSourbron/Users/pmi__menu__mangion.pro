@@ -1,4 +1,11 @@
-;    PMI Main Menu
+;Menu for the demo version on
+;https://sites.google.com/site/plaresmedima/
+
+;REQUIRES PACKAGES:
+;  Slices
+;  Dynamic
+;  Perfusion
+
 ;
 ;    Copyright (C) 2013 Steven Sourbron
 ;
@@ -14,23 +21,21 @@
 ;
 ;    You should have received a copy of the GNU General Public License along
 ;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 
- pro PMI__Menu, mbar
 
-	;Enter here the name of the procedure defining your PMI Menu
-	;Default Menu is the Skeleton menu:
+pro PMI__Menu__Mangion, parent
 
-	;PMI__Menu__Skeleton, mbar
+	PMI__Menu__Skeleton, parent
+	PMI__Menu__Slices, parent
+	PMI__Menu__Dynamic, parent
 
-	;It contains only the basic menus Study, Series, Region, Display
-	;Its source code can be found in the folder "Source>Menus"
+	id = widget_button(parent, value='Mangion',/menu)
 
-	;Please name all your menus "PMI__Menu__XXXXX"
-
-
-	PMI__Menu__MoCoMo, mbar
+	Sid = PMI__Button__SemiQuantitativePerfusion(id, value='Descriptive parameter maps')
+	Sid = PMI__Button__SohaibCompartmentLinear(id,value='Perfusion parameter maps')
+    Sid = PMI__Button__FitSingleInletRoi(id, value='ROI compartment models')
 
 
 end
