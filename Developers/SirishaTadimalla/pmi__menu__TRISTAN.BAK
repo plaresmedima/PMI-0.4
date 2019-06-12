@@ -33,16 +33,7 @@ pro PMI__Menu__TRISTAN, parent
 	PMI__Menu__Dynamic, parent
 
 
-	id = widget_button(parent, value='Perfusion',/menu)
-
-	Sid = PMI__Button__SemiQuantitativePerfusion(id	, value='Semi-quantitative (Pixel)')
-	Sid = PMI__Button__FastDeconvolutionAnalysis(id, value='Model-free (Pixel)')
-    Sid = PMI__Button__FitModToftsLin(id, value='Modified Tofts (Pixel)')
-    Sid = PMI__Button__FitSingleInletRoi(id, value='Exchange models (ROI)', /separator)
-	Sid = PMI__Button__KidneyModelsROI(id, value = 'Kidney models (ROI)')
-	Sid = PMI__Button__FitDualInletRoi(id, value = 'Liver models (ROI)')
-
-    id = widget_button(parent, value='MoCoMo',/menu)
+	id = widget_button(parent, value='MoCoMo',/menu)
 
     Sid = PMI__Button__MOCOMO_3D_DCE_2CM(id, value='3D DCE 2CM')
     Sid = PMI__Button__MOCOMO_3D_CONST(id, value='3D Constant')
@@ -53,10 +44,17 @@ pro PMI__Menu__TRISTAN, parent
     Sid = PMI__Button__MOCOMO_2D_CONST(id, value='2D Constant')
 
     id = widget_button(parent, value='TRISTAN',/menu)
+	Sid = PMI__Button__DumpDicom(id)
 
 	Sid = PMI__Button__TRISTAN_Import(id, value = 'Import DICOM')
-	Sid = PMI__Button__TRISTAN_LinearVFA_T1mapping(id, value='Variable Flip Angle T1-mapping (Pixel)')
-	Sid = PMI__Button__TRISTAN_MOLLI_T1mapping(id, value='MOLLI T1-mapping (Pixel)')
-	Sid = PMI__Button__DumpDicom(id,/separator)
 
+	Sid = PMI__Button__TRISTAN_LinearVFA_T1mapping(id, value='Variable Flip Angle T1-mapping (Pixel)',/separator)
+	Sid = PMI__Button__TRISTAN_MOLLI_T1mapping(id, value='MOLLI T1-mapping (Pixel)')
+	Sid = PMI__Button__FitT1SaturationRecoveryPixel(id, value='Saturation Recovery T1-mapping (Pixel)')
+
+	Sid = PMI__Button__TRISTAN_CopyCoronalROIs(id, value='Copy ROI to BH and FB datasets',/separator)
+	Sid = PMI__Button__TRISTAN_CopyTransverseROIs(id, value='Copy ROI to RAVE and MOLLI datasets')
+
+	Sid = PMI__Button__SlicesCoronalToSagittal(id, value='CoronaltoSagittal')
+	Sid = PMI__Button__SlicesSagittalToAxial(id, value='SagittaltoAxial')
 end

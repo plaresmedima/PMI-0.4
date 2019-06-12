@@ -6,6 +6,7 @@ FUNCTION PMI__Button__Input__TRISTAN_MOLLI_T1mapping, top, series
 	in = PMI__Form(top, Title='T1 mapping input', [$
 		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:sel})])
 	IF in.cancel THEN return, 0
+
     Series = Stdy->Obj(0,ind[in.ser])
     return, 1
 END
@@ -47,7 +48,7 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
 			Sig[0:ind] = -Sig[0:ind]
 
 			Pars = [max(Sig), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1]
-			Fit = mpcurvefit(Time, Sig, 1+0E*Sig, Pars, function_name='PMI__TRISTAN_MOLLI_T1mapping',/quiet,NODERIVATIVE=1)
+			Fit = mpcurvefit(time, Sig, 1+0E*Sig, Pars, function_name='PMI__TRISTAN_MOLLI_T1mapping',/quiet,NODERIVATIVE=1)
 
 			Sinf_slice[i] = Pars[0]
 			Sratio_slice[i] = Pars[1]
