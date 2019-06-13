@@ -27,6 +27,7 @@ FUNCTION FFD_2D_REG, precision, Source, Target, xc, yc, Weight_cnt, Weight_loc, 
 
  FOR iterations=1L, itmax DO BEGIN
    Grad = FFD_2D_GRAD(Source,Sx,Sy,DefField,Target,xc,yc, Weight_cnt, Weight_loc, Weight_val, DEF=Deformed)
+   print, Deformed
    IF FFD_2D_LSEARCH(Grad, Source, Target, xc, yc, precision, DEFORMATION_FIELD=DefField, DEFORMED=Deformed, STEPSIZE=stepsize) THEN BREAK
  ENDFOR
 

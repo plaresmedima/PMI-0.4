@@ -105,6 +105,7 @@ function PMI__Dicom__ReadDataElement, unit, group, element, value=value, gr=gr, 
 ;;;;Then the value is 0 and 0 returned
 
 	if length eq 0 then return, 0B
+	if length gt 1028ULL^3L then return, 0B ;10/04/2019 SPS: added to exclude very long lenths >1GB
 
 	s = fstat(unit)
 	if vr eq 'SQ' then begin
@@ -117,10 +118,12 @@ function PMI__Dicom__ReadDataElement, unit, group, element, value=value, gr=gr, 
 ;;;;Then the value is 0 and 0 returned
 
 	point_lun, -unit, p
-	if s.size - p lt length then begin
+	if s.size-p lt length then begin
 		point_lun, unit, 132
 		return, 0B
 	endif
+
+;print, 'xxx', s.size-p lt length, ULONG64(s.size-p) lt length
 
 ;;;;Read Value field
 
