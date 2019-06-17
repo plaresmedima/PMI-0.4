@@ -33,9 +33,9 @@ PRO PMI__Display__tristanratsroi::Fit
 			P = [0.0393, 0.00153] * (1-0.23) 	;[khe, kbh] in units 1/s
 			Fit = FitSingleInlet('TristanRatModel',time,aif,curve,P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, /NODERIVATIVE, AKAIKE_ERROR=aic)
 			Parameters = $
-				[{Name:'Hepatocellular Uptake Rate (khe)'		,Units:'ml/min/ml'		,Value: 60D*P[0]	,Nr: 2} $
-				,{Name:'Biliary Efflux Rate (kbh)'		,Units:'ml/min/ml'		,Value: 60D*P[1]	,Nr: 3} $
-				,{Name:'Hepatocellular Transit Time (Tc)'		,Units:'min'	,Value:(1-0.23)/P[1]/60D	,Nr: 4} ]
+				[{Name:'Hepatocellular Uptake Rate (khe) '		,Units:'ml/min/ml'		,Value: 60D*P[0]	,Nr: 2} $
+				,{Name:'Biliary Efflux Rate (kbh) '		,Units:'ml/min/ml'		,Value: 60D*P[1]	,Nr: 3} $
+				,{Name:'Hepatocellular Transit Time (Tc) '		,Units:'min'	,Value:(1-0.23)/P[1]/60D	,Nr: 4} ]
 			IF Delay NE 0 THEN $
 				Parameters = [Parameters,{Name:'Arterial Delay', Units:'sec', Value:1D*Pd, Nr:5} ]
 			end
