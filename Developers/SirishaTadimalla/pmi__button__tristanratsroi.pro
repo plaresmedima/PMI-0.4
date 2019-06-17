@@ -469,7 +469,7 @@ END
 
 PRO PMI__Display__tristanratsroi__Define
 
-	SingleInletModifiedTofts
+	SingleInletTristanRatModel
 
 	Struct = {PMI__Display__tristanratsroi 	$
 	,	id: 0L 	$

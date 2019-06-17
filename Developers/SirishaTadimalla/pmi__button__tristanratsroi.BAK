@@ -187,7 +187,14 @@ FUNCTION PMI__Display__tristanratsroi::Event, ev
 		ExportCurves[0,1:*] = strcompress(Time,/remove_all)
 		ExportCurves[1,1:*] = strcompress(AifCurve,/remove_all)
 		ExportCurves[2,1:*] = strcompress(RoiCurve,/remove_all)
-		PMI__Write_csv, File +'_Curves.csv', ExportCurves
+		PMI__Write_csv, File +'_Concentrations.csv', ExportCurves
+
+		ExportCurves = strarr(3,1+n_elements(time))
+		ExportCurves[*,0] = ['Time (s)','Spleen (a.u.)', 'Liver (a.u.)']
+		ExportCurves[0,1:*] = strcompress(Time,/remove_all)
+		ExportCurves[1,1:*] = strcompress(*Self.Curve[1],/remove_all)
+		ExportCurves[2,1:*] = strcompress(*Self.Curve[0],/remove_all)
+		PMI__Write_csv, File +'_Signals.csv', ExportCurves
 
 		ExportParameters = strarr(3,3)
 		ExportParameters[0,*] = (*self.Parameters).Name + '  (' + (*self.Parameters).Units + ')'
@@ -462,7 +469,7 @@ END
 
 PRO PMI__Display__tristanratsroi__Define
 
-	SingleInletModifiedTofts
+	SingleInletTristanRatModel
 
 	Struct = {PMI__Display__tristanratsroi 	$
 	,	id: 0L 	$
