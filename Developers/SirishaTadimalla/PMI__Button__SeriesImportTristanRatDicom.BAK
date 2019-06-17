@@ -15,6 +15,76 @@
 ;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+pro PMI__Button__SeriesImportTristanRatDicom_TimeMip, Stdy, Series
+
+	nb = 4
+
+	;CREATE OUTPUT
+
+	U = ['a.u.']
+
+	AUC = Stdy->New('SERIES',Default=Series,Name=Series->Name()+'[Area under the Curve ('+U+'*sec)]')	& AUC->t, Series->t(0)
+	MAX = Stdy->New('SERIES',Default=Series,Name=Series->Name()+'[Time MIP ('+U+')]') 					& MAX->t, Series->t(0)
+
+	MAX->Trim, 0E, 1
+	AUC->Trim, 0E, 1
+
+	;START OF CALCULATION
+
+	time = Series->t()
+	time = float(time-time[0])
+	d = Series->d()
+
+	MaxIm = fltarr(d[0]*d[1])
+	AUCim = fltarr(d[0]*d[1])
+
+	;LOOP OVER THE SLICES
+
+	for i=0L,d[2]-1 do begin
+
+		;calculate baseline P0
+		P0 = Series -> Read(Stdy->DataPath(),i,0)
+		for j=1L,nb-1 do P0 = P0 + Series -> Read(Stdy->DataPath(),i,j)
+		P0 = P0/nb
+		nozero = where(P0 NE 0, cnt_nozero)
+
+		if cnt_nozero GT 0 then begin
+		    for j=0L,d[3]-1 do begin
+
+			    P = Series -> Read(Stdy->DataPath(),i,j)
+				P = P[nozero]-P0[nozero]
+
+			    if j eq 0 then begin
+				    MaxIm[nozero] = P
+			    endif else begin
+				    ind = where(P gt MaxIm[nozero], cnt)
+				    if cnt gt 0 then begin
+					    MaxIm[nozero[ind]] = P[ind]
+				    endif
+				    AUCim[nozero] = AUCim[nozero] + (Time[j]-Time[j-1])*P
+			    endelse
+			endfor
+
+        endif
+
+		MAX -> Write, Stdy->DataPath(), MaxIm, i
+		AUC -> Write, Stdy->DataPath(), AUCim, i
+
+		MAX->Trim, max([MAX->Trim(1),max(MaxIm)]), 1
+		AUC->Trim, max([AUC->Trim(1),max(AUCim)]), 1
+
+        if cnt_nozero GT 0 then begin
+
+		    MaxIm[nozero] = 0
+		    AUCim[nozero] = 0
+		endif
+
+	endfor
+
+	MAX->Trim, 0.4* MAX->Trim(1), 1
+	AUC->Trim, 0.4* AUC->Trim(1), 1
+
+end
 
 pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, cnt=cnt
 
@@ -33,8 +103,8 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)
 	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)
 
-	if ProtocolName eq 'vFAIgFLASH' then begin
-		scalefactor = 4
+	if strmid(ProtocolName,0,10) eq 'vFAIgFLASH' then begin
+		scalefactor = 2
 		nx = floor(scalefactor*nx)
 		ny = floor(scalefactor*ny)
 	endif
@@ -63,7 +133,7 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 
 		if files[k] ne '' then begin
 			im = PMI__Dicom__ReadImage(files[k], Info=Info_k)
-			if ProtocolName eq 'vFAIgFLASH' then im = congrid(im,d[0],d[1],interp=0)
+			if strmid(ProtocolName,0,10) eq 'vFAIgFLASH' then im = congrid(im,d[0],d[1],interp=0)
 			Info[k] = Info_k
 			if size(im,/n_dimensions) ne 0 then begin
 				range[0] = min([range[0],min(im,max=max)])
@@ -77,6 +147,8 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 	Dcm -> Trim, [range[0],0.8*range[1]]
 	Dcm -> ReadDicom, files[0]
 	Dcm -> Set, obj_new('DATA_ELEMENT','5200'x,'9230'x,vr='SQ',value=Info)
+
+	if appendix eq '_[DCE]' then PMI__Button__SeriesImportTristanRatDicom_TimeMip, Stdy, Dcm
 
 end
 
