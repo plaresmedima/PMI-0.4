@@ -102,13 +102,14 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 
 	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)
 	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)
-
-	if strmid(ProtocolName,0,10) eq 'vFAIgFLASH' then begin
+	print, strmid(ProtocolName,2,15)
+	if (strmid(ProtocolName,0,10) eq 'vFAIgFLASH' || strmid(ProtocolName,2,10) eq 'vFAIgFLASH' || strmid(ProtocolName,2,15) eq 'TRISTAN_IGFLASH') then begin
 		scalefactor = 2
 		nx = floor(scalefactor*nx)
 		ny = floor(scalefactor*ny)
 	endif
 
+	t = t - min(t)
 	case n_elements(t) of
 		13: begin
 			appendix = '_[VFA]'
@@ -133,7 +134,7 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 
 		if files[k] ne '' then begin
 			im = PMI__Dicom__ReadImage(files[k], Info=Info_k)
-			if strmid(ProtocolName,0,10) eq 'vFAIgFLASH' then im = congrid(im,d[0],d[1],interp=0)
+			if (strmid(ProtocolName,0,10) eq 'vFAIgFLASH' || strmid(ProtocolName,2,10) eq 'vFAIgFLASH' || strmid(ProtocolName,2,15) eq 'TRISTAN_IGFLASH') then im = congrid(im,d[0],d[1],interp=0)
 			Info[k] = Info_k
 			if size(im,/n_dimensions) ne 0 then begin
 				range[0] = min([range[0],min(im,max=max)])

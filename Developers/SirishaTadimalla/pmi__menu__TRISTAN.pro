@@ -31,6 +31,7 @@ pro PMI__Menu__TRISTAN, parent
 	PMI__Menu__Skeleton, parent
 	PMI__Menu__Slices, parent
 	PMI__Menu__Dynamic, parent
+	PMI__Menu__Perfusion, parent
 
 
 	id = widget_button(parent, value='MoCoMo',/menu)

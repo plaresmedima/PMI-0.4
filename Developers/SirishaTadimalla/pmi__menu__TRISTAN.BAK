@@ -55,6 +55,6 @@ pro PMI__Menu__TRISTAN, parent
 	Sid = PMI__Button__TRISTAN_CopyCoronalROIs(id, value='Copy ROI to BH and FB datasets',/separator)
 	Sid = PMI__Button__TRISTAN_CopyTransverseROIs(id, value='Copy ROI to RAVE and MOLLI datasets')
 
-	Sid = PMI__Button__SlicesCoronalToSagittal(id, value='CoronaltoSagittal')
+	Sid = PMI__Button__SlicesCoronalToSagittal(id, value='CoronaltoSagittal',/separator)
 	Sid = PMI__Button__SlicesSagittalToAxial(id, value='SagittaltoAxial')
 end
