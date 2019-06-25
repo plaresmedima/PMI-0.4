@@ -1,5 +1,5 @@
 
-pro TRISTAN_Import_Siemens3T__LoadDynamics_MoCo, Sequence, Stdy, files
+pro TRISTAN_Import_Philips3T__LoadDynamics_MoCo, Sequence, Stdy, files
 
 	; Process dynamic dataset
 	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
@@ -40,7 +40,7 @@ pro TRISTAN_Import_Siemens3T__LoadDynamics_MoCo, Sequence, Stdy, files
 
 end
 
-pro TRISTAN_Import_Siemens3T__LoadVFA_MoCo, Sequence, Stdy, files
+pro TRISTAN_Import_Philips3T__LoadVFA_MoCo, Sequence, Stdy, files
 
 	;;;;;;; Initialise
 	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
@@ -127,7 +127,7 @@ pro TRISTAN_Import_Siemens3T__LoadVFA_MoCo, Sequence, Stdy, files
 
 end
 
-pro TRISTAN_Import_Siemens3T__LoadDynamics, Sequence, Stdy, files
+pro TRISTAN_Import_Philips3T__LoadDynamics, Sequence, Stdy, files
 
 	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
 	t = PMI__Dicom__Read(files,'0008'x,'0032'x) ;Array of Acquisition times
@@ -156,7 +156,7 @@ pro TRISTAN_Import_Siemens3T__LoadDynamics, Sequence, Stdy, files
 
 end
 
-pro TRISTAN_Import_Siemens3T__LoadVFA, Sequence, Stdy, files
+pro TRISTAN_Import_Philips3T__LoadVFA, Sequence, Stdy, files
 
 	sort_z = ['0020'x,'1041'x]
 	sort_t = ['0008'x,'0032'x]
@@ -222,7 +222,7 @@ pro TRISTAN_Import_Siemens3T__LoadVFA, Sequence, Stdy, files
 	endfor
 end
 
-pro TRISTAN_Import_Siemens3T__Load3DSPGR, Sequence, Stdy, files, Series, status
+pro TRISTAN_Import_Philips3T__Load3DSPGR, Sequence, Stdy, files, Series, status
 
 	PMI__Message, status, 'Loading 3DSPGR Data'
 
@@ -246,11 +246,11 @@ pro TRISTAN_Import_Siemens3T__Load3DSPGR, Sequence, Stdy, files, Series, status
 	j1 = where(PMI__Dicom__Read(files_BH,'0020'x,'0011'x) NE uniqueSeries[n_elements(uniqueSeries)-1])
 
 	; Get VFA T1 map from BH dataset - no motion correction
-	TRISTAN_Import_Siemens3T__LoadVFA, Sequence+'_BH', Stdy, files_BH[j1]
+	TRISTAN_Import_Philips3T__LoadVFA, Sequence+'_BH', Stdy, files_BH[j1]
 
 	; Load dynamic BH images - no motion correction
 	j2 = where(PMI__Dicom__Read(files_BH,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
-	TRISTAN_Import_Siemens3T__LoadDynamics, Sequence+'_dynamicBH', Stdy, files_BH[j2]
+	TRISTAN_Import_Philips3T__LoadDynamics, Sequence+'_dynamicBH', Stdy, files_BH[j2]
 
 	;;;;;;;; Process FB dataset
 	; Get only VFA images
@@ -259,15 +259,15 @@ pro TRISTAN_Import_Siemens3T__Load3DSPGR, Sequence, Stdy, files, Series, status
 	j3 = where(PMI__Dicom__Read(files_FB,'0020'x,'0011'x) NE uniqueSeries[n_elements(uniqueSeries)-1])
 
 	; Get VFA T1 map from FB dataset - after motion correction
-	TRISTAN_Import_Siemens3T__LoadVFA_MoCo, Sequence+'_FB', Stdy, files_FB[j3]
+	TRISTAN_Import_Philips3T__LoadVFA_MoCo, Sequence+'_FB', Stdy, files_FB[j3]
 
 	; Load dynamic FB images - after motion correction
 	j4 = where(PMI__Dicom__Read(files_FB,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
-	TRISTAN_Import_Siemens3T__LoadDynamics_MoCo, Sequence+'_dynamicFB', Stdy, files_FB[j4]
+	TRISTAN_Import_Philips3T__LoadDynamics_MoCo, Sequence+'_dynamicFB', Stdy, files_FB[j4]
 
 end
 
-pro TRISTAN_Import_Siemens3T__LoadRAVE, Sequence, Stdy, files, Series, status
+pro TRISTAN_Import_Philips3T__LoadRAVE, Sequence, Stdy, files, Series, status
 
 	PMI__Message, status, 'Loading RAVE Data'
 
@@ -283,19 +283,19 @@ pro TRISTAN_Import_Siemens3T__LoadRAVE, Sequence, Stdy, files, Series, status
 
 
 	; Get VFA T1 map from BH dataset - no motion correction
-	TRISTAN_Import_Siemens3T__LoadVFA, Sequence+'_RAVE', Stdy, files_SEQ
+	TRISTAN_Import_Philips3T__LoadVFA, Sequence+'_RAVE', Stdy, files_SEQ
 
 	; Get dynamic dataset
 	j = where(PMI__Dicom__Read(files_RAVE,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
 	files_SEQ = files_RAVE[j]
-	TRISTAN_Import_Siemens3T__LoadDynamics, Sequence+'_dynamicRAVE', Stdy, files_SEQ
+	TRISTAN_Import_Philips3T__LoadDynamics, Sequence+'_dynamicRAVE', Stdy, files_SEQ
 
 
 end
 
 
 
-pro TRISTAN_Import_Siemens3T__LoadInversionRecovery, Sequence, Stdy, files, Series, status
+pro TRISTAN_Import_Philips3T__LoadInversionRecovery, Sequence, Stdy, files, Series, status
 
 	PMI__Message, status, 'Loading Inversion Recovery Data'
 
@@ -413,7 +413,7 @@ pro TRISTAN_Import_Siemens3T__LoadInversionRecovery, Sequence, Stdy, files, Seri
 end
 
 
-pro TRISTAN_Import_Siemens3T__LoadVolume, Sequence, Stdy, files, SeriesType, status
+pro TRISTAN_Import_Philips3T__LoadVolume, Sequence, Stdy, files, SeriesType, status
 
 	PMI__Message, status, 'Loading ' + Sequence
 
@@ -453,7 +453,7 @@ end
 
 
 
-pro TRISTAN_Import_Siemens3T__LoadSequence, Sequence, SortBy=SortBy, Stdy, files, first, status
+pro TRISTAN_Import_Philips3T__LoadSequence, Sequence, SortBy=SortBy, Stdy, files, first, status
 
   n = n_elements(first)-1
 
@@ -517,35 +517,31 @@ pro TRISTAN_Import_Siemens3T__LoadSequence, Sequence, SortBy=SortBy, Stdy, files
 end
 
 
-pro TRISTAN_Import_Siemens3T, Stdy, files, first, status=status
+pro TRISTAN_Import_Philips3T, Stdy, files, first, status=status
 
 ;;;;CHECK SEQUENCE PARAMETERS
 
 
 ;;;;LOAD THE SERIES
 
-	seq1 = '*tfi2d1_192 ' ; All Localiser images bundled up
+	seq1 = 'SURVEY' ; All Localiser images bundled up
 
-	seq2 = '*h2d1_208 _Cor ' ; Coronal T2 HASTE
-	seq3 = '*h2d1_208 _Tra ' ; Transverse T2 HASTE
+	seq2 = 'T2_haste_cor_mbh' ; Coronal T2 HASTE
+	seq3 = 'T2_haste_tra_mbh' ; Transverse T2 HASTE
 
-	seq4 = '*tfl2d1r86' ; LL T1 mapping
+	seq4 = 'T1map_LL_tra_mbh_gre' ; LL T1 mapping
 
-	seq5 = 'RAVE3d1 ' ; RAVE VFA and dynamic
-	seq6 = '*fl3d1'  ; 3D SPGR - VFA and dynamic, BH and FB
+	seq5 = 'radialSPGR_tra_fb' ; radial VFA and dynamic
+	seq6 = 'SPGR_cor_fb'  ; 3D SPGR - VFA and dynamic, BH and FB
 
-	Series = string(PMI__Dicom__Read(files,'0018'x,'0024'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 
+	;TRISTAN_Import_Philips3T__LoadInversionRecovery, seq4, Stdy, files, Series, status
+	;TRISTAN_Import_Philips3T__Load3DSPGR, seq6, Stdy, files, Series, status
+	TRISTAN_Import_Philips3T__LoadSequence, seq1, Stdy, files, first, status
 
-	Orientation = PMI__Dicom__Read(files,'0051'x,'100E'x)  ;Orientation of images
-	SeriesType = Series + '_' + Orientation
-
-	TRISTAN_Import_Siemens3T__LoadInversionRecovery, seq4, Stdy, files, Series, status
-	TRISTAN_Import_Siemens3T__Load3DSPGR, seq6, Stdy, files, Series, status
-	TRISTAN_Import_Siemens3T__LoadSequence, seq1, Stdy, files, first, status
-
-	TRISTAN_Import_Siemens3T__LoadVolume, seq2, Stdy, files, SeriesType, status
-	TRISTAN_Import_Siemens3T__LoadVolume, seq3, Stdy, files, SeriesType, status
-	TRISTAN_Import_Siemens3T__LoadRAVE, seq5, Stdy, files, Series, status
+	;TRISTAN_Import_Philips3T__LoadVolume, seq2, Stdy, files, Series, status
+	;TRISTAN_Import_Philips3T__LoadVolume, seq3, Stdy, files, Series, status
+	;TRISTAN_Import_Philips3T__LoadRAVE, seq5, Stdy, files, Series, status
 
 end

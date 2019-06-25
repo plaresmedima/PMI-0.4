@@ -1,5 +1,5 @@
 
-FUNCTION PMI__Button__TRISTAN_Import__QueryFolder, files, first, status=status
+FUNCTION TRISTAN_QueryFolder, files, first, status=status
 
 
 ;;;;SELECT ONLY DICOM IMAGE DATA AND READ SERIES UID
@@ -34,21 +34,19 @@ FUNCTION PMI__Button__TRISTAN_Import__QueryFolder, files, first, status=status
 END
 
 
-pro PMI__Button__Event__TRISTAN_Import, ev
+pro TRISTAN_Batch_Import, path, studyname
 
-;;;;SELECT A FOLDER
+	PMI__info, ev.top, state=State, Viewer=Viewer
+	Stdy = obj_new('STDY_STATE',path+studyname)
+	Stdy -> SaveStdy
+	State -> Insert, Stdy
+	PMI__Button__RecentStudy__Build, ev.top, /update
 
-    PMI__info, ev.top, State=s, Stdy=Stdy, Status=Status
-    if not s->get_dir(title='Please select the DICOM folder', files=files, cnt=n) then return
-	if n eq 0 then begin
-		ok = dialog_message(/information,'This folder is empty')
-		return
-	endif
+    files = file_search(path,'*', /TEST_REGULAR, count=n)
+	IF NOT TRISTAN_QueryFolder(files, first, status=status) THEN RETURN
 
-	IF NOT PMI__Button__TRISTAN_Import__QueryFolder(files, first, status=status) THEN RETURN
-
-	;; files = an array of strings with DICOM file names, sorted by Series UID
-	;; first = an array of indices for the first file of each series
+;; files = an array of strings with DICOM file names, sorted by Series UID
+;; first = an array of indices for the first file of each series
 
 	Manufacturer = PMI__Dicom__Read(files[0],'0008'x,'0070'x)
 	Version = PMI__Dicom__Read(files[0],'0008'x,'1090'x)
@@ -62,35 +60,15 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 		 'Philips Medical Systems': Case Version of
 		   'Achieva dStream': ;TRISTAN_Import_Philips3T, Stdy, files, first, status=status
 		   'Ingenia': ;TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
-		   endcase
+		    else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+		  endcase
 		 'Bordeaux': Case Version of
 		   'BEAT-DKD_10_1': ;TRISTAN_Import_Bordeaux_10_1, Stdy, files, first, status=status
 		   'BEAT-DKD_10_2': ;TRISTAN_Import_Bordeaux_10_2, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
-		   endcase
+		    else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+		    endcase
 		  else: ok = dialog_message(/information, Manufacturer + ' not supported' )
 	Endcase
-
-	PMI__control, ev.top, /refresh, Path=Path
-	return:PMI__Message, status
-
-end
-
-
-
-pro PMI__Button__Control__TRISTAN_Import, id, v
-
-	;PMI__Info, tlb(id), Stdy=Stdy
-	widget_control, id, sensitive = 1;obj_valid(Stdy)
-end
-
-function PMI__Button__TRISTAN_Import, parent, value=value, separator=separator
-
-	if n_elements(value) eq 0 then value = 'Import DICOM'
-
-	return, widget_button(parent, value=value, separator=separator, $
-		event_pro = 'PMI__Button__Event__TRISTAN_Import', $
-		pro_set_value = 'PMI__Button__Control__TRISTAN_Import' )
+	Stdy -> SaveStdy
 
 end
