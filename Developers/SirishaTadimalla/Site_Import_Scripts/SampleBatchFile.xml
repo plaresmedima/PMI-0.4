@@ -1,0 +1,10 @@
+<Studies type = "Siemens 3T">
+  <Study>
+    <path>C:\Users\medstad\OneDrive - University of Leeds\TRISTAN\WP2\Raw Data\Processed Data\S3T\TRISTAN_DNE003_Scan1</path>
+    <name>S3T_Vol003_Scan1.pmi</name>
+  </Study>
+  <Study>
+    <path>C:\Users\medstad\OneDrive - University of Leeds\TRISTAN\WP2\Raw Data\Processed Data\S3T\TRISTAN_DNE003_Scan2</path>
+    <name>S3T_Vol003_Scan2.pmi</name>
+  </Study>
+</Studies>

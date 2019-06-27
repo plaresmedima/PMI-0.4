@@ -59,8 +59,8 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 		   'Aera': ;TRISTAN_Import_Siemens1_5T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
-		 'Philips Medical Systems': Case Version of
-		   'Achieva dStream': ;TRISTAN_Import_Philips3T, Stdy, files, first, status=status
+		 'Philips Medical Systems ': Case Version of
+		   'Achieva dStream ': TRISTAN_Import_Philips3T, Stdy, files, first, status=status
 		   'Ingenia': ;TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
