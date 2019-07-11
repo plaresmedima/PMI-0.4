@@ -37,6 +37,7 @@ pro PMI__Menu__TRISTANRATS, parent
 	Sid = PMI__Button__SeriesImportTristanRatDicom(id, value='Import DICOMs')
 ;	Sid = PMI__Button__TristanSemiQuantitativePerfusion(id	, value='Create time-MIPs')
 ;	Sid = PMI__Button__TRISTAN_LinearVFA_T1mapping(id, value='Variable Flip Angle T1-mapping (Pixel)')
-	Sid = PMI__Button__tristanratsroi(id, value='Fit Rat Gadoxetate model')
+	Sid = PMI__Button__tristanratsroi(id, value='Fit Rat Gadoxetate model v1.0')
+	Sid = PMI__Button__tristanratsroi_v1_1(id, value='Fit Rat Gadoxetate model v1.1')
 
 end
