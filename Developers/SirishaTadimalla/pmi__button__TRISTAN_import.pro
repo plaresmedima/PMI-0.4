@@ -47,34 +47,28 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 
 	IF NOT PMI__Button__TRISTAN_Import__QueryFolder(files, first, status=status) THEN RETURN
 
-;; files = an array of strings with DICOM file names, sorted by Series UID
-;; first = an array of indices for the first file of each series
-	;print, files
-	;print, first
+	;; files = an array of strings with DICOM file names, sorted by Series UID
+	;; first = an array of indices for the first file of each series
 
 	Manufacturer = PMI__Dicom__Read(files[0],'0008'x,'0070'x)
-	;Version = PMI__Dicom__Read(files[0],'2001'x,'10C8'x)
 	Version = PMI__Dicom__Read(files[0],'0008'x,'1090'x)
-
-	;print, Manufacturer+'/'+Version
 
 	Case Manufacturer of
 		 'SIEMENS ': Case Version of
 		   'Prisma': TRISTAN_Import_Siemens3T, Stdy, files, first, status=status
 		   'Aera': ;TRISTAN_Import_Siemens1_5T, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Manufacturer + ' Version number ' + Version + ' not supported' )
+		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
-		 'Philips': Case Version of
-		   'BEAT-DKD_10_1': ;TRISTAN_Import_Leeds_10_1, Stdy, files, first, status=status
-		   'BEAT-DKD_10_2': ;TRISTAN_Import_Leeds_10_2, Stdy, files, first, status=status
-		   'BEAT-DKD_10_5': ;TRISTAN_Import_Leeds_10_5, Stdy, files, first, status=status
-		    else: ok = dialog_message(/information, Manufacturer + ' Version number ' + Version + ' not supported' )
-		  endcase
+		 'Philips Medical Systems ': Case Version of
+		   'Achieva dStream ': TRISTAN_Import_Philips3T, Stdy, files, first, status=status
+		   'Ingenia': ;TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
+		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+		   endcase
 		 'Bordeaux': Case Version of
 		   'BEAT-DKD_10_1': ;TRISTAN_Import_Bordeaux_10_1, Stdy, files, first, status=status
 		   'BEAT-DKD_10_2': ;TRISTAN_Import_Bordeaux_10_2, Stdy, files, first, status=status
-		    else: ok = dialog_message(/information, Manufacturer + ' Version number ' + Version + ' not supported' )
-		    endcase
+		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+		   endcase
 		  else: ok = dialog_message(/information, Manufacturer + ' not supported' )
 	Endcase
 
@@ -87,8 +81,8 @@ end
 
 pro PMI__Button__Control__TRISTAN_Import, id, v
 
-	PMI__Info, tlb(id), Stdy=Stdy
-	widget_control, id, sensitive = obj_valid(Stdy)
+	;PMI__Info, tlb(id), Stdy=Stdy
+	widget_control, id, sensitive = 1;obj_valid(Stdy)
 end
 
 function PMI__Button__TRISTAN_Import, parent, value=value, separator=separator
