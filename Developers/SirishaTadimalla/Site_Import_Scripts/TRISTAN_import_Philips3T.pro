@@ -37,7 +37,6 @@ pro TRISTAN_Import_Philips3T__LoadDynamics_MoCo, Sequence, Stdy, files
 	Dcm -> Write, Stdy->DataPath(), image  ;write raw data to disk
 	Dcm -> Trim, [min(image),0.8*max(image)]  ;set default grey scale ranges
 	Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
-
 end
 
 pro TRISTAN_Import_Philips3T__LoadVFA_MoCo, Sequence, Stdy, files
@@ -88,42 +87,42 @@ pro TRISTAN_Import_Philips3T__LoadVFA_MoCo, Sequence, Stdy, files
 		image = 0*image
 	endfor
 
-	; Calculate T1 map using linear fit
-	TR = PMI__Dicom__Read(files[0],'0018'x,'0080'x) ;msec
-	Dom = {z:z, t:t[0], m:d[0:1]}
-    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_S0')
-    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_R1 (ms-1)')
-    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_T1 (ms)')
-    FIT_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_RMS (%)')
-
-	SVA_slice = fltarr(nFA,d[0]*d[1])
-	S0_slice = fltarr(d[0]*d[1])
-	R1_slice = fltarr(d[0]*d[1])
-	T1_slice = fltarr(d[0]*d[1])
-	FIT_slice = fltarr(d[0]*d[1])
-
-	for j=0L,d[2]-1 do begin ;loop over slices
-		PMI__Message, status, 'Calculating T1 map ', j/(d[2]-1E)
-
-		for k=0L,nFA-1 do SVA_slice[k,*] = vfa[*,*,j,k]
-
-		for i=0L,d[0]*d[1]-1 do begin
-
-			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]), RMS = rms)
-
-			S0_slice[i] = PAR[1]
-			R1_slice[i] = Par[0]
-			T1_slice[i] = 1/Par[0]
-			Fit_slice[i] = rms
-
-		endfor
-
-		S0_series->Write, Stdy->DataPath(), S0_slice, j
-		R1_series->Write, Stdy->DataPath(), R1_slice, j
-		T1_series->Write, Stdy->DataPath(), T1_slice, j
-		FIT_series->Write, Stdy->DataPath(), Fit_slice, j
-
-	endfor
+;	; Calculate T1 map using linear fit
+;	TR = PMI__Dicom__Read(files[0],'0018'x,'0080'x) ;msec
+;	Dom = {z:z, t:t[0], m:d[0:1]}
+;    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_S0')
+;    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_R1 (ms-1)')
+;    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_T1 (ms)')
+;    FIT_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_RMS (%)')
+;
+;	SVA_slice = fltarr(nFA,d[0]*d[1])
+;	S0_slice = fltarr(d[0]*d[1])
+;	R1_slice = fltarr(d[0]*d[1])
+;	T1_slice = fltarr(d[0]*d[1])
+;	FIT_slice = fltarr(d[0]*d[1])
+;
+;	for j=0L,d[2]-1 do begin ;loop over slices
+;		PMI__Message, status, 'Calculating T1 map ', j/(d[2]-1E)
+;
+;		for k=0L,nFA-1 do SVA_slice[k,*] = vfa[*,*,j,k]
+;
+;		for i=0L,d[0]*d[1]-1 do begin
+;
+;			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]), RMS = rms)
+;
+;			S0_slice[i] = PAR[1]
+;			R1_slice[i] = Par[0]
+;			T1_slice[i] = 1/Par[0]
+;			Fit_slice[i] = rms
+;
+;		endfor
+;
+;		S0_series->Write, Stdy->DataPath(), S0_slice, j
+;		R1_series->Write, Stdy->DataPath(), R1_slice, j
+;		T1_series->Write, Stdy->DataPath(), T1_slice, j
+;		FIT_series->Write, Stdy->DataPath(), Fit_slice, j
+;
+;	endfor
 
 end
 
@@ -261,6 +260,7 @@ pro TRISTAN_Import_Philips3T__Load3DSPGR_FB, Sequence, Stdy, files, status
 
 	; Get VFA T1 map from FB dataset - after motion correction
 	TRISTAN_Import_Philips3T__LoadVFA_MoCo, Sequence, Stdy, files_FB[j3]
+
 
 	; Load dynamic FB images - after motion correction
 	j4 = where(PMI__Dicom__Read(files_FB,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
