@@ -58,14 +58,17 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 		   'Aera': ;TRISTAN_Import_Siemens1_5T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
-		 'Philips Medical Systems ': Case Version of
+		 'Philips Healthcare': Case Version of
 		   'Achieva dStream ': TRISTAN_Import_Philips3T, Stdy, files, first, status=status
-		   'Ingenia': ;TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
-		 'Bordeaux': Case Version of
-		   'BEAT-DKD_10_1': ;TRISTAN_Import_Bordeaux_10_1, Stdy, files, first, status=status
-		   'BEAT-DKD_10_2': ;TRISTAN_Import_Bordeaux_10_2, Stdy, files, first, status=status
+		 'Philips ': Case Version of
+		 	'Ingenia ': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
+		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+		   endcase
+		 'GE MEDICAL SYSTEMS ': Case Version of
+		   'DISCOVERY MR750 ': TRISTAN_Import_GE3T, Stdy, files, first, status=status
+		   'DISCOVERY MR450 ': TRISTAN_Import_GE3T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
 		  else: ok = dialog_message(/information, Manufacturer + ' not supported' )

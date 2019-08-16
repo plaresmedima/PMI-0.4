@@ -100,6 +100,7 @@ pro PMI__Button__SeriesImportDicom__Load, Stdy, files, sort0, sort1, status=stat
 		PMI__Button__SeriesImportDicom__LoadMultiFrame, status, cnt, files, NrOfFrames, Stdy
 		return
 	endif
+	stop, n, NrOfFrames
 
 	PMI__Message, status, 'Sorting DICOM Series ' + cnt
 
@@ -148,7 +149,7 @@ pro PMI__Button__SeriesImportDicom__Load, Stdy, files, sort0, sort1, status=stat
 	endfor
 
 	Dcm -> Trim, [range[0],0.8*range[1]]
-;	Dcm -> ReadDicom, files[0]
+	Dcm -> ReadDicom, files[0]
 	Dcm -> Set, obj_new('DATA_ELEMENT','5200'x,'9230'x,vr='SQ',value=Info)
 
 end
