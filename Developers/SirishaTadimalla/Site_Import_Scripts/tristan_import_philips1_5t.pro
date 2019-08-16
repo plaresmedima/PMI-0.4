@@ -313,7 +313,7 @@ pro TRISTAN_Import_Philips1_5T__LoadInversionRecovery, Sequence, Stdy, files, st
 
 	z = PMI__Dicom__Read(files_M,'0020'x,'1041'x) ;Slice location
 	t = PMI__Dicom__Read(files_M,'2005'x,'1572'x) ;Inversion Time
-
+	stop, t
 	files_TI = PMI__Dicom__Sort(files_M, z, t)
 	t = t[sort(t)]
 
@@ -485,6 +485,7 @@ end
 
 pro TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 
+	print, 'in Philips 1.5T'
 ;;;;CHECK SEQUENCE PARAMETERS
 
 ;;;;LOAD THE SERIES
@@ -502,12 +503,12 @@ pro TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 
 
 	TRISTAN_Import_Philips1_5T__LoadInversionRecovery, seq4, Stdy, files, status
-	TRISTAN_Import_Philips1_5T__Load3DSPGR_FB, seq6, Stdy, files, status
-	TRISTAN_Import_Philips1_5T__Load3DSPGR_BH, seq7, Stdy, files, status
-	TRISTAN_Import_Philips1_5T__LoadSequence, seq1, Stdy, files, first, status
+	;TRISTAN_Import_Philips1_5T__Load3DSPGR_FB, seq6, Stdy, files, status
+	;TRISTAN_Import_Philips1_5T__Load3DSPGR_BH, seq7, Stdy, files, status
+	;TRISTAN_Import_Philips1_5T__LoadSequence, seq1, Stdy, files, first, status
 
-	TRISTAN_Import_Philips1_5T__LoadVolume, seq2, Stdy, files, status
-	TRISTAN_Import_Philips1_5T__LoadVolume, seq3, Stdy, files, status
-	TRISTAN_Import_Philips1_5T__LoadRadial, seq5, Stdy, files, status
+	;TRISTAN_Import_Philips1_5T__LoadVolume, seq2, Stdy, files, status
+	;TRISTAN_Import_Philips1_5T__LoadVolume, seq3, Stdy, files, status
+	;TRISTAN_Import_Philips1_5T__LoadRadial, seq5, Stdy, files, status
 
 end

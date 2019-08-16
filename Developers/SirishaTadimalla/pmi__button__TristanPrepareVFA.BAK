@@ -22,19 +22,17 @@ pro PMI__Button__Event__TristanPrepareVFA, ev
 
 
 	dim = Series->d()
-	x = [0,dim[0]-1]
-	y = [0,dim[1]-1]
-	z = [0,dim[2]-1]
-	t = [0,dim[3]-1]
-
-	d = 1 + [x[1]-x[0],y[1]-y[0],z[1]-z[0],t[1]-t[0]]
 
 	FOR j=0L,dim[3]-1 DO BEGIN
 		Win = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[FA]'+ string(round(j)), $
-		Domain	= {z:Series->z(z[0],z[1]), t:Series->t(0), m:d[0:1]} )
+		Domain	= {z:Series->z(), t:Series->t(0), m:dim[0:1]} )
 		PMI__Message, status, 'Extracting', j/(dim[3]-1.0)
-		im = Series -> Read(Stdy->DataPath(),dim[2]-1,t[j])
-		Win -> Write, Stdy->DataPath(), im[x[0]:x[1],y[0]:y[1]],j
+		for i=0L,dim[2]-1 do begin
+			im = Series -> Read(Stdy->DataPath(),i,j)
+			print, im[32,32]
+			Win -> Write, Stdy->DataPath(), im,i,j
+		endfor
+
 	ENDFOR
 
 	PMI__control, ev.top, /refresh

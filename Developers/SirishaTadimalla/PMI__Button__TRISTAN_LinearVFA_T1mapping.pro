@@ -29,7 +29,7 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 	; if the FAs in the header are all the same, then we need to get them from the user
 	if (FA[0] EQ FA[2]) then begin
 		if nFA EQ 13 then begin
-			v = PMI__Form(top, Title='Extract series', [$
+			v = PMI__Form(ev.top, Title='Select series', [$
 			ptr_new({Type:'VALUE', Tag:'fa0', Label:'FA1'	, Value:FA[0]}),$
 			ptr_new({Type:'VALUE', Tag:'fa1', Label:'FA2'	, Value:FA[1]}),$
 			ptr_new({Type:'VALUE', Tag:'fa2', Label:'FA3'	, Value:FA[2]}),$
@@ -49,7 +49,7 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 		endif
 
 		if nFA EQ 7 then begin
-			v = PMI__Form(top, Title='Extract series', [$
+			v = PMI__Form(ev.top, Title='Select series', [$
 			ptr_new({Type:'VALUE', Tag:'fa0', Label:'FA1'	, Value:FA[0]}),$
 			ptr_new({Type:'VALUE', Tag:'fa1', Label:'FA2'	, Value:FA[1]}),$
 			ptr_new({Type:'VALUE', Tag:'fa2', Label:'FA3'	, Value:FA[2]}),$
@@ -63,7 +63,7 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 		endif
 
 		if nFA EQ 6 then begin
-			v = PMI__Form(top, Title='Extract series', [$
+			v = PMI__Form(ev.top, Title='Select series', [$
 			ptr_new({Type:'VALUE', Tag:'fa0', Label:'FA1'	, Value:FA[0]}),$
 			ptr_new({Type:'VALUE', Tag:'fa1', Label:'FA2'	, Value:FA[1]}),$
 			ptr_new({Type:'VALUE', Tag:'fa2', Label:'FA3'	, Value:FA[2]}),$
@@ -76,7 +76,7 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 		endif
 
 		if nFA EQ 4 then begin
-			v = PMI__Form(top, Title='Extract series', [$
+			v = PMI__Form(ev.top, Title='Select series', [$
 			ptr_new({Type:'VALUE', Tag:'fa0', Label:'FA1'	, Value:FA[0]}),$
 			ptr_new({Type:'VALUE', Tag:'fa1', Label:'FA2'	, Value:FA[1]}),$
 			ptr_new({Type:'VALUE', Tag:'fa2', Label:'FA3'	, Value:FA[2]}),$
