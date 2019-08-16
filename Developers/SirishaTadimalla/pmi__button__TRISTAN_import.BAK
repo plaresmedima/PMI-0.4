@@ -29,7 +29,6 @@ FUNCTION PMI__Button__TRISTAN_Import__QueryFolder, files, first, status=status
 	nSeries = n_elements(reduce(UID,first))
 	first = [first,n]
 
-
 	return, 1
 END
 
@@ -52,7 +51,7 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 
 	Manufacturer = PMI__Dicom__Read(files[0],'0008'x,'0070'x)
 	Version = PMI__Dicom__Read(files[0],'0008'x,'1090'x)
-	print, Manufacturer, Version
+	print, Version
 
 	Case Manufacturer of
 		 'SIEMENS ': Case Version of

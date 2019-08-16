@@ -29,7 +29,6 @@ FUNCTION PMI__Button__TRISTAN_Import__QueryFolder, files, first, status=status
 	nSeries = n_elements(reduce(UID,first))
 	first = [first,n]
 
-
 	return, 1
 END
 
