@@ -31,6 +31,7 @@
 
 
 	PMI__Menu__TRISTAN, mbar
-
+	;PMI__Menu__Nick, mbar
+	;PMI__Menu__TRISTANRATS, mbar
 
 end

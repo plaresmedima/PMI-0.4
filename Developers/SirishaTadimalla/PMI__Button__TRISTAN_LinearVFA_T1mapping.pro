@@ -26,6 +26,67 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 	FA = fltarr(nFA)
 	For k=0L, nFA-1 do FA[k] = (Stdy->Obj(0,sel[k]))->GETVALUE('0018'x,'1314'x)
 
+	; if the FAs in the header are all the same, then we need to get them from the user
+	if (FA[0] EQ FA[2]) then begin
+		if nFA EQ 13 then begin
+			v = PMI__Form(top, Title='Extract series', [$
+			ptr_new({Type:'VALUE', Tag:'fa0', Label:'FA1'	, Value:FA[0]}),$
+			ptr_new({Type:'VALUE', Tag:'fa1', Label:'FA2'	, Value:FA[1]}),$
+			ptr_new({Type:'VALUE', Tag:'fa2', Label:'FA3'	, Value:FA[2]}),$
+			ptr_new({Type:'VALUE', Tag:'fa3', Label:'FA4'	, Value:FA[3]}),$
+			ptr_new({Type:'VALUE', Tag:'fa4', Label:'FA5'	, Value:FA[4]}),$
+			ptr_new({Type:'VALUE', Tag:'fa5', Label:'FA6'	, Value:FA[5]}),$
+			ptr_new({Type:'VALUE', Tag:'fa6', Label:'FA7'	, Value:FA[6]}),$
+			ptr_new({Type:'VALUE', Tag:'fa7', Label:'FA8'	, Value:FA[7]}),$
+			ptr_new({Type:'VALUE', Tag:'fa8', Label:'FA9'	, Value:FA[8]}),$
+			ptr_new({Type:'VALUE', Tag:'fa9', Label:'FA10'	, Value:FA[9]}),$
+			ptr_new({Type:'VALUE', Tag:'fa10', Label:'FA11'	, Value:FA[10]}),$
+			ptr_new({Type:'VALUE', Tag:'fa11', Label:'FA12'	, Value:FA[11]}),$
+			ptr_new({Type:'VALUE', Tag:'fa12', Label:'FA13' , Value:FA[12]})])
+			if v.cancel then return
+
+			FA = [v.fa0,v.fa1,v.fa2,v.fa3,v.fa4,v.fa5,v.fa6,v.fa7,v.fa8,v.fa9,v.fa10,v.fa11,v.fa12]
+		endif
+
+		if nFA EQ 7 then begin
+			v = PMI__Form(top, Title='Extract series', [$
+			ptr_new({Type:'VALUE', Tag:'fa0', Label:'FA1'	, Value:FA[0]}),$
+			ptr_new({Type:'VALUE', Tag:'fa1', Label:'FA2'	, Value:FA[1]}),$
+			ptr_new({Type:'VALUE', Tag:'fa2', Label:'FA3'	, Value:FA[2]}),$
+			ptr_new({Type:'VALUE', Tag:'fa3', Label:'FA4'	, Value:FA[3]}),$
+			ptr_new({Type:'VALUE', Tag:'fa4', Label:'FA5'	, Value:FA[4]}),$
+			ptr_new({Type:'VALUE', Tag:'fa5', Label:'FA6'	, Value:FA[5]}),$
+			ptr_new({Type:'VALUE', Tag:'fa6', Label:'FA7' , Value:FA[6]})])
+			if v.cancel then return
+
+			FA = [v.fa0,v.fa1,v.fa2,v.fa3,v.fa4,v.fa5,v.fa6]
+		endif
+
+		if nFA EQ 6 then begin
+			v = PMI__Form(top, Title='Extract series', [$
+			ptr_new({Type:'VALUE', Tag:'fa0', Label:'FA1'	, Value:FA[0]}),$
+			ptr_new({Type:'VALUE', Tag:'fa1', Label:'FA2'	, Value:FA[1]}),$
+			ptr_new({Type:'VALUE', Tag:'fa2', Label:'FA3'	, Value:FA[2]}),$
+			ptr_new({Type:'VALUE', Tag:'fa3', Label:'FA4'	, Value:FA[3]}),$
+			ptr_new({Type:'VALUE', Tag:'fa4', Label:'FA5'	, Value:FA[4]}),$
+			ptr_new({Type:'VALUE', Tag:'fa5', Label:'FA6' , Value:FA[5]})])
+			if v.cancel then return
+
+			FA = [v.fa0,v.fa1,v.fa2,v.fa3,v.fa4,v.fa5]
+		endif
+
+		if nFA EQ 4 then begin
+			v = PMI__Form(top, Title='Extract series', [$
+			ptr_new({Type:'VALUE', Tag:'fa0', Label:'FA1'	, Value:FA[0]}),$
+			ptr_new({Type:'VALUE', Tag:'fa1', Label:'FA2'	, Value:FA[1]}),$
+			ptr_new({Type:'VALUE', Tag:'fa2', Label:'FA3'	, Value:FA[2]}),$
+			ptr_new({Type:'VALUE', Tag:'fa3', Label:'FA4' , Value:FA[5]})])
+			if v.cancel then return
+
+			FA = [v.fa0,v.fa1,v.fa2,v.fa3]
+		endif
+	endif
+
 	d = Default->d()
 	SVA_slice = fltarr(nFA,d[0]*d[1])
 	S0_slice = fltarr(d[0]*d[1])

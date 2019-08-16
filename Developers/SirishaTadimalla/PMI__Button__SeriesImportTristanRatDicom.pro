@@ -189,7 +189,7 @@ pro PMI__Button__Event__SeriesImportTristanRatDicom, ev
 	if not PMI__Button__SeriesImportTristanRatDicom__Input(ev.top, files=files, first=first) then goto, return
 
 	PMI__info, ev.top, Stdy=Stdy, Status=Status
-
+	print, n_elements(first)
 	n=n_elements(first)-1
 	for i=0L,n-1 do $
 		PMI__Button__SeriesImportTristanRatDicom__Load $

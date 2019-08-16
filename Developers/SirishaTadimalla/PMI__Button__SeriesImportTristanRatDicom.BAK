@@ -102,7 +102,7 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 
 	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)
 	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)
-	print, strmid(ProtocolName,2,15)
+
 	if (strmid(ProtocolName,0,10) eq 'vFAIgFLASH' || strmid(ProtocolName,2,10) eq 'vFAIgFLASH' || strmid(ProtocolName,2,15) eq 'TRISTAN_IGFLASH') then begin
 		scalefactor = 2
 		nx = floor(scalefactor*nx)
@@ -189,7 +189,7 @@ pro PMI__Button__Event__SeriesImportTristanRatDicom, ev
 	if not PMI__Button__SeriesImportTristanRatDicom__Input(ev.top, files=files, first=first) then goto, return
 
 	PMI__info, ev.top, Stdy=Stdy, Status=Status
-
+	print, n_elements(first)
 	n=n_elements(first)-1
 	for i=0L,n-1 do $
 		PMI__Button__SeriesImportTristanRatDicom__Load $
@@ -197,7 +197,7 @@ pro PMI__Button__Event__SeriesImportTristanRatDicom, ev
 		, files[first[i]:first[i+1]-1] $
 		, status = status $
 		, cnt = strcompress(i+1,/remove_all) + '/' + strcompress(n,/remove_all)
-
+	stop, cnt
 	PMI__control, ev.top, /refresh, Path=Path
 	return:PMI__Message, status
 end
