@@ -20,7 +20,7 @@ pro TRISTAN_Import_Philips1_5T__LoadDynamics_MoCo, Sequence, Stdy, files
 			image[*,*,j,k] = PMI__Dicom__ReadImage(files[ind]) ;read image data from file
 		endfor
 	endfor
-
+	return
 	;;;;;; Perform motion correction
 	; Set parameters for MoCoMo
 	in = {res:1E, prec:1E}
@@ -270,9 +270,12 @@ pro TRISTAN_Import_Philips1_5T__Load3DSPGR_FBdyn, Sequence, Stdy, files, status
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
 	files_FB = files[i]
-
+	; Separate the runs
+	j1 = where(strmatch(Series, Sequence+'_run1'+'*') eq 1, cnt)
+	j2 = where(strmatch(Series, Sequence+'_run2'+'*') eq 1, cnt)
 	; Load dynamic FB images - after motion correction
-	TRISTAN_Import_Philips1_5T__LoadDynamics_MoCo, Sequence+'_dynamic', Stdy, files_FB
+	TRISTAN_Import_Philips1_5T__LoadDynamics_MoCo, Sequence+'_dynamic1', Stdy, files_FB[j1]
+	TRISTAN_Import_Philips1_5T__LoadDynamics_MoCo, Sequence+'_dynamic2', Stdy, files_FB[j2]
 
 end
 
