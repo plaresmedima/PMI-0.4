@@ -361,9 +361,9 @@ pro TRISTAN_Import_Philips1_5T__getIRT1map, Sequence, Stdy, files_M, status
 
 		for i=0L,d[0]*d[1]-1 do begin
 			Sig = reform(P[i,*])
-			; Identify the minimum and its index and reverse signs of all elements upto this index
-			minS = min(Sig,ind)
-			Sig[0:ind] = -Sig[0:ind]
+			;; Identify the minimum and its index and reverse signs of all elements upto this index
+			;minS = min(Sig,ind)
+			;Sig[0:ind] = -Sig[0:ind]
 
 			Pars = [max(Sig), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1]
 			Fit = mpcurvefit(time, Sig, 1+0E*Sig, Pars, function_name='PMI__TRISTAN_MOLLI_T1mapping',/quiet,NODERIVATIVE=1)
@@ -526,15 +526,15 @@ pro TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 	seq10 = 'dyn_radialSPGR'	; radial dynamic
 
 
-	;TRISTAN_Import_Philips1_5T__LoadInversionRecovery, seq4, Stdy, files, status
+	TRISTAN_Import_Philips1_5T__LoadInversionRecovery, seq4, Stdy, files, status
 	TRISTAN_Import_Philips1_5T__Load3DSPGR_FBdyn, seq9, Stdy, files, status
-	;TRISTAN_Import_Philips1_5T__Load3DSPGR_BHdyn, seq8, Stdy, files, status
-	;TRISTAN_Import_Philips1_5T__Load3DSPGR_FB, seq6, Stdy, files, status
-	;TRISTAN_Import_Philips1_5T__Load3DSPGR_BH, seq7, Stdy, files, status
-	;TRISTAN_Import_Philips1_5T__LoadSequence, seq1, Stdy, files, first, status
-	;TRISTAN_Import_Philips1_5T__LoadVolume, seq2, Stdy, files, status
-	;TRISTAN_Import_Philips1_5T__LoadVolume, seq3, Stdy, files, status
-	;TRISTAN_Import_Philips1_5T__LoadRadial, seq5, Stdy, files, status
-	;TRISTAN_Import_Philips1_5T__LoadRadialdyn, seq10, Stdy, files, status
+	TRISTAN_Import_Philips1_5T__Load3DSPGR_BHdyn, seq8, Stdy, files, status
+	TRISTAN_Import_Philips1_5T__Load3DSPGR_FB, seq6, Stdy, files, status
+	TRISTAN_Import_Philips1_5T__Load3DSPGR_BH, seq7, Stdy, files, status
+	TRISTAN_Import_Philips1_5T__LoadSequence, seq1, Stdy, files, first, status
+	TRISTAN_Import_Philips1_5T__LoadVolume, seq2, Stdy, files, status
+	TRISTAN_Import_Philips1_5T__LoadVolume, seq3, Stdy, files, status
+	TRISTAN_Import_Philips1_5T__LoadRadial, seq5, Stdy, files, status
+	TRISTAN_Import_Philips1_5T__LoadRadialdyn, seq10, Stdy, files, status
 
 end
