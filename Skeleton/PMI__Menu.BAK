@@ -30,9 +30,18 @@
 	;Please name all your menus "PMI__Menu__XXXXX"
 
 
+<<<<<<< HEAD
 	PMI__Menu__demo, mbar
+=======
+
+	;PMI__Menu__TRISTAN, mbar
 
 
+	PMI__Menu__TRISTAN, mbar
+	;PMI__Menu__Nick, mbar
+	;PMI__Menu__TRISTANRATS, mbar
+	;PMI__Menu__Cathy, mbar
+>>>>>>> 1e61432a4ace580f86a9be12969fb7c893bee346
 
 
 end
