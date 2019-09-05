@@ -1,5 +1,5 @@
 
-pro TRISTAN_Import_Siemens3T__LoadDynamics_MoCo, Sequence, Stdy, files
+pro TRISTAN_Import_GE3T__LoadDynamics_MoCo, Sequence, Stdy, files
 
 	; Process dynamic dataset
 	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
@@ -37,16 +37,15 @@ pro TRISTAN_Import_Siemens3T__LoadDynamics_MoCo, Sequence, Stdy, files
 	Dcm -> Write, Stdy->DataPath(), image  ;write raw data to disk
 	Dcm -> Trim, [min(image),0.8*max(image)]  ;set default grey scale ranges
 	Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
-
 end
 
-pro TRISTAN_Import_Siemens3T__LoadVFA_MoCo, Sequence, Stdy, files
+pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
 
 	;;;;;;; Initialise
 	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
 	ny = PMI__Dicom__Read(files,'0028'x,'0010'x)
-	nz = 36
-	nt = 36
+	nz = 44
+	nt = 18
 
 	FA = PMI__Dicom__Read(files,'0018'x,'1314'x)
 	FA = FA[UNIQ(FA)]
@@ -112,8 +111,8 @@ pro TRISTAN_Import_Siemens3T__LoadVFA_MoCo, Sequence, Stdy, files
 			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]), RMS = rms)
 
 			S0_slice[i] = PAR[1]
-			R1_slice[i] = Par[0]
-			T1_slice[i] = 1/Par[0]
+			R1_slice[i] = PAR[0]
+			T1_slice[i] = 1/PAR[0]
 			Fit_slice[i] = rms
 
 		endfor
@@ -127,7 +126,7 @@ pro TRISTAN_Import_Siemens3T__LoadVFA_MoCo, Sequence, Stdy, files
 
 end
 
-pro TRISTAN_Import_Siemens3T__LoadDynamics, Sequence, Stdy, files
+pro TRISTAN_Import_GE3T__LoadDynamics, Sequence, Stdy, files
 
 	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
 	t = PMI__Dicom__Read(files,'0008'x,'0032'x) ;Array of Acquisition times
@@ -156,7 +155,7 @@ pro TRISTAN_Import_Siemens3T__LoadDynamics, Sequence, Stdy, files
 
 end
 
-pro TRISTAN_Import_Siemens3T__LoadVFA, Sequence, Stdy, files
+pro TRISTAN_Import_GE3T__LoadVFA, Sequence, Stdy, files
 
 	sort_z = ['0020'x,'1041'x]
 	sort_t = ['0008'x,'0032'x]
@@ -168,8 +167,7 @@ pro TRISTAN_Import_Siemens3T__LoadVFA, Sequence, Stdy, files
   	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
   	ny = PMI__Dicom__Read(files,'0028'x,'0010'x)
 
-	FA = PMI__Dicom__Read(files,'0018'x,'1314'x)
-	FA = FA[UNIQ(FA)]
+	FA = [2,5,10,15,20,25]
 
   	d = [max(nx),max(ny),n_elements(z),n_elements(FA)]
 
@@ -222,202 +220,67 @@ pro TRISTAN_Import_Siemens3T__LoadVFA, Sequence, Stdy, files
 	endfor
 end
 
-pro TRISTAN_Import_Siemens3T__Load3DSPGR, Sequence, Stdy, files, Series, status
 
-	PMI__Message, status, 'Loading 3DSPGR Data'
+pro TRISTAN_Import_GE3T__Load3DSPGR_BHdyn, Sequence, Stdy, files, status
 
-	i = where(Series eq Sequence, cnt)
-
+	PMI__Message, status, 'Loading 3DSPGR BH Data'
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
 
-	files_all = files[i]
-
-	; Separate the breath-hold and free-breathing series using number of rows
-	jBH = where(PMI__Dicom__Read(files_all,'0028'x,'0010'x) eq 256)
-	jFB = where(PMI__Dicom__Read(files_all,'0028'x,'0010'x) eq 96)
-
-	files_BH = files_all[jBH]
-	files_FB = files_all[jFB]
-
-	;;;;;;; Process BH dataset
-	; Get only VFA images
-	seriesNumbers = PMI__Dicom__Read(files_BH,'0020'x,'0011'x)
-	uniqueSeries = seriesNumbers[UNIQ(seriesNumbers, SORT(seriesNumbers))]
-	j1 = where(PMI__Dicom__Read(files_BH,'0020'x,'0011'x) NE uniqueSeries[n_elements(uniqueSeries)-1])
-
-	; Get VFA T1 map from BH dataset - no motion correction
-	TRISTAN_Import_Siemens3T__LoadVFA, Sequence+'_BH', Stdy, files_BH[j1]
+	files_BH = files[i]
 
 	; Load dynamic BH images - no motion correction
-	j2 = where(PMI__Dicom__Read(files_BH,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
-	TRISTAN_Import_Siemens3T__LoadDynamics, Sequence+'_dynamicBH', Stdy, files_BH[j2]
-
-	;;;;;;;; Process FB dataset
-	; Get only VFA images
-	seriesNumbers = PMI__Dicom__Read(files_FB,'0020'x,'0011'x)
-	uniqueSeries = seriesNumbers[UNIQ(seriesNumbers, SORT(seriesNumbers))]
-	j3 = where(PMI__Dicom__Read(files_FB,'0020'x,'0011'x) NE uniqueSeries[n_elements(uniqueSeries)-1])
-
-	; Get VFA T1 map from FB dataset - after motion correction
-	TRISTAN_Import_Siemens3T__LoadVFA_MoCo, Sequence+'_FB', Stdy, files_FB[j3]
-
-	; Load dynamic FB images - after motion correction
-	j4 = where(PMI__Dicom__Read(files_FB,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
-	TRISTAN_Import_Siemens3T__LoadDynamics_MoCo, Sequence+'_dynamicFB', Stdy, files_FB[j4]
+	TRISTAN_Import_GE3T__LoadDynamics, Sequence+'_dynamic', Stdy, files_BH
 
 end
 
-pro TRISTAN_Import_Siemens3T__LoadRAVE, Sequence, Stdy, files, Series, status
+pro TRISTAN_Import_GE3T__Load3DSPGR_BH, Sequence, Stdy, files, status
 
-	PMI__Message, status, 'Loading RAVE Data'
-
-	i = where(Series eq Sequence, cnt)
+	PMI__Message, status, 'Loading 3DSPGR BH Data'
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
-	files_RAVE = files[i]
 
-	; Separate individual flip angle and dynamic series using the series numbers
-	seriesNumbers = PMI__Dicom__Read(files_RAVE,'0020'x,'0011'x)
-	uniqueSeries = seriesNumbers[UNIQ(seriesNumbers, SORT(seriesNumbers))]
-	j = where(PMI__Dicom__Read(files_RAVE,'0020'x,'0011'x) NE uniqueSeries[n_elements(uniqueSeries)-1])
-	files_SEQ = files_RAVE[j]
-
+	files_BH = files[i]
 
 	; Get VFA T1 map from BH dataset - no motion correction
-	TRISTAN_Import_Siemens3T__LoadVFA, Sequence+'_RAVE', Stdy, files_SEQ
-
-	; Get dynamic dataset
-	j = where(PMI__Dicom__Read(files_RAVE,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
-	files_SEQ = files_RAVE[j]
-	TRISTAN_Import_Siemens3T__LoadDynamics, Sequence+'_dynamicRAVE', Stdy, files_SEQ
-
+	TRISTAN_Import_GE3T__LoadVFA, Sequence, Stdy, files_BH
 
 end
 
+pro TRISTAN_Import_GE3T__Load3DSPGR_FBdyn, Sequence, Stdy, files, status
 
-
-pro TRISTAN_Import_Siemens3T__LoadInversionRecovery, Sequence, Stdy, files, Series, status
-
-	PMI__Message, status, 'Loading Inversion Recovery Data'
-
-	i = where(Series eq Sequence, cnt)
+	PMI__Message, status, 'Loading 3DSPGR FB dynamic Data'
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
-	files_IR = files[i]
+	files_FB = files[i]
 
-	; Get phase images
-	j = where(PMI__Dicom__Read(files_IR,'0008'x,'0008'x) eq 'ORIGINAL\PRIMARY\P\DIS2D')
+	; Load dynamic FB images - after motion correction
+	TRISTAN_Import_GE3T__LoadDynamics_MoCo, Sequence+'_dynamic', Stdy, files_FB
 
-	files_P = files_IR[j]
+end
 
-	z = PMI__Dicom__Read(files_P,'0020'x,'1041'x) ;Slice location
-	t = PMI__Dicom__Read(files_P,'0018'x,'0082'x) ;Inversion Time
+pro TRISTAN_Import_GE3T__Load3DSPGR_FB, Sequence, Stdy, files, status
 
-	files_TI = PMI__Dicom__Sort(files_P, z, t)
+	PMI__Message, status, 'Loading 3DSPGR FB Data'
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
+	if cnt eq 0 then return
+	files_FB = files[i]
 
-	nx = PMI__Dicom__Read(files_TI[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_TI[0],'0028'x,'0010'x)
-	nz = n_elements(z)
-	nt = n_elements(t)
-
-	imageP = fltarr(nx,ny,nz*nt)
-
-	for k=0L,nz*nt-1 do imageP[*,*,k] = PMI__Dicom__ReadImage(files_TI[k])
-
-
-	Dcm = Stdy -> New('SERIES', Name=Sequence+'_Phase', Domain = {z:z, t:t, m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), imageP
-	Dcm -> Trim, [min(imageP),0.8*max(imageP)]
-	Dcm -> ReadDicom, files_TI[0]
-
-	; Get magnitude images
-	j = where(PMI__Dicom__Read(files_IR,'0008'x,'0008'x) eq 'ORIGINAL\PRIMARY\M\DIS2D')
-
-	files_M = files_IR[j]
-
-	z = PMI__Dicom__Read(files_M,'0020'x,'1041'x) ;Slice location
-	t = PMI__Dicom__Read(files_M,'0018'x,'0082'x) ;Inversion Time
-
-	files_TI = PMI__Dicom__Sort(files_M, z, t)
-	t = t[sort(t)]
-
-	nx = PMI__Dicom__Read(files_TI[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_TI[0],'0028'x,'0010'x)
-	nz = n_elements(z)
-	nt = n_elements(t)
-
-	imageM = fltarr(nx,ny,nz*nt)
-
-	for k=0L,nz*nt-1 do imageM[*,*,k] = PMI__Dicom__ReadImage(files_TI[k])
-
-
-	Dcm = Stdy -> New('SERIES', Name=Sequence+'_Magnitude', Domain = {z:z, t:t, m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), imageM
-	Dcm -> Trim, [min(imageM),0.8*max(imageM)]
-	Dcm -> ReadDicom, files_TI[0]
-
-	;Also calculate T1 map
-	print, 'T1mapping'
-
-	DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	ind = where(DynSeries EQ '*tfl2d1r86_Magnitude')
-	T1Series = Stdy->Obj(0,ind)
-
-	Dom = {z:T1Series->z(), t:T1Series->t(0), m:T1Series->m()}
-    Sinf = Stdy->New('SERIES', Domain= Dom,  Name= T1Series->name() + '_Sinf' )
-    Sratio = Stdy->New('SERIES', Domain= Dom,  Name= T1Series->name() + '_Sratio' )
-    St1 = Stdy->New('SERIES', Domain= Dom,  Name= T1Series->name() + '_T1')
-    St1corr = Stdy->New('SERIES', Domain= Dom,  Name= T1Series->name() + '_T1Corrected')
-
-	d = T1Series->d()
-	time = T1Series->t()
-	ExpectedT1 = max(time)/4.0
-
-	for j=0L,d[2]-1 do begin
-
-		PMI__Message, status, 'Calculating ', j/(d[2]-1E)
-
-		P = T1Series->Read(Stdy->DataPath(),z=T1Series->z(j))
-		P = reform(P,d[0]*d[1],d[3],/overwrite)
-
-		Sinf_slice = fltarr(d[0]*d[1])
-		Sratio_slice = fltarr(d[0]*d[1])
-		T1_slice = fltarr(d[0]*d[1])
-		T1_corr_slice = fltarr(d[0]*d[1])
-
-		for i=0L,d[0]*d[1]-1 do begin
-			Sig = reform(P[i,*])
-			; Identify the minimum and its index and reverse signs of all elements upto this index
-			minS = min(Sig,ind)
-			Sig[0:ind] = -Sig[0:ind]
-
-			Pars = [max(Sig), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1]
-			Fit = mpcurvefit(time, Sig, 1+0E*Sig, Pars, function_name='PMI__TRISTAN_MOLLI_T1mapping',/quiet,NODERIVATIVE=1)
-
-			Sinf_slice[i] = Pars[0]
-			Sratio_slice[i] = Pars[1]
-			T1_slice[i] = 1/Pars[2]
-			T1_corr_slice[i] = (Pars[1]-1)/Pars[2]
-		endfor
-
-		Sinf->Write, Stdy->DataPath(), Sinf_slice, j
-		Sratio->Write, Stdy->DataPath(), Sratio_slice, j
-		St1->Write, Stdy->DataPath(), T1_slice, j
-		St1corr->Write, Stdy->DataPath(), T1_corr_slice, j
-
-	endfor
-
-	Sinf->Trim, [0E, max(P)]
-	Sratio->Trim, [0E, max(P)]
-	St1->Trim, [0E, max(time)]
-	St1corr->Trim, [0E, max(time)]
+	; Get VFA T1 map from FB dataset - after motion correction
+	TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files_FB
 
 end
 
 
-pro TRISTAN_Import_Siemens3T__LoadVolume, Sequence, Stdy, files, SeriesType, status
+pro TRISTAN_Import_GE3T__LoadVolume, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading ' + Sequence
-
-	i = where(SeriesType eq Sequence, cnt)
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	i = where(Series eq Sequence, cnt)
 
 
 	if cnt eq 0 then return
@@ -453,13 +316,11 @@ end
 
 
 
-pro TRISTAN_Import_Siemens3T__LoadSequence, Sequence, SortBy=SortBy, Stdy, files, first, status
+pro TRISTAN_Import_GE3T__LoadSequence, Sequence, Stdy, files, first, status
 
   n = n_elements(first)-1
 
-  ;Series = string(PMI__Dicom__Read(files[first[0:n-1]],'0018'x,'1030'x))
-  ;Series = string(PMI__Dicom__Read(files[first[0]:first[n]-1],'0018'x,'0024'x))
-  Series = string(PMI__Dicom__Read(files,'0018'x,'0024'x))
+  Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
   i = where(Series eq Sequence, cnt)
   if cnt eq 0 then return
   Series = Series[i]
@@ -467,18 +328,8 @@ pro TRISTAN_Import_Siemens3T__LoadSequence, Sequence, SortBy=SortBy, Stdy, files
 
   PMI__Message, status, 'Sorting ' + Sequence
 
-  if n_elements(SortBy) eq 0 then SortBy = ['Slice location','Acquisition time']
-
-  case SortBy[0] of
-	'Slice location': sort_z = ['0020'x,'1041'x]
-	'Image number': sort_z = ['0020'x,'0013'x]
-  endcase
-
-  case SortBy[1] of
-	'Acquisition time': sort_t = ['0008'x,'0032'x]
-	'Image number': sort_t = ['0020'x,'0013'x]
-	'Echo time': sort_t = ['0018'x,'0081'x]  ;
-  endcase
+  sort_z = ['0020'x,'1041'x]
+  sort_t = ['0008'x,'0032'x]
 
   z = PMI__Dicom__Read(files_SEQ,sort_z[0],sort_z[1])
   t = PMI__Dicom__Read(files_SEQ,sort_t[0],sort_t[1])
@@ -517,34 +368,28 @@ pro TRISTAN_Import_Siemens3T__LoadSequence, Sequence, SortBy=SortBy, Stdy, files
 end
 
 
-pro TRISTAN_Import_Siemens3T, Stdy, files, first, status=status
+pro TRISTAN_Import_GE3T, Stdy, files, first, status=status
 
 ;;;;CHECK SEQUENCE PARAMETERS
 
 ;;;;LOAD THE SERIES
 
-	seq1 = '*tfi2d1_192 ' ; All Localiser images bundled up
+	seq1 = '3 plane Loc BH' ; All Localiser images bundled up
 
-	seq2 = '*h2d1_208 _Cor ' ; Coronal T2 HASTE
-	seq3 = '*h2d1_208 _Tra ' ; Transverse T2 HASTE
+	seq2 = 'Cor SSFSE NPW BH' ; Coronal T2 HASTE
 
-	seq4 = '*tfl2d1r86' ; LL T1 mapping
+	seq3 = 'VFA_FB'  ; 3D SPGR - VFA FB
+	seq4 = 'VFA_BH'  ; 3D SPGR - VFA BH
+	seq5 = '15_FB_DYN'  ; 3D SPGR - dynamic FB
+	seq6 = '15_BH_DYN'  ; 3D SPGR - dynamic BH
 
-	seq5 = 'RAVE3d1 ' ; RAVE VFA and dynamic
-	seq6 = '*fl3d1'  ; 3D SPGR - VFA and dynamic, BH and FB
+	;TRISTAN_Import_GE3T__Load3DSPGR_FB, seq3, Stdy, files, status
+	TRISTAN_Import_GE3T__Load3DSPGR_BH, seq4, Stdy, files, status
+	;TRISTAN_Import_GE3T__Load3DSPGR_FBdyn, seq5, Stdy, files, status
+	;TRISTAN_Import_GE3T__Load3DSPGR_BHdyn, seq6, Stdy, files, status
 
-	Series = string(PMI__Dicom__Read(files,'0018'x,'0024'x))
+	;TRISTAN_Import_GE3T__LoadSequence, seq1, Stdy, files, first, status
 
-
-	Orientation = PMI__Dicom__Read(files,'0051'x,'100E'x)  ;Orientation of images
-	SeriesType = Series + '_' + Orientation
-
-	TRISTAN_Import_Siemens3T__LoadInversionRecovery, seq4, Stdy, files, Series, status
-	TRISTAN_Import_Siemens3T__Load3DSPGR, seq6, Stdy, files, Series, status
-	TRISTAN_Import_Siemens3T__LoadSequence, seq1, Stdy, files, first, status
-
-	TRISTAN_Import_Siemens3T__LoadVolume, seq2, Stdy, files, SeriesType, status
-	TRISTAN_Import_Siemens3T__LoadVolume, seq3, Stdy, files, SeriesType, status
-	TRISTAN_Import_Siemens3T__LoadRAVE, seq5, Stdy, files, Series, status
+	;TRISTAN_Import_GE3T__LoadVolume, seq2, Stdy, files, status
 
 end
