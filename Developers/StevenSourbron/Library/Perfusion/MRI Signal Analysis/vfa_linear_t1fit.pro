@@ -1,9 +1,9 @@
-FUNCTION VFA_Linear_T1fit, TR, FA, S, RMS=RMS
+FUNCTION VFA_Linear_T1fit, TR, FA, S, RMS=RMS, PROB=prob
 
 	Y = S/sin(!PI*FA/180)
 	X = S/tan(!PI*FA/180)
 
-	VEC = LINFIT(X,Y)
+	VEC = LINFIT(X,Y, PROB=prob)
 
 	A = VEC[0]
 	B = VEC[1]

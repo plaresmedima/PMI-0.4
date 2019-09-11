@@ -25,7 +25,7 @@
 
 
 
-pro PMI__Menu__Basak, parent
+pro PMI__Menu__Jeong, parent
 
 	PMI__Menu__Skeleton, parent
 	PMI__Menu__Slices, parent
@@ -41,6 +41,12 @@ pro PMI__Menu__Basak, parent
 	Sid = PMI__Button__KidneyModelsROI(id, value = 'Kidney models (ROI)')
 	Sid = PMI__Button__FitDualInletRoi(id, value = 'Liver models (ROI)')
 
-	id = widget_button(parent, value='Basak',/menu)
+	id = widget_button(parent, value='Jeong',/menu)
+
+	Sid = PMI__Button__Jeong_SemiQuantitativePerfusion(id, value='Semi-quantitative analysis (Pixel)')
+	Sid = PMI__Button__Jeong_FitDualInletRoi(id, value = 'Quantitative analysis (ROI)')
+	Sid = PMI__Button__Jeong_DualInletOneCompPixel(id, value='Quantitative analysis (Pixel)', /separator)
+;   Sid = PMI__Button__Sergios_FastDeconvolutionAnalysis(id, value='Model-free quantitative analysis (Pixel)')
+;	Sid = PMI__Button__JeongLinearVFA(id, value='Variable Flip Angle T1-mapping (Pixel)',/separator)
 
 end

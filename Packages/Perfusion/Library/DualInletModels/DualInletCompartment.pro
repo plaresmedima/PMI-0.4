@@ -37,11 +37,14 @@ Pro DualInletCompartment, X, P, F, Fi
 	ti=X[1:ni] & time=X[ni+1:ni+n]
 	inputA=X[ni+n+1:ni+2*n] & inputV=X[ni+2*n+1:*]
 
-	F0 = ExpConvolution(KT,[time,inputA],Der=D0)
-	F1 = ExpConvolution(KT,[time,inputV],Der=D1)
+;	F0 = ExpConvolution(KT,[time,inputA],Der=D0)
+;	F1 = ExpConvolution(KT,[time,inputV],Der=D1)
+
+	F0 = ExpConvolution(KT,[time,inputA])
+	F1 = ExpConvolution(KT,[time,inputV])
 
 	F0=F0[ti] & F1=F1[ti]
-	D0=D0[ti] & D1=D1[ti]
+;	D0=D0[ti] & D1=D1[ti]
 
 	F = P[0]*F0 + P[1]*F1
 
