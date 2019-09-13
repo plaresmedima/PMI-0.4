@@ -1,0 +1,29 @@
+;  vh ch' = khe ce - kbh ch
+;  ch = exp(-t kbh/vh) * (khe/vh) ce
+
+;	DR1(t) = re ve ce(t) + rh khe exp(-t Kc) * ce(t)
+;	P = [khe, kbh]
+
+; 	Kc = kbh/vh
+
+Pro TristanRatModel_v2_0, X, P, DR1
+
+	if n_params() eq 0 then return
+
+	re = X[0]
+	rh = X[1]
+	ve = X[2]
+	vh = X[3]
+	ni = X[4]
+	ti = X[5:5+ni-1]
+	n = n_elements(X[5+ni:*])/2
+	time = X[5+ni:5+ni+n-1]
+	aif = X[5+ni+n:*]
+
+	Kc = P[1]/vh
+
+	Conv = ExpConvolution(Kc,[time,aif])
+
+	DR1 = re * ve * aif[ti] + rh * P[0] * Conv[ti]
+
+end

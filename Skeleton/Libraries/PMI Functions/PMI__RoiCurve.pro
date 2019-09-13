@@ -16,7 +16,7 @@
 ;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-FUNCTION PMI__RoiCurve, Path, S, R, id, X=X, cnt=cnt, slice=slice
+FUNCTION PMI__RoiCurve, Path, S, R, id, X=X, cnt=cnt, slice=slice, INDICES=ind
 
 	d = S->d()
 
@@ -57,10 +57,10 @@ FUNCTION PMI__RoiCurve, Path, S, R, id, X=X, cnt=cnt, slice=slice
 		Y = Y + Yi
    	endfor
 
-    k = where(N gt 0, cnt)
-     if cnt gt 0 then begin
-       X = X[k]
-       Y = Y[k]/N[k]
+    ind = where(N gt 0, cnt)
+    if cnt gt 0 then begin
+       X = X[ind]
+       Y = Y[ind]/N[ind]
     endif
 
     return, Y

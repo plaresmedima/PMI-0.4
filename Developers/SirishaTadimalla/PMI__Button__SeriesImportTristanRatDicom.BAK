@@ -197,7 +197,7 @@ pro PMI__Button__Event__SeriesImportTristanRatDicom, ev
 		, files[first[i]:first[i+1]-1] $
 		, status = status $
 		, cnt = strcompress(i+1,/remove_all) + '/' + strcompress(n,/remove_all)
-	stop, cnt
+
 	PMI__control, ev.top, /refresh, Path=Path
 	return:PMI__Message, status
 end

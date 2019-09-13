@@ -1,33 +1,72 @@
 
+FUNCTION PMI__Display__tristanratsroi_v2_0::Constants
 
+	FieldStrength = self.series->GETVALUE('0018'x,'0087'x)
 
-PRO PMI__Display__tristanratsroi::Fit
+	c = {rb:0E, rh:0E, ve:0E, vh:0E, ves:0E, R1l:0E, R1s:0E}
 
-	Self->GET, Model=Model, Delay=Delay, Time=Time, AifCurve=Aif, RoiCurve=Curve
+	; Relaxivity measurements provided by Claudia Green, Bayer, sept 2019
+
+	Case floor(FieldStrength) of
+		4.0: begin
+			c.rb = 6.4 ;relaxivity of blood in Hz/mM ;assume spleen relaxivity is the same
+			c.rh = 7.6 ;relaxivity of hepatocytes
+			c.R1l = 1.3203 ; per sec - liver R1
+			c.R1s = 0.7458 ; per sec - spleen R1
+		end
+		7.0: begin
+			c.rb = 6.2 ;relaxivity of blood in Hz/mM ;assume spleen relaxivity is the same
+			c.rh = 6.0 ;relaxivity of hepatocytes
+			c.R1l = 0.8346 ; per sec - liver R1
+			c.R1s = 0.6313 ; per sec - spleen R1
+		end
+	Endcase
+
+	;Volume values provided by Dan Scotcher (email 13 sept 2019)
+	c.ve = 0.230 ;extracellular_volume_fraction in the liver
+	c.vh = 0.722 ;hepatocyte_volume_fraction
+	c.ves = 0.314 ;spleen_extracellular_volume_fraction
+
+	return, c
+
+END
+
+PRO PMI__Display__tristanratsroi_v2_0::Fit
+
+	Self->GET, Model=Model, Time=Time, AifCurve=Aif, RoiCurve=Curve, Indices=ti
 	Self->SET, Message='Fitting...', Sensitive=0
 
-	IF Delay NE 0 THEN DELAY_VALUES=[0,10,time[1]/2]
+	c = self->constants()
+	aif /= c.rb ;spleen concentration
+	aif /= c.ves ;extracellular concentration
 
-	CASE Model OF
+	;FIT CURVE
 
-		'TRISTAN Rat Model':begin
-			P = [0.0393, 0.00153] * (1-0.23) 	;[khe, kbh] in units 1/s
-			Fit = FitSingleInlet('TristanRatModel',time,aif,curve,P, DELAY_PAR=Pd, DELAY_VALUES=DELAY_VALUES, /NODERIVATIVE, AKAIKE_ERROR=aic)
-			Parameters = $
-				[{Name:'Hepatocellular Uptake Rate (khe) '		,Units:'ml/min/ml'		,Value: 60D*P[0]	,Nr: 2} $
-				,{Name:'Biliary Efflux Rate (kbh) '		,Units:'ml/min/ml'		,Value: 60D*P[1]	,Nr: 3} $
-				,{Name:'Hepatocellular Transit Time (Tc) '		,Units:'min'	,Value:(1-0.23)/P[1]/60D	,Nr: 4} ]
-			IF Delay NE 0 THEN $
-				Parameters = [Parameters,{Name:'Arterial Delay', Units:'sec', Value:1D*Pd, Nr:5} ]
-			end
-	endcase
+	n = n_elements(Time)
+	ti = *(self.Indices[0])
+	ni = n_elements(ti)
+
+	Pars = [0.0393, 0.00153] * (1-0.23) 	;[khe, kbh] in units 1/s
+	parinfo = replicate({limited:[1B,0B], limits:[0D,1D]}, 2)
+	Fit = mpcurvefit([c.rb,c.rh,c.ve,c.vh,ni,ti,Time,aif], $
+		Curve, 1+0E*Curve, Pars, $
+		function_name='TristanRatModel_v2_0', $
+		/quiet,/NODERIVATIVE, PARINFO=parinfo)
+	FitError = sqrt(total((Fit-Curve)^2))/sqrt(total((Curve)^2))
+	if ni ne n then TristanRatModel_v2_0, [c.rb,c.rh,c.ve,c.vh, n,lindgen(n),Time,aif], Pars, Fit
+
+	Parameters = $
+		[{Name:'Hepatocellular Uptake Rate (khe) '		,Units:'ml/min/ml'		,Value: 60D*Pars[0]	        ,Nr: 2} $
+		,{Name:'Biliary Efflux Rate (kbh) '		        ,Units:'ml/min/ml'		,Value: 60D*Pars[1]	        ,Nr: 3} $
+		,{Name:'Hepatocellular Transit Time (Tc) '		,Units:'min'	        ,Value: c.vh/Pars[1]/60D	,Nr: 4} $
+		,{Name:'RMS Fit Error '		                    ,Units:'%'	            ,Value: 100D*FitError	    ,Nr: 6} ]
 
 	self.Curve[2] = ptr_new(Fit)
 	self.Parameters = ptr_new(Parameters)
 	Self->SET, /Sensitive
 END
 
-PRO PMI__Display__tristanratsroi::Plot
+PRO PMI__Display__tristanratsroi_v2_0::Plot
 
 	Self->GET, OnDisplay=OnDisplay
 
@@ -36,46 +75,47 @@ PRO PMI__Display__tristanratsroi::Plot
 	CASE OnDisplay OF
 
 		'ROI':begin
-			Self -> GET, Time=Time, RoiCurve=Y, RoiName=RoiName, Units=Units
+			Self -> GET, Time=Time, RoiCurve=Y, RoiName=RoiName, Indices=Ind
 			Self -> SET, /Erase
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
 			, 	[0,max(time)], [min(Y),max(Y)] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'Time (sec)', ytitle=Units $
+			, 	xtitle = 'Time (sec)', ytitle= 'Change in R1 (1/sec)' $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, time, Y, color=6*16, linestyle=0, thick=2
+			oplot, time[Ind], Y, color=6*16, linestyle=0, thick=2
 			xyouts, x0, top-0*dy, 'Liver ROI: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
 		'AIF':begin
-			Self -> GET, Time=Time, AifCurve=Y, AifName=AifName, Units=Units
+			Self -> GET, Time=Time, AifCurve=Y, AifName=AifName
 			Self -> SET, /Erase
  			plot, time, Y, position=[0.1,0.2,0.5,0.9]  $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'Time (sec)', ytitle=Units $
+			, 	xtitle = 'Time (sec)', ytitle='Change in R1 (1/sec)' $
 			, 	linestyle=0, thick=2 $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 			xyouts, x0, top-1*dy, 'Spleen ROI: ' + AifName	, color=0, /normal, charsize=1.5, charthick=1.5
 			end
 
 		'FIT':BEGIN
-			Self -> GET, RoiCurve=Curve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, AifName=AifName, Units=Units
+			Self -> GET, RoiCurve=Curve, AifCurve=Aif, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, AifName=AifName, Indices=Ind
 			Self -> SET, /Erase
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(time)], [min([min(Curve),min(Fit)]),max([max(Curve),max(Fit)])] $
+			, 	[0,max(time)], [min([min(Curve),min(Aif),min(Fit)]),max([max(Curve),max(Aif),max(Fit)])] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'Time (sec)', ytitle=Units $
+			, 	xtitle = 'Time (sec)', ytitle='Change in R1 (1/sec)' $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, time, Curve, color=6*16, psym=4, thick=2
+			oplot, time[Ind], Curve, color=6*16, psym=4, thick=2
+			oplot, time, Aif, color=0*16, linestyle=0, thick=2
 			oplot, time, Fit, color=12*16, linestyle=0, thick=2
 
-			xyouts, x0, top-0*dy, 'Liver ROI: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
-			xyouts, x0, top-1*dy, 'Spleen ROI: ' + AifName	, color=0, /normal, charsize=1.5, charthick=1.5
-			xyouts, x0, top-3*dy, 'Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
+			xyouts, x0, top-0*dy, 'Liver ROI: ' + RoiName	, color=6*16 , /normal, charsize=1.5, charthick=1.5
+			xyouts, x0, top-1*dy, 'Spleen ROI: ' + AifName	, color=0    , /normal, charsize=1.5, charthick=1.5
+			xyouts, x0, top-3*dy, 'Tissue Model: ' + Model	, color=12*16, /normal, charsize=1.5, charthick=1.5
 
 			P = *self.Parameters
 
@@ -91,7 +131,7 @@ END
 
 
 
-FUNCTION PMI__Display__tristanratsroi::Event, ev
+FUNCTION PMI__Display__tristanratsroi_v2_0::Event, ev
 
 	Uname = widget_info(ev.id,/uname)
 
@@ -129,6 +169,7 @@ FUNCTION PMI__Display__tristanratsroi::Event, ev
 	i = where(Uname Eq ['ROI','AIF'], cnt)
 	If cnt eq 1 then begin
 		ptr_free, Self.Curve[i], Self.Curve[2], self.parameters
+		if i eq 0 then ptr_free, self.Indices[i]
 		self->plot
 		return, 0B
 	endif
@@ -150,10 +191,10 @@ FUNCTION PMI__Display__tristanratsroi::Event, ev
 	i = where(Uname Eq ['Export','Export As'], cnt)
 	if cnt eq 1 then begin
 
-		Self->GET, Time=Time, RoiCurve=RoiCurve, AifCurve=AifCurve, Fit=Fit, Model=Model, Roiname=Roiname
+		Self->GET, Time=Time, RoiCurve=RoiCurve, AifCurve=AifCurve, Fit=Fit, Model=Model, Roiname=Roiname, Indices=Ind
 		if Uname eq 'Export' then begin
 			PMI__Info, ev.top, Stdy=Stdy
-			Path = Stdy->Datapath() + 'TRISTAN Rat Model (ROI)'
+			Path = Stdy->Datapath() + 'TRISTAN Rat Model v2.0 (ROI)'
 			file_mkdir, Path
 			File = Path + '\' + Roiname + '__SI_' + Model
 		endif else begin
@@ -164,20 +205,20 @@ FUNCTION PMI__Display__tristanratsroi::Event, ev
 		Write_tiff, File + '.tif', reverse(tvrd(/true),3)
 
 		ExportCurves = strarr(3,1+n_elements(time))
-		ExportCurves[*,0] = ['Time (s)','Extracellular Conc (mM)', 'Liver Conc (mM)']
+		ExportCurves[*,0] = ['Time (s)','Spleen Delta R1 (/sec)', 'Liver Delta R1 (/sec)']
 		ExportCurves[0,1:*] = strcompress(Time,/remove_all)
 		ExportCurves[1,1:*] = strcompress(AifCurve,/remove_all)
-		ExportCurves[2,1:*] = strcompress(RoiCurve,/remove_all)
-		PMI__Write_csv, File +'_Concentrations.csv', ExportCurves
+		ExportCurves[2,1+Ind] = strcompress(RoiCurve,/remove_all)
+		PMI__Write_csv, File +'__Relaxation_rates.csv', ExportCurves
 
 		ExportCurves = strarr(3,1+n_elements(time))
 		ExportCurves[*,0] = ['Time (s)','Spleen (a.u.)', 'Liver (a.u.)']
 		ExportCurves[0,1:*] = strcompress(Time,/remove_all)
 		ExportCurves[1,1:*] = strcompress(*Self.Curve[1],/remove_all)
-		ExportCurves[2,1:*] = strcompress(*Self.Curve[0],/remove_all)
-		PMI__Write_csv, File +'_Signals.csv', ExportCurves
+		ExportCurves[2,1+Ind] = strcompress(*Self.Curve[0],/remove_all)
+		PMI__Write_csv, File +'__Signals.csv', ExportCurves
 
-		ExportParameters = strarr(3,3)
+		ExportParameters = strarr(3,4)
 		ExportParameters[0,*] = (*self.Parameters).Name + '  (' + (*self.Parameters).Units + ')'
 		ExportParameters[1,*] = strcompress((*self.Parameters).Value,/remove_all)
 		PMI__Write_csv, File + '__Parameters.csv', ExportParameters
@@ -192,39 +233,20 @@ FUNCTION PMI__Display__tristanratsroi::Event, ev
 	return, 0B
 END
 
-FUNCTION PMI__Display__Event__tristanratsroi, ev
+FUNCTION PMI__Display__Event__tristanratsroi_v2_0, ev
 
 	widget_control, ev.handler, get_uvalue=self
 	return, Self -> Event(ev)
 END
 
-FUNCTION PMI__Display__tristanratsroi::Conc, Region
+FUNCTION PMI__Display__tristanratsroi_v2_0::DR1, Region
 
 	case Region of
 		'ROI':Signal=*Self.Curve[0]
 		'AIF':Signal=*Self.Curve[1]
 	endcase
-;	Self -> GET, SignalModel=SignalModel
 
 	S0 = total(Signal[0:self.baseline-1])/self.baseline
-
-	FieldStrength = self.series->GETVALUE('0018'x,'0087'x)
-	Case floor(FieldStrength) of
-		4.0: begin
-			relaxivity = 5.5
-			case Region of
-				'ROI':R10 = 1.3203/1000 ; per msec
-				'AIF':R10 = 0.7458/1000 ; per msec
-			endcase
-		end
-		7.0: begin
-			relaxivity = 5.1
-			case Region of
-				'ROI':R10 = 0.8346/1000 ; per msec
-				'AIF':R10 = 0.6313/1000 ; per msec
-			endcase
-		end
-	Endcase
 
 	IF self.TR EQ 0 THEN BEGIN
 		self.TR = self.series->GETVALUE('0018'x,'0080'x)
@@ -239,31 +261,40 @@ FUNCTION PMI__Display__tristanratsroi::Conc, Region
 			ENDELSE
 		ENDIF
 	ENDIF
-	return, Concentration_SPGRESS(Signal, S0, 1/R10, self.FA, self.TR, relaxivity)
+
+	c = self->constants()
+	case Region of
+		'ROI':return, Concentration_SPGRESS(Signal, S0, 1000/c.R1l, self.FA, self.TR, 1.0) ;change in R1 (1/sec)
+		'AIF':return, Concentration_SPGRESS(Signal, S0, 1000/c.R1s, self.FA, self.TR, 1.0) ;change in R1 (1/sec)
+	endcase
+
 END
 
-FUNCTION PMI__Display__tristanratsroi::GetCurve, Region
+FUNCTION PMI__Display__tristanratsroi_v2_0::GetCurve, Region, INDICES=TimeIndices
 
 	Self -> GET, Time=Time, Stdy=Stdy, Region=Region
 	Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
-	Signal = PMI__RoiCurve(Stdy->DataPath(), Self.Series, Region, cnt=cnt)
+	Signal = PMI__RoiCurve(Stdy->DataPath(), Self.Series, Region, INDICES=TimeIndices, cnt=cnt)
 	Self -> SET, /Sensitive
-	if cnt eq 0 then return, Time*0
+	if cnt eq 0 then begin
+		TimeIndices = lindgen(n_elements(Time))
+		return, Time*0
+	endif
 	return, Signal
 END
 
-FUNCTION PMI__Display__tristanratsroi::GetName, Region
+FUNCTION PMI__Display__tristanratsroi_v2_0::GetName, Region
 
 	self->GET, Region=Region
 	return, Region -> Name()
 END
 
 
-PRO PMI__Display__tristanratsroi::GET, $
+PRO PMI__Display__tristanratsroi_v2_0::GET, $
  	CursorPos = CursorPos, $
 	Model=Model, Delay=Delay, $
-	Time=Time, Fit=Fit, Units=Units, SignalModel=SignalModel, $
- 	RoiCurve=RoiCurve, AifCurve=AifCurve, $
+	Time=Time, Fit=Fit, SignalModel=SignalModel, $
+ 	RoiCurve=RoiCurve, AifCurve=AifCurve, Indices=RoiIndices, $
 	RoiName=RoiName, AifName=AifName, $
  	OnDisplay=OnDisplay, $
 	RoiVolume=RoiVolume, $
@@ -289,26 +320,29 @@ PRO PMI__Display__tristanratsroi::GET, $
 	if arg_present(AifName) then AifName=Self->GetName('AIF')
 
 	if arg_present(RoiCurve) then begin
-		if not ptr_valid(Self.Curve[0]) then Self.Curve[0] = ptr_new(Self->GetCurve('ROI'))
-		RoiCurve = self->Conc('ROI')
+		if not ptr_valid(Self.Curve[0]) then begin
+			Curve = Self->GetCurve('ROI', INDICES=RoiIndices)
+			Self.Curve[0] = ptr_new(Curve)
+			Self.Indices[0] = ptr_new(RoiIndices)
+		endif else RoiIndices = *(Self.Indices[0])
+		RoiCurve = self->DR1('ROI')
 	endif
 
 	if arg_present(AifCurve) then begin
-		if not ptr_valid(Self.Curve[1]) then Self.Curve[1] = ptr_new(Self->GetCurve('AIF'))
-		AifCurve = Self->Conc('AIF')/0.43 ;Spleen ve = 0.43
+		if not ptr_valid(Self.Curve[1]) then begin
+			Curve = Self->GetCurve('AIF', INDICES=AifIndices)
+			Self -> GET, Time=Time
+			if n_elements(AifIndices) LT n_elements(Time) then $
+				Curve = INTERPOL(Curve, Time[AifIndices], Time)
+			Self.Curve[1] = ptr_new(Curve)
+		endif
+		AifCurve = Self->DR1('AIF')
 	endif
 
 	if arg_present(FIT) then begin
 		if not ptr_valid(Self.Curve[2]) then Self->Fit
 		FIT = *Self.Curve[2]
 		endif
-
-	if arg_present(units) then begin
-		Self -> GET, SignalModel=tmp
-		case tmp of
-			0:units = 'Concentration (mM)'
-		endcase
-	endif
 
 	if arg_present(SignalModel) then begin
 		id = widget_info(self.id,find_by_uname='SIG')
@@ -339,7 +373,7 @@ PRO PMI__Display__tristanratsroi::GET, $
 	endif
 END
 
-PRO PMI__Display__tristanratsroi::SET, $
+PRO PMI__Display__tristanratsroi_v2_0::SET, $
 	PMI__REFRESH=pmi__refresh, PMI__RESIZE=pmi_resize, $
 	Refresh=Refresh, Erase=Erase, $
 	Message=Message, Sensitive=Sensitive, $
@@ -401,13 +435,13 @@ END
 
 
 
-PRO PMI__Display__tristanratsroi::Cleanup
+PRO PMI__Display__tristanratsroi_v2_0::Cleanup
 	widget_control, self.id, /destroy
-	ptr_free, Self.Curve, self.Parameters
+	ptr_free, Self.Curve, self.Indices, self.Parameters
 	loadct, 0
 END
 
-FUNCTION PMI__Display__tristanratsroi::Init, parent, CursorPos, xsize=xsize, ysize=ysize
+FUNCTION PMI__Display__tristanratsroi_v2_0::Init, parent, CursorPos, xsize=xsize, ysize=ysize
 
 	if n_elements(CursorPos) ne 0 then self.CursorPos = CursorPos
 
@@ -415,7 +449,7 @@ FUNCTION PMI__Display__tristanratsroi::Init, parent, CursorPos, xsize=xsize, ysi
 
 	PMI__Info, tlb(parent), Stdy=Stdy
 
-	self.id = widget_base(parent,/column,map=0,event_func='PMI__Display__Event__tristanratsroi')
+	self.id = widget_base(parent,/column,map=0,event_func='PMI__Display__Event__tristanratsroi_v2_0')
 	Controls = widget_base(self.id,/row,ysize=40,/base_align_center,space=5)
 	self.DrawId	= widget_draw(self.id,/retain)
 
@@ -432,7 +466,7 @@ FUNCTION PMI__Display__tristanratsroi::Init, parent, CursorPos, xsize=xsize, ysi
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['TRISTAN Rat Model'])
+			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['TRISTAN Rat Model v2.0'])
   			widget_control, id, set_droplist_select = 0, sensitive=0
 
 		Base = widget_base(Controls,/row,/frame,/nonexclusive)
@@ -448,15 +482,16 @@ FUNCTION PMI__Display__tristanratsroi::Init, parent, CursorPos, xsize=xsize, ysi
 	return, 1
 END
 
-PRO PMI__Display__tristanratsroi__Define
+PRO PMI__Display__tristanratsroi_v2_0__Define
 
-	SingleInletTristanRatModel
+	TristanRatModel_v2_0
 
-	Struct = {PMI__Display__tristanratsroi 	$
+	Struct = {PMI__Display__tristanratsroi_v2_0 	$
 	,	id: 0L 	$
 	,	DrawId: 0L $
 	,	CursorPos:lonarr(4)	$
 	,	Curve:ptrarr(3) $ ;RoiCurve, AifCurve, Fit
+	,	Indices:ptrarr(1) $ ; RoiIndices
 	,	Parameters: ptr_new() $
 	,	Series: obj_new() $
 	,	Baseline: 0L $
@@ -466,7 +501,7 @@ PRO PMI__Display__tristanratsroi__Define
 END
 
 
-pro PMI__Button__Event__tristanratsroi, ev
+pro PMI__Button__Event__tristanratsroi_v2_0, ev
 
 	PMI__Info, ev.top, Stdy=Stdy
 
@@ -480,7 +515,7 @@ pro PMI__Button__Event__tristanratsroi, ev
 		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Number of precontrast scans', Value:4L})])
 	IF v.cancel THEN return
 
-	PMI__Control, ev.top, Viewer = 'PMI__Display__tristanratsroi', Display=Display
+	PMI__Control, ev.top, Viewer = 'PMI__Display__tristanratsroi_v2_0', Display=Display
 
 	Display -> Set, /Refresh, $
 		Series = Stdy->Obj(0,ind[v.series]), $
@@ -488,7 +523,7 @@ pro PMI__Button__Event__tristanratsroi, ev
 		set_droplist_select = [v.roi,v.aif]
 end
 
-pro PMI__Button__Control__tristanratsroi, id, v
+pro PMI__Button__Control__tristanratsroi_v2_0, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -499,15 +534,15 @@ pro PMI__Button__Control__tristanratsroi, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__tristanratsroi, parent,value=value, separator=separator
+function PMI__Button__tristanratsroi_v2_0, parent,value=value, separator=separator
 
-	PMI__Display__tristanratsroi__Define
+	PMI__Display__tristanratsroi_v2_0__Define
 
 	if n_elements(value) eq 0 then value = 'TRISTAN RAT models (ROI)'
 
 	return, widget_button(parent, $
 		value = value,	$
-		event_pro = 'PMI__Button__Event__tristanratsroi',	$
-		pro_set_value = 'PMI__Button__Control__tristanratsroi', $
+		event_pro = 'PMI__Button__Event__tristanratsroi_v2_0',	$
+		pro_set_value = 'PMI__Button__Control__tristanratsroi_v2_0', $
 	 	separator = separator )
 end

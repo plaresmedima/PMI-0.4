@@ -119,7 +119,7 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 			appendix = '_[DCE]'
 			t = 57*findgen(n_elements(t)) ;acquisition times
 			end
-		else: appendix = ''
+		else: appendix = '_'
 	endcase
 	Name = string(ProtocolName) + appendix
 

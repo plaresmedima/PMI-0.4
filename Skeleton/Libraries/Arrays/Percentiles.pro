@@ -30,6 +30,5 @@ function percentiles, X, P, InterQuartile=IQ
 	X = X[sort(X)]
 	n = n_elements(X)
 
-
 	return, X[floor((p/100D)*(n-1D))]
 end
