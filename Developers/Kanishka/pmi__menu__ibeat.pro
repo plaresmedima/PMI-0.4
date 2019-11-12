@@ -51,7 +51,10 @@ pro PMI__Menu__iBeat, parent
 
     id = widget_button(parent, value='iBEAt',/menu)
 
-	Sid = PMI__Button__KidneyModelsROI_iBEAt(id, value = 'Kidney models (ROI)')
+	Sid = PMI__Button__SemiQuantitativePerfusion(id	, value='DCE semi-quantitative analysis')
+	Sid = PMI__Button__FastDeconvolutionAnalysis(id, value='DCE model-free analyss')
+	Sid = PMI__Button__MOCOMO_2D_DCE_2CM(id, value='DCE motion correction')
+	Sid = PMI__Button__KidneyModelsROI_iBEAt(id, value = 'DCE ROI modelling')
 
 ;	Sid = PMI__Button__iBEAt_Import(id, value = 'Import DICOM')
 ;	Sid = PMI__Button__DumpDicom(id, /separator)
