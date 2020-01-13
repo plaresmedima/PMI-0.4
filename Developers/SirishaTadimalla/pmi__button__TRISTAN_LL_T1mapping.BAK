@@ -1,4 +1,4 @@
-FUNCTION PMI__Button__Input__TRISTAN_Siemens_T1mapping, top, series
+FUNCTION PMI__Button__Input__TRISTAN_LL_T1mapping, top, series
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -12,11 +12,11 @@ END
 
 
 
-pro PMI__Button__Event__TRISTAN_Siemens_T1mapping, ev
+pro PMI__Button__Event__TRISTAN_LL_T1mapping, ev
 
 	PMI__Message, status, 'Preparing calculation..'
 
-    IF NOT PMI__Button__Input__TRISTAN_Siemens_T1mapping(ev.top,series) THEN goto, exit
+    IF NOT PMI__Button__Input__TRISTAN_LL_T1mapping(ev.top,series) THEN goto, exit
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
 
@@ -60,7 +60,7 @@ pro PMI__Button__Event__TRISTAN_Siemens_T1mapping, ev
 end
 
 
-pro PMI__Button__Control__TRISTAN_Siemens_T1mapping, id, v
+pro PMI__Button__Control__TRISTAN_LL_T1mapping, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -70,7 +70,7 @@ pro PMI__Button__Control__TRISTAN_Siemens_T1mapping, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__TRISTAN_Siemens_T1mapping, parent, value=value,separator=separator
+function PMI__Button__TRISTAN_LL_T1mapping, parent, value=value,separator=separator
 
 	PMI__FitT1SaturationRecovery
 
@@ -78,8 +78,8 @@ function PMI__Button__TRISTAN_Siemens_T1mapping, parent, value=value,separator=s
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__ibeat_Siemens_T1mapping' $
-    ,	pro_set_value = 'PMI__Button__Control__ibeat_Siemens_T1mapping' $
+    ,  	event_pro = 'PMI__Button__Event__TRISTAN_LL_T1mapping' $
+    ,	pro_set_value = 'PMI__Button__Control__TRISTAN_LL_T1mapping' $
     ,  	separator = separator )
 
     return, id

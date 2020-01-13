@@ -22,9 +22,13 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
     FIT_series = Stdy->New('SERIES', Domain= Dom,  Name= 'VFA_RMS (%)')
 
 	TR = Default->GETVALUE('0018'x,'0080'x) ;msec
+	print, TR
+	;TR = 3.0999999
 
 	FA = fltarr(nFA)
 	For k=0L, nFA-1 do FA[k] = (Stdy->Obj(0,sel[k]))->GETVALUE('0018'x,'1314'x)
+
+    print, FA
 
 	; if the FAs in the header are all the same, then we need to get them from the user
 	if (FA[0] EQ FA[2]) then begin
@@ -86,7 +90,7 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
 			FA = [v.fa0,v.fa1,v.fa2,v.fa3]
 		endif
 	endif
-
+	print, FA
 	d = Default->d()
 	SVA_slice = fltarr(nFA,d[0]*d[1])
 	S0_slice = fltarr(d[0]*d[1])
