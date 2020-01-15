@@ -13,7 +13,7 @@
 
 
 
-	PMI__Menu__TRISTANrats, mbar
+	PMI__Menu__TRISTAN, mbar
 
 
 end

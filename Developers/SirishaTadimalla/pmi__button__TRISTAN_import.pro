@@ -49,34 +49,40 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 	;; files = an array of strings with DICOM file names, sorted by Series UID
 	;; first = an array of indices for the first file of each series
 
-	Manufacturer = PMI__Dicom__Read(files[0],'0008'x,'0070'x)
-	Version = PMI__Dicom__Read(files[0],'0008'x,'1090'x)
+;	Manufacturer = PMI__Dicom__Read(files[0],'0008'x,'0070'x)
+;	Version = PMI__Dicom__Read(files[0],'0008'x,'1090'x)
 
-	Case Manufacturer of
-		 'SIEMENS ': Case Version of
-		   'Prisma': TRISTAN_Import_Siemens3T, Stdy, files, first, status=status
-		   'Aera': ;TRISTAN_Import_Siemens1_5T, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
-		   endcase
-		 'Philips Healthcare': Case Version of
-		   'Achieva dStream ': TRISTAN_Import_Philips3T, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
-		   endcase
-		 'Philips ': Case Version of
-		 	'Ingenia ': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
-		   endcase
-		 'Philips Medical Systems ': Case Version of
-		 	'Ingenia ': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
-		   endcase
-		 'GE MEDICAL SYSTEMS': Case Version of
-		   'DISCOVERY MR750 ': TRISTAN_Import_GE3T, Stdy, files, first, status=status
-		   'DISCOVERY MR450 ': TRISTAN_Import_GE1_5T, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
-		   endcase
-		  else: ok = dialog_message(/information, Manufacturer + ' not supported' )
-	Endcase
+;	Case Manufacturer of
+;		 'SIEMENS ': Case Version of
+;		   'Prisma': TRISTAN_Import_Siemens3T, Stdy, files, first, status=status
+;		   'Aera': ;TRISTAN_Import_Siemens1_5T, Stdy, files, first, status=status
+;		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+;		   endcase
+;		 'Philips Healthcare': Case Version of
+;		   'Achieva dStream ': TRISTAN_Import_Philips3T, Stdy, files, first, status=status
+;		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+;		   endcase
+;		 'Philips Medical Systems ': Case Version of
+;		   'Achieva dStream ': TRISTAN_Import_Philips3T, Stdy, files, first, status=status
+;		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+;		   endcase
+;		 'Philips ': Case Version of
+;		 	'Ingenia ': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
+;		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+;		   endcase
+;		 'Philips Medical Systems ': Case Version of
+;		 	'Ingenia': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
+;		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+;		   endcase
+;		 'GE MEDICAL SYSTEMS': Case Version of
+;		   'DISCOVERY MR750 ': TRISTAN_Import_GE3T, Stdy, files, first, status=status
+;		   'DISCOVERY MR450 ': TRISTAN_Import_GE1_5T, Stdy, files, first, status=status
+;		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+;		   endcase
+;		  else: ok = dialog_message(/information, Manufacturer + ' not supported' )
+;	Endcase
+
+	TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 
 	PMI__control, ev.top, /refresh, Path=Path
 	return:PMI__Message, status
