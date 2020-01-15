@@ -1,0 +1,43 @@
+;Returns the value of data element with tags "group" and "element"
+
+;
+;    Copyright (C) 2013 Steven Sourbron
+;
+;    This program is free software; you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation; either version 2 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License along
+;    with this program; if not, write to the Free Software Foundation, Inc.,
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+
+function PMI__Dicom__Read, file, group, element, ok=ok
+
+	n = n_elements(file)
+	if n gt 1 then begin
+		v0 = PMI__Dicom__Read(file[0], group, element, ok=ok)
+		stop, v0
+		if not ok then return, bytarr(n)
+		value = make_array(n,type=size(v0,/type))
+		value[0] = v0
+		for i=1L,n-1 do value[i] = PMI__Dicom__Read(file[i], group, element)
+
+		return, value
+	endif
+
+	ok = 0B
+	if not PMI__Dicom__Openr(file, unit, TransferSyntaxUID=ts) then return, 0B
+	implicit_vr = (group NE '0002'x) AND (ts EQ '1.2.840.10008.1.2')
+	If implicit_vr then Hdr=LMU__DicomTemplate()
+	ok = PMI__Dicom__ReadDataElement(unit, group, element, value=value, TransferSyntaxUID=ts, Template=Hdr)
+	If implicit_vr then obj_destroy, Hdr
+	free_lun, unit
+	return, value
+end

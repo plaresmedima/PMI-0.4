@@ -25,7 +25,9 @@ pro PMI__Button__Event__TRISTAN_LL_T1mapping, ev
     St1 = Stdy->New('SERIES', Domain= Dom,  Name= Series->name() + '_T1')
 
 	d = Series->d()
-	time = Series->t()
+	;time = Series->t()
+	time = fltarr(10)
+	For k=0L, 9 do time[k] = (Series->GETVALUE('2005'x,'1572'x))
 	ExpectedT1 = max(time)/2.0
 
 	for j=0L,d[2]-1 do begin

@@ -8,7 +8,6 @@ FUNCTION PMI__Button__Input__TRISTAN_MOLLI_T1mapping, top, series
 	IF in.cancel THEN return, 0
 
     Series = Stdy->Obj(0,ind[in.ser])
-    stop, Series
     return, 1
 END
 
@@ -28,6 +27,9 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
 
 	d = Series->d()
 	time = Series->t()
+	;time = fltarr(10)
+	;For k=0L, 9 do time[k] = (Series->GETVALUE('2005'x,'1572'x))
+	;time = [935, 186, 185, 1685, 936, 1686, 2435, 2436, 3185, 3935, 4685]
 	ExpectedT1 = max(time)/4.0
 
 	for j=0L,d[2]-1 do begin
@@ -45,8 +47,8 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
 		for i=0L,d[0]*d[1]-1 do begin
 			Sig = reform(P[i,*])
 			; Identify the minimum and its index and reverse signs of all elements upto this index
-			minS = min(Sig,ind)
-			Sig[0:ind] = -Sig[0:ind]
+			;minS = min(Sig,ind)
+			;Sig[0:ind] = -Sig[0:ind]
 
 			Pars = [max(Sig), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1]
 			Fit = mpcurvefit(time, Sig, 1+0E*Sig, Pars, function_name='PMI__TRISTAN_MOLLI_T1mapping',/quiet,NODERIVATIVE=1)

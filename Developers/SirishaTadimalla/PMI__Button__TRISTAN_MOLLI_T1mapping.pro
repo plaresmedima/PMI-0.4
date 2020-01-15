@@ -26,7 +26,10 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
     St1corr = Stdy->New('SERIES', Domain= Dom,  Name= Series->name() + '_T1Corrected')
 
 	d = Series->d()
-	time = Series->t()
+	;time = Series->t()
+	;time = fltarr(10)
+	;For k=0L, 9 do time[k] = (Series->GETVALUE('2005'x,'1572'x))
+	time = [3186,4685,6185,186,3185,185,1686,1685]
 	ExpectedT1 = max(time)/4.0
 
 	for j=0L,d[2]-1 do begin
@@ -44,8 +47,8 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
 		for i=0L,d[0]*d[1]-1 do begin
 			Sig = reform(P[i,*])
 			; Identify the minimum and its index and reverse signs of all elements upto this index
-			minS = min(Sig,ind)
-			Sig[0:ind] = -Sig[0:ind]
+			;minS = min(Sig,ind)
+			;Sig[0:ind] = -Sig[0:ind]
 
 			Pars = [max(Sig), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1]
 			Fit = mpcurvefit(time, Sig, 1+0E*Sig, Pars, function_name='PMI__TRISTAN_MOLLI_T1mapping',/quiet,NODERIVATIVE=1)

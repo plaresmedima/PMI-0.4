@@ -6,7 +6,8 @@ pro PMI__Button__Event__TRISTANratVFA, ev
 
     Series = Stdy->Names(0,ns,DefDim=3,ind=ind,sel=sel)
 	v = PMI__Form(ev.top, Title='VFA T1-mapping user input', [$
-		ptr_new({Type:'DROPLIST',Tag:'series', Label:'Variable Flip Angle Series', Value:Series, Select:sel})])
+		ptr_new({Type:'DROPLIST',Tag:'series', Label:'Variable Flip Angle Series', Value:Series, Select:sel}), $
+		ptr_new({Type:'DROPLIST',Tag:'order', Label:'Order of Flip Angle Acquisitions', Value:['Ascending', 'Descending'], Select:1})])
 	IF v.cancel THEN goto, exit
 
 	Series = Stdy->Obj(0,ind[v.series])
@@ -18,7 +19,10 @@ pro PMI__Button__Event__TRISTANratVFA, ev
     FIT_series = Stdy->New('SERIES', Domain= Dom, Name= Series->name()+'__RMS (%)')
 
 	TR = Series -> GETVALUE('0018'x,'0080'x) ;msec
-	FA = Series -> t()
+	CASE v.order of
+		0: FA = [1.,2,3,4,5,6,7,8,9,10,15,20,30] ;flip angles
+		1: FA = [30,20,15,10,9,8,7,6,5,4,3,2,1.]
+	ENDCASE
 
 	d = Series->d()
 
