@@ -21,9 +21,9 @@ pro PMI__Button__Event__TRISTAN_LinearVFA_T1mapping, ev
     T1_series = Stdy->New('SERIES', Domain= Dom,  Name= 'VFA_T1 (ms)')
     FIT_series = Stdy->New('SERIES', Domain= Dom,  Name= 'VFA_RMS (%)')
 
-	TR = Default->GETVALUE('0018'x,'0080'x) ;msec
-	print, TR
-	;TR = 3.0999999
+	;TR = Default->GETVALUE('0018'x,'0080'x) ;msec
+	;print, TR
+	TR = 3.0999999
 
 	FA = fltarr(nFA)
 	For k=0L, nFA-1 do FA[k] = (Stdy->Obj(0,sel[k]))->GETVALUE('0018'x,'1314'x)

@@ -12,7 +12,7 @@ Pro PMI__TRISTAN_MOLLI_T1mapping, X, P, C, C_DER
 
 	C_DER0 = 1-P[1]*E
 
-	C = P[0]*C_DER0
+	C = ABS(P[0]*C_DER0)
 
 	IF n_params() LT 4 THEN return
 

@@ -26,7 +26,7 @@ pro PMI__Button__SeriesImportDicomSpecial__Load, Stdy, files, sort0, sort1, stat
 	z = make_array(n)
 	for i=0L,n-1 do begin
 		kk = PMI__Dicom__Read(files[i],sort0[0],sort0[1])
-		z[i] = kk[1]
+		z[i] = kk[1]; 1 for coronal, 2 for trans
 	endfor
 	t = PMI__Dicom__Read(files,sort1[0],sort1[1])
 
@@ -116,7 +116,7 @@ function PMI__Button__SeriesImportDicomSpecial__Input, top, files=files, first=f
 			,	['0020'x,'0013'x] $ ;Image Number
 			,	['0020'x,'0100'x] $	;Temporal position identifier
 			,	['0020'x,'0011'x] $	;Series Number
-			,	['0018'x,'0082'x] $	;Inversion Time
+			,	['2005'x,'1572'x] $	;Inversion Time
 			,   ['0018'x,'0081'x] $ ;Echo Time
 			,	['0018'x,'0080'x] $	;Repetition Time
             ,	['0018'x,'1314'x] $; flip angle
