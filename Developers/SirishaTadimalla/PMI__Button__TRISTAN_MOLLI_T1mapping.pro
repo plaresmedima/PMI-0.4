@@ -26,10 +26,10 @@ pro PMI__Button__Event__TRISTAN_MOLLI_T1mapping, ev
     St1corr = Stdy->New('SERIES', Domain= Dom,  Name= Series->name() + '_T1Corrected')
 
 	d = Series->d()
-	;time = Series->t()
+	time = Series->t()
 	;time = fltarr(10)
 	;For k=0L, 9 do time[k] = (Series->GETVALUE('2005'x,'1572'x))
-	time = [3186,4685,6185,186,3185,185,1686,1685]
+	;time = [3185,3186,3935,4685,5435,1686,1685,936,935,186,185,2435,2436]
 	ExpectedT1 = max(time)/4.0
 
 	for j=0L,d[2]-1 do begin
