@@ -55,10 +55,14 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 	Case Manufacturer of
 		 'SIEMENS ': Case Version of
 		   'Prisma': TRISTAN_Import_Siemens3T, Stdy, files, first, status=status
-		   'Aera': ;TRISTAN_Import_Siemens1_5T, Stdy, files, first, status=status
+		   'Aera': TRISTAN_Import_Siemens1_5T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
 		 'Philips Healthcare': Case Version of
+		   'Achieva dStream ': TRISTAN_Import_Philips3T, Stdy, files, first, status=status
+		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
+		   endcase
+		 'Philips Medical Systems ': Case Version of
 		   'Achieva dStream ': TRISTAN_Import_Philips3T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
@@ -67,7 +71,7 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
 		 'Philips Medical Systems ': Case Version of
-		 	'Ingenia ': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
+		 	'Ingenia': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
 		 'GE MEDICAL SYSTEMS': Case Version of
@@ -77,6 +81,7 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 		   endcase
 		  else: ok = dialog_message(/information, Manufacturer + ' not supported' )
 	Endcase
+
 
 	PMI__control, ev.top, /refresh, Path=Path
 	return:PMI__Message, status

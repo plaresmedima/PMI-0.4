@@ -223,7 +223,7 @@ end
 pro TRISTAN_Import_Philips1_5T__Load3DSPGR_BH, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR BH Data'
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
@@ -238,7 +238,7 @@ end
 pro TRISTAN_Import_Philips1_5T__Load3DSPGR_BHdyn, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR BH dynamic Data'
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
@@ -253,7 +253,7 @@ end
 pro TRISTAN_Import_Philips1_5T__Load3DSPGR_FB, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR FB Data'
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
 	files_FB = files[i]
@@ -266,7 +266,7 @@ end
 pro TRISTAN_Import_Philips1_5T__Load3DSPGR_FBdyn, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR FB dynamic data'
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
 	files_FB = files[i]
@@ -283,7 +283,7 @@ pro TRISTAN_Import_Philips1_5T__LoadRadial, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading radial SPGR Data'
 
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
@@ -297,7 +297,7 @@ pro TRISTAN_Import_Philips1_5T__LoadRadialdyn, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading radial SPGR Data'
 
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 
 	i = where(strmatch(Series, '*'+Sequence+'*') eq 1,cnt)
 
@@ -392,7 +392,7 @@ pro TRISTAN_Import_Philips1_5T__LoadInversionRecovery, Sequence, Stdy, files, st
 
 	PMI__Message, status, 'Loading Inversion Recovery Data'
 
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 	i = where(Series eq Sequence, cnt)
 	if cnt eq 0 then return
 	files_IR = files[i]
@@ -415,7 +415,7 @@ end
 pro TRISTAN_Import_Philips1_5T__LoadVolume, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading ' + Sequence
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
 	i = where(Series eq Sequence, cnt)
 
 
@@ -456,7 +456,7 @@ pro TRISTAN_Import_Philips1_5T__LoadSequence, Sequence, Stdy, files, first, stat
 
   n = n_elements(first)-1
 
-  Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+  Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
   i = where(Series eq Sequence, cnt)
   if cnt eq 0 then return
   Series = Series[i]

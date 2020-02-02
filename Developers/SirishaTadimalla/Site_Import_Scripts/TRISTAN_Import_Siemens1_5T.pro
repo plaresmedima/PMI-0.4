@@ -1,322 +1,278 @@
 
+pro TRISTAN_Import_Siemens1_5T__LoadDynamics_MoCo, Sequence, Stdy, files
 
-pro iBEAt_Import_Turku_10_8__LoadT1W, Sequence, Stdy, files, Series, status
+	; Process dynamic dataset
+	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
+	t = PMI__Dicom__Read(files,'0008'x,'0032'x) ;Array of Acquisition times
+	files = PMI__Dicom__Sort(files, z, t) ; returns a 2D string array of file names
 
-	PMI__Message, status, 'Sorting ' + Sequence
-
-	i = where(Series eq Sequence, cnt)
-	if cnt eq 0 then return
-	files_T1W = files[i]
-
-	z = PMI__Dicom__Read(files_T1W,'0020'x,'1041'x) ;Slice location
-	t = PMI__Dicom__Read(files_T1W,'0020'x,'0013'x) ;Image Number
-	files_T1W = PMI__Dicom__Sort(files_T1W, z, t)
-
-	nx = PMI__Dicom__Read(files_T1W[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_T1W[0],'0028'x,'0010'x)
-
-	Type = ['Magnitude', 'Phase']
-	d = [nx,ny,n_elements(z),n_elements(t)]
-
-	for ti=0L,d[3]-1 do begin
-
-	  Dcm = Stdy -> New('SERIES', Name=Sequence+'_'+Type[ti], Domain = {z:z, t:t[ti], m:[nx,ny]})
-	  range = [0E,0E]
-	  for k=ti*d[2],(ti+1)*d[2]-1 do begin
-
-        PMI__Message, status, 'Loading  ' + Sequence, k/(d[2]*d[3]-1.0)
-
-		image = PMI__Dicom__ReadImage(files_T1W[k])
-		range[0] = min([range[0],min(image,max=max)])
-		range[1] = max([range[1],max])
-		Dcm -> Write, Stdy->DataPath(), image, k-ti*d[2]
-
-	  endfor
-
-	  Dcm -> Trim, [range[0],0.8*range[1]]
-	  Dcm -> ReadDicom, files_T1W[0]
-
-	endfor
-
-end
-
-
-
-
-
-
-
-
-pro iBEAt_Import_Turku_10_8__LoadDixon, Sequence, Stdy, files, Series, status
-
-	PMI__Message, status, 'Sorting ' + Sequence
-
-	i = where(Series eq Sequence, cnt)
-	if cnt eq 0 then return
-	files_DIX = files[i]
-
-	z = PMI__Dicom__Read(files_DIX,'0020'x,'1041'x) ;Slice location
-	t = PMI__Dicom__Read(files_DIX,'0020'x,'0013'x) ;Image Number
-	files_DIX = PMI__Dicom__Sort(files_DIX, z, t)
-
-	nx = PMI__Dicom__Read(files_DIX[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_DIX[0],'0028'x,'0010'x)
-
-	Volumes = ['Water', 'In-phase', 'Op-phase', 'Fat']
-	d = [nx,ny,n_elements(z),n_elements(t)]
-
-	for ti=0L,d[3]-1 do begin
-
-	  Dcm = Stdy -> New('SERIES', Name=Sequence+'_'+Volumes[ti], Domain = {z:z, t:t[ti], m:[nx,ny]})
-	  range = [0E,0E]
-	  for k=ti*d[2],(ti+1)*d[2]-1 do begin
-
-		PMI__Message, status, 'Loading '+ Sequence, k/(d[2]*d[3]-1.0)
-
-		image = PMI__Dicom__ReadImage(files_DIX[k])
-		range[0] = min([range[0],min(image,max=max)])
-		range[1] = max([range[1],max])
-		Dcm -> Write, Stdy->DataPath(), image, k-ti*d[2]
-
-	  endfor
-
-	  Dcm -> Trim, [range[0],0.8*range[1]]
-	  Dcm -> ReadDicom, files_DIX[0]
-
-	endfor
-
-end
-
-
-
-
-
-
-
-
-
-pro iBEAt_Import_Turku_10_8__LoadMTmapping, Seq, Stdy, files, Series, status
-
-	PMI__Message, status, 'Loading MT Data'
-
-	Sequence = Seq[0]
-
-	i = where(Series eq Sequence, cnt)
-	if cnt eq 0 then return
-	files_MT = files[i]
-
-	z = PMI__Dicom__Read(files_MT,'0020'x,'1041'x) ;Slice location
-	t = PMI__Dicom__Read(files_MT,'0020'x,'0013'x) ;Image Number
-	files_MT = PMI__Dicom__Sort(files_MT, z, t)
-
-	nx = PMI__Dicom__Read(files_MT[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_MT[0],'0028'x,'0010'x)
+	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)  ;nr of rows
+	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)  ;nr of columns
 	nz = n_elements(z)
 	nt = n_elements(t)
-	image_OFF = fltarr(nx,ny,nz,nt)
+	d = [nx,ny,nz,nt] ;dimensions of the series
 
-	for k=0L,nz-1 do begin
-	for l=0L,nt-1 do begin
-	  image_OFF[*,*,k,l] = PMI__Dicom__ReadImage(files_MT[k,l])
-	endfor
+	image = fltarr(nx,ny,nz,nt) ;array holding the data
+
+	for k=0L,d[3]-1 do begin ;loop over all slices and times
+		for j=0L,d[2]-1 do begin
+			ind = j + d[2]*k
+			image[*,*,j,k] = PMI__Dicom__ReadImage(files[ind]) ;read image data from file
+		endfor
 	endfor
 
-	Sequence = Seq[1]
+	;;;;;; Perform motion correction
+	; Set parameters for MoCoMo
+	in = {res:1E, prec:1E}
+	; Set window
+	win = {p:[0L,0L,0L], n:d[0:2]}
+
+	; Calculate
+	image = TRANSPOSE(image, [3,0,1,2])
+	image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
+	image = TRANSPOSE(image, [1,2,3,0])
+
+	;;;;;; Write series
+	Dcm = Stdy -> New('SERIES', Name=Sequence+'[Motion-free]', Domain = {z:z, t:t, m:[nx,ny]}) ;new series object in display
+	Dcm -> Write, Stdy->DataPath(), image  ;write raw data to disk
+	Dcm -> Trim, [min(image),0.8*max(image)]  ;set default grey scale ranges
+	Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
+
+end
+
+pro TRISTAN_Import_Siemens1_5T__LoadVFA_MoCo, Sequence, Stdy, files
+
+	;;;;;;; Initialise
+	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
+	ny = PMI__Dicom__Read(files,'0028'x,'0010'x)
+	nz = 36
+	nt = 36
+
+	FA = PMI__Dicom__Read(files,'0018'x,'1314'x)
+	FA = FA[UNIQ(FA)]
+	nFA = n_elements(FA)
+
+	vfa = fltarr(max(nx),max(ny),nz,nFA) ;array holding the data
+	image = fltarr(max(nx),max(ny),nz,nt) ;array holding the data
+	for n = 0L, nFA-1 do begin
+		j = where(PMI__Dicom__Read(files,'0018'x,'1314'x) eq FA[n])
+		files_FA = files[j]
+		z = PMI__Dicom__Read(files_FA,'0020'x,'1041'x) ;Array of Slice locations
+		t = PMI__Dicom__Read(files_FA,'0008'x,'0032'x) ;Array of Acquisition times
+
+		files_FA = PMI__Dicom__Sort(files_FA, z, t) ; returns a 2D string array of file names
+		d = [max(nx),max(ny),nz,nt] ;dimensions of the series
+
+		for k=0L,d[3]-1 do begin ;loop over all slices and times
+			for j=0L,d[2]-1 do begin
+				ind = j + d[2]*k
+				image[*,*,j,k] = PMI__Dicom__ReadImage(files_FA[ind]) ;read image data from file
+			endfor
+		endfor
+
+		;;;;;; Perform motion correction
+		; Set parameters for MoCoMo
+		in = {res:1E, prec:1E}
+		; Set window
+		win = {p:[0L,0L,0L], n:d[0:2]}
+
+		; Calculate
+		image = TRANSPOSE(image, [3,0,1,2])
+		image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
+		image = TRANSPOSE(image, [1,2,3,0])
+		; Calculate mean over time
+		for j=0L, d[2]-1 do begin ; each slice
+			im = reform(image[*,*,j,*])
+			vfa[*,*,j,n] = TOTAL(im,3)/nt
+		endfor
+		image = 0*image
+	endfor
+
+	; Calculate T1 map using linear fit
+	TR = PMI__Dicom__Read(files[0],'0018'x,'0080'x) ;msec
+	Dom = {z:z, t:t[0], m:d[0:1]}
+    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_S0')
+    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_R1 (ms-1)')
+    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_T1 (ms)')
+    FIT_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_RMS (%)')
+
+	SVA_slice = fltarr(nFA,d[0]*d[1])
+	S0_slice = fltarr(d[0]*d[1])
+	R1_slice = fltarr(d[0]*d[1])
+	T1_slice = fltarr(d[0]*d[1])
+	FIT_slice = fltarr(d[0]*d[1])
+
+	for j=0L,d[2]-1 do begin ;loop over slices
+		PMI__Message, status, 'Calculating T1 map ', j/(d[2]-1E)
+
+		for k=0L,nFA-1 do SVA_slice[k,*] = vfa[*,*,j,k]
+
+		for i=0L,d[0]*d[1]-1 do begin
+
+			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]), RMS = rms)
+
+			S0_slice[i] = PAR[1]
+			R1_slice[i] = Par[0]
+			T1_slice[i] = 1/Par[0]
+			Fit_slice[i] = rms
+
+		endfor
+
+		S0_series->Write, Stdy->DataPath(), S0_slice, j
+		R1_series->Write, Stdy->DataPath(), R1_slice, j
+		T1_series->Write, Stdy->DataPath(), T1_slice, j
+		FIT_series->Write, Stdy->DataPath(), Fit_slice, j
+
+	endfor
+
+end
+
+pro TRISTAN_Import_Siemens1_5T__LoadDynamics, Sequence, Stdy, files
+
+	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
+	t = PMI__Dicom__Read(files,'0008'x,'0032'x) ;Array of Acquisition times
+	files = PMI__Dicom__Sort(files, z, t) ; returns a 2D string array of file names
+
+	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)  ;nr of rows
+	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)  ;nr of columns
+	nz = n_elements(z)
+	nt = n_elements(t)
+
+	d = [nx,ny,nz,nt] ;dimensions of the series
+
+	image = fltarr(nx,ny,nz,nt) ;array holding the data
+
+	for k=0L,d[3]-1 do begin ;loop over all slices and times
+		for j=0L,d[2]-1 do begin
+			ind = j + d[2]*k
+			image[*,*,j,k] = PMI__Dicom__ReadImage(files[ind]) ;read image data from file
+		endfor
+	endfor
+
+    Dcm = Stdy -> New('SERIES', Name=Sequence, Domain = {z:z, t:t, m:[nx,ny]}) ;new series object in display
+	Dcm -> Write, Stdy->DataPath(), image  ;write raw data to disk
+	Dcm -> Trim, [min(image),0.8*max(image)]  ;set default grey scale ranges
+	Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
+
+end
+
+pro TRISTAN_Import_Siemens1_5T__LoadVFA, Sequence, Stdy, files
+
+	sort_z = ['0020'x,'1041'x]
+	sort_t = ['0008'x,'0032'x]
+	z = PMI__Dicom__Read(files,sort_z[0],sort_z[1])
+  	t = PMI__Dicom__Read(files,sort_t[0],sort_t[1])
+
+  	files = PMI__Dicom__Sort(files, z, t)
+
+  	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
+  	ny = PMI__Dicom__Read(files,'0028'x,'0010'x)
+
+	FA = PMI__Dicom__Read(files,'0018'x,'1314'x)
+	FA = FA[UNIQ(FA)]
+
+  	d = [max(nx),max(ny),n_elements(z),n_elements(FA)]
+
+	image = fltarr(max(nx),max(ny),n_elements(z),n_elements(FA)) ;array holding the data
+	for k=0L,d[3]-1 do begin ;loop over all slices and FAs
+		for j=0L,d[2]-1 do begin
+			ind = j + d[2]*k
+			image[*,*,j,k] = PMI__Dicom__ReadImage(files[ind]) ;read image data from file
+		endfor
+	endfor
+
+	; Calculate T1 map using linear fit
+	TR = PMI__Dicom__Read(files[0],'0018'x,'0080'x) ;msec
+	nFA = n_elements(FA)
+
+	Dom = {z:z, t:t[0], m:d[0:1]}
+    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_S0')
+    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_R1 (ms-1)')
+    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_T1 (ms)')
+    FIT_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_RMS (%)')
+
+	SVA_slice = fltarr(nFA,d[0]*d[1])
+	S0_slice = fltarr(d[0]*d[1])
+	R1_slice = fltarr(d[0]*d[1])
+	T1_slice = fltarr(d[0]*d[1])
+	FIT_slice = fltarr(d[0]*d[1])
+
+	for j=0L,d[2]-1 do begin ;loop over slices
+
+		PMI__Message, status, 'Calculating T1 map ', j/(d[2]-1E)
+
+		for k=0L,nFA-1 do SVA_slice[k,*] = image[*,*,j,k]
+
+		for i=0L,d[0]*d[1]-1 do begin
+
+			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]), RMS = rms)
+
+			S0_slice[i] = PAR[1]
+			R1_slice[i] = Par[0]
+			T1_slice[i] = 1/Par[0]
+			Fit_slice[i] = rms
+
+		endfor
+
+		S0_series->Write, Stdy->DataPath(), S0_slice, j
+		R1_series->Write, Stdy->DataPath(), R1_slice, j
+		T1_series->Write, Stdy->DataPath(), T1_slice, j
+		FIT_series->Write, Stdy->DataPath(), Fit_slice, j
+
+	endfor
+end
+
+pro TRISTAN_Import_Siemens1_5T__Load3DSPGR, Sequence, Stdy, files, Series, status
+
+	PMI__Message, status, 'Loading 3DSPGR Data'
 
 	i = where(Series eq Sequence, cnt)
+
 	if cnt eq 0 then return
-	files_MT = files[i]
 
-	z = PMI__Dicom__Read(files_MT,'0020'x,'1041'x) ;Slice location
-	t = PMI__Dicom__Read(files_MT,'0020'x,'0013'x) ;Image Number
-	files_MT = PMI__Dicom__Sort(files_MT, z, t)
+	files_all = files[i]
 
-	nx = PMI__Dicom__Read(files_MT[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_MT[0],'0028'x,'0010'x)
-	nz = n_elements(z)
-	nt = n_elements(t)
-	image_ON = fltarr(nx,ny,nz,nt)
+	; Separate the breath-hold and free-breathing series using number of rows
+	jBH = where(PMI__Dicom__Read(files_all,'0028'x,'0010'x) eq 256)
+	jFB = where(PMI__Dicom__Read(files_all,'0028'x,'0010'x) eq 96)
 
-	for k=0L,nz-1 do begin
-	for l=0L,nt-1 do begin
-	  image_ON[*,*,k,l] = PMI__Dicom__ReadImage(files_MT[k,l])
-	endfor
-	endfor
+	files_BH = files_all[jBH]
+	files_FB = files_all[jFB]
 
-    Name = 'mt-kidney-coronal-oblique-bh_magnitude'
-	Magnitude = fltarr(nx,ny,nz,2)
-	Magnitude[*,*,*,0] = image_OFF[*,*,*,0]
-	Magnitude[*,*,*,1] = image_ON[*,*,*,0]
-	Dcm = Stdy -> New('SERIES', Name=Name, Domain = {z:z, t:[0,1], m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), Magnitude
-	Dcm -> Trim, [min(Magnitude),0.8*max(Magnitude)]
-	Dcm -> ReadDicom, files_MT[0]
+	;;;;;;; Process BH dataset
+	; Get only VFA images
+	seriesNumbers = PMI__Dicom__Read(files_BH,'0020'x,'0011'x)
+	uniqueSeries = seriesNumbers[UNIQ(seriesNumbers, SORT(seriesNumbers))]
+	j1 = where(PMI__Dicom__Read(files_BH,'0020'x,'0011'x) NE uniqueSeries[n_elements(uniqueSeries)-1])
 
-    Name = 'mt-kidney-coronal-oblique-bh_phase'
-	Phase = fltarr(nx,ny,nz,2)
-	Phase[*,*,*,0] = image_OFF[*,*,*,1]
-	Phase[*,*,*,1] = image_ON[*,*,*,1]
-	Dcm = Stdy -> New('SERIES', Name=Name, Domain = {z:z, t:[0,1], m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), Phase
-	Dcm -> Trim, [min(Phase),0.8*max(Phase)]
-	Dcm -> ReadDicom, files_MT[0]
+	; Get VFA T1 map from BH dataset - no motion correction
+	TRISTAN_Import_Siemens1_5T__LoadVFA, Sequence+'_BH', Stdy, files_BH[j1]
 
-	Name = 'mt-kidney-coronal-oblique-bh_MTR'
-	MTR = 100*(image_OFF[*,*,*,0]-image_ON[*,*,*,0])/image_OFF[*,*,*,0]
-	Dcm = Stdy -> New('SERIES', Name=Name, Domain = {z:z, t:[0], m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), MTR
-	Dcm -> Trim, [0,100]
-	Dcm -> ReadDicom, files_MT[0]
+	; Load dynamic BH images - no motion correction
+	j2 = where(PMI__Dicom__Read(files_BH,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
+	TRISTAN_Import_Siemens1_5T__LoadDynamics, Sequence+'_dynamicBH', Stdy, files_BH[j2]
+
+	;;;;;;;; Process FB dataset
+	; Get only VFA images
+	seriesNumbers = PMI__Dicom__Read(files_FB,'0020'x,'0011'x)
+	uniqueSeries = seriesNumbers[UNIQ(seriesNumbers, SORT(seriesNumbers))]
+	j3 = where(PMI__Dicom__Read(files_FB,'0020'x,'0011'x) NE uniqueSeries[n_elements(uniqueSeries)-1])
+
+	; Get VFA T1 map from FB dataset - after motion correction
+	TRISTAN_Import_Siemens1_5T__LoadVFA_MoCo, Sequence+'_FB', Stdy, files_FB[j3]
+
+	; Load dynamic FB images - after motion correction
+	j4 = where(PMI__Dicom__Read(files_FB,'0020'x,'0011'x) eq uniqueSeries[n_elements(uniqueSeries)-1])
+	TRISTAN_Import_Siemens1_5T__LoadDynamics_MoCo, Sequence+'_dynamicFB', Stdy, files_FB[j4]
 
 end
 
-
-
-
-
-
-
-
-pro iBEAt_Import_Turku_10_8__LoadPhaseContrast, Sequence, Stdy, files, Series, status
-
-	PMI__Message, status, 'Loading Phase Contrast Data'
-
-	i = where(Series eq Sequence, cnt)
-	if cnt eq 0 then return
-	files_PC = files[i]
-
-	z = PMI__Dicom__Read(files_PC,'0020'x,'1041'x) ;Slice location
-	t = PMI__Dicom__Read(files_PC,'0020'x,'0013'x) ;Image Number
-	files_PC = PMI__Dicom__Sort(files_PC, z, t)
-
-	nx = PMI__Dicom__Read(files_PC[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_PC[0],'0028'x,'0010'x)
-	nz = n_elements(z)
-	nt = n_elements(t)
-	image = fltarr(nx,ny,nz,nt)
-
-	for k=0L,nz-1 do begin
-	for l=0L,nt-1 do begin
-	  image[*,*,k,l] = PMI__Dicom__ReadImage(files_PC[k,l])
-	endfor
-	endfor
-
-	nPhases = n_elements(files_PC)/3
-	Trigger_Times = PMI__Dicom__Read(files_PC[0,2*nPhases:3*nPhases-1],'0018'x,'1060'x)
-
-    Name = Sequence + '_Magnitude'
-	Derived = Image[*,*,*,0:nPhases-1]
-	Dcm = Stdy -> New('SERIES', Name=Name, Domain = {z:z, t:Trigger_Times, m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), Derived
-	Dcm -> Trim, [min(Derived),0.8*max(Derived)]
-	Dcm -> ReadDicom, files_PC[0]
-
-    Name = Sequence + '_Subtraction'
-	Derived = Image[*,*,*,nPhases:2*nPhases-1]
-	Dcm = Stdy -> New('SERIES', Name=Name, Domain = {z:z, t:Trigger_Times, m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), Derived
-	Dcm -> Trim, [min(Derived),0.8*max(Derived)]
-	Dcm -> ReadDicom, files_PC[0]
-
-    Name = Sequence + '_Velocity [cm/s]'
-	Derived = Image[*,*,*,2*nPhases:3*nPhases-1]
-	Dcm = Stdy -> New('SERIES', Name=Name, Domain = {z:z, t:Trigger_Times, m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), Derived
-	Dcm -> Trim, [min(Derived),max(Derived)]
-	Dcm -> ReadDicom, files_PC[0]
-
-end
-
-
-
-
-
-
-
-pro iBEAt_Import_Turku_10_8__LoadT2mapping, Sequence, Stdy, files, Series, status
-
-	PMI__Message, status, 'Loading T2 mapping Data'
-
-    TI = [0.,30.,60.,70.,80.,90.,100.,110.,120.]
-
-    s = 0L
-	i = where(Series eq Sequence[s], cnt)
-	if cnt eq 0 then return
-	files_TI = files[i]
-	nslices = n_elements(files_TI)
-	t = fltarr(nslices) + TI[s]
-	for s=1L, n_elements(Sequence)-1 do begin
-		i = where(Series eq Sequence[s])
-		files_TI = [files_TI, files[i]]
-		t = [t, fltarr(nslices) + TI[s]]
-	endfor
-
-	z = PMI__Dicom__Read(files_TI,'0020'x,'1041'x) ;Slice location
-	files_TI = PMI__Dicom__Sort(files_TI, z, t)
-
-	nx = PMI__Dicom__Read(files_TI[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_TI[0],'0028'x,'0010'x)
-	nz = n_elements(z)
-	nt = n_elements(t)
-	image = fltarr(nx,ny,nz*nt)
-
-	for k=0L,nz*nt-1 do image[*,*,k] = PMI__Dicom__ReadImage(files_TI[k])
-
-	Name = 'T2map-kidney-coronal-oblique-BH-T1-TFE'
-	Dcm = Stdy -> New('SERIES', Name=Name, Domain = {z:z, t:t, m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), image
-	Dcm -> Trim, [min(image),0.8*max(image)]
-	Dcm -> ReadDicom, files_TI[0]
-
-end
-
-
-
-
-
-
-pro iBEAt_Import_Turku_10_8__LoadInversionRecovery, Sequence, Stdy, files, Series, status
-
-	PMI__Message, status, 'Loading Inversion Recovery Data'
-
-	i = where(Series eq Sequence[0], cnt)
-	if cnt eq 0 then return
-	files_TI = files[i]
-	for s=1L, n_elements(Sequence)-1 do begin
-		i = where(Series eq Sequence[s])
-		files_TI = [files_TI, files[i]]
-	endfor
-
-	z = PMI__Dicom__Read(files_TI,'0020'x,'1041'x) ;Slice location
-	t = PMI__Dicom__Read(files_TI,'2001'x,'101B'x) ;Inversion Time
-	files_TI = PMI__Dicom__Sort(files_TI, z, t)
-
-	nx = PMI__Dicom__Read(files_TI[0],'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_TI[0],'0028'x,'0010'x)
-	nz = n_elements(z)
-	nt = n_elements(t)
-	image = fltarr(nx,ny,nz*nt)
-
-	for k=0L,nz*nt-1 do image[*,*,k] = PMI__Dicom__ReadImage(files_TI[k])
-
-	Name = 'T1map-kidney-BTFEcoronal-oblique-BH'
-	Dcm = Stdy -> New('SERIES', Name=Name, Domain = {z:z, t:t, m:[nx,ny]})
-	Dcm -> Write, Stdy->DataPath(), image
-	Dcm -> Trim, [min(image),0.8*max(image)]
-	Dcm -> ReadDicom, files_TI[0]
-
-end
-
-
-
-
-
-
-pro iBEAt_Import_Turku_10_8__LoadVolume, Sequence, Stdy, files, Series, status
+pro TRISTAN_Import_Siemens1_5T__LoadVolume, Sequence, Stdy, files, SeriesType, status
 
 	PMI__Message, status, 'Loading ' + Sequence
 
-	i = where(Series eq Sequence, cnt)
+	i = where(SeriesType eq Sequence, cnt)
+
 	if cnt eq 0 then return
 	files_VOL = files[i]  ;Array of filenames for the Sequence to be imported
 
@@ -350,10 +306,16 @@ end
 
 
 
-pro iBEAt_Import_Turku_10_8__LoadSequence, Sequence, SortBy=SortBy, Stdy, files, first, status
+pro TRISTAN_Import_Siemens1_5T__LoadSequence, Sequence, SortBy=SortBy, Stdy, files, first, status
 
   n = n_elements(first)-1
-  Series = string(PMI__Dicom__Read(files[first[0:n-1]],'0018'x,'1030'x))
+
+  Series = string(PMI__Dicom__Read(files,'0018'x,'0024'x))
+  i = where(Series eq Sequence, cnt)
+
+  if cnt eq 0 then return
+  Series = Series[i]
+  files_SEQ = files[i]
 
   PMI__Message, status, 'Sorting ' + Sequence
 
@@ -370,122 +332,64 @@ pro iBEAt_Import_Turku_10_8__LoadSequence, Sequence, SortBy=SortBy, Stdy, files,
 	'Echo time': sort_t = ['0018'x,'0081'x]  ;
   endcase
 
-  i = where(Series eq Sequence, cnt)
-  for j=0L, cnt-1 do begin
+  z = PMI__Dicom__Read(files_SEQ,sort_z[0],sort_z[1])
+  t = PMI__Dicom__Read(files_SEQ,sort_t[0],sort_t[1])
+  files_SEQ = PMI__Dicom__Sort(files_SEQ, z, t)
 
-	files_SEQ = files[first[i[j]]:first[i[j]+1]-1]
+  nx = PMI__Dicom__Read(files_SEQ,'0028'x,'0011'x)
+  ny = PMI__Dicom__Read(files_SEQ,'0028'x,'0010'x)
 
-	z = PMI__Dicom__Read(files_SEQ,sort_z[0],sort_z[1])
-	t = PMI__Dicom__Read(files_SEQ,sort_t[0],sort_t[1])
-	files_SEQ = PMI__Dicom__Sort(files_SEQ, z, t)
+  d = [max(nx),max(ny),n_elements(z),n_elements(t)]
+  Dcm = Stdy -> New('SERIES',	Name = Sequence, Domain = {z:z, t:t, m:d[0:1]})
 
-	nx = PMI__Dicom__Read(files_SEQ,'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files_SEQ,'0028'x,'0010'x)
+  x = (d[0]-nx)/2
+  y = (d[1]-ny)/2
 
-	d = [max(nx),max(ny),n_elements(z),n_elements(t)]
-	Dcm = Stdy -> New('SERIES',	Name = Sequence, Domain = {z:z, t:t, m:d[0:1]})
+  im = fltarr(d[0],d[1])
+  range = [0E,0E]
+  for k=0L,d[2]*d[3]-1 do begin
 
-	x = (d[0]-nx)/2
-	y = (d[1]-ny)/2
+	PMI__Message, status, 'Loading ' + Sequence, k/(d[2]*d[3]-1.0)
 
-	im = fltarr(d[0],d[1])
-	range = [0E,0E]
-	for k=0L,d[2]*d[3]-1 do begin
-
-		PMI__Message, status, 'Loading ' + Sequence, k/(d[2]*d[3]-1.0)
-
-		image = PMI__Dicom__ReadImage(files_SEQ[k])
-		if size(image,/n_dimensions) ne 0 then begin
-			im[x[k]:x[k]+nx[k]-1,y[k]:y[k]+ny[k]-1] = image
-			range[0] = min([range[0],min(image,max=max)])
-			range[1] = max([range[1],max])
-		endif
-		Dcm -> Write, Stdy->DataPath(), im, k
-		im = im*0
-
-	endfor
-
-	Dcm -> Trim, [range[0],0.8*range[1]]
-	Dcm -> ReadDicom, files_SEQ[0]
+	image = PMI__Dicom__ReadImage(files_SEQ[k])
+	if size(image,/n_dimensions) ne 0 then begin
+		im[x[k]:x[k]+nx[k]-1,y[k]:y[k]+ny[k]-1] = image
+		range[0] = min([range[0],min(image,max=max)])
+		range[1] = max([range[1],max])
+	endif
+	Dcm -> Write, Stdy->DataPath(), im, k
+	im = im*0
 
   endfor
+
+  Dcm -> Trim, [range[0],0.8*range[1]]
+  Dcm -> ReadDicom, files_SEQ[0]
+
 
 end
 
 
-
-
-
-
-
-
-pro iBEAt_Import_Turku_10_8, Stdy, files, first, status=status
+pro TRISTAN_Import_Siemens1_5T, Stdy, files, first, status=status
 
 ;;;;CHECK SEQUENCE PARAMETERS
 
-
 ;;;;LOAD THE SERIES
 
-	seq1 = 'WIP SURVEY-ISO-BH '
-	seq2 = 'WIP SURVEY-REF'
-	seq3 = 'WIP T2W-abdomen-haste-tra-bh SENSE'
-	seq4 = 'WIP T1W-abdomen-Dixon-coronal-BH SENSE'
-	seq5 = 'WIP T2star-map-pancreas-tra-bh SENSE'
-	seq6 = 'WIP T1W-kidneys-coronal-oblique-bh SENSE'
-	Seq7 =['WIP T1map-kidney-BTFE150-coronal-oblique-BH SENSE ', $
-	  	   'WIP T1map-kidney-BTFE260coronal-oblique-BH SENSE', $
-	       'WIP T1map-kidney-BTFE660coronal-oblique-BH SENSE', $
-	       'WIP T1map-kidney-BTFE1055coronal-oblique-BH SENSE ', $
-	       'WIP T1map-kidney-BTFE1535coronal-oblique-BH SENSE ', $
-	       'WIP T1map-kidney-BTFE2012coronal-oblique-BH SENSE ', $
-	       'WIP T1map-kidney-BTFE2573coronal-oblique-BH SENSE ', $
-	       'WIP T1map-kidney-BTFE3450coronal-oblique-BH SENSE ', $
-	       'WIP T1map-kidney-BTFE4405coronal-oblique-BH SENSE ']
-	seq8 = 'WIP T2-star-map-kidneys-coronal-oblique-BH SENSE'
-	seq9 = [$
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-no SENSE ', $
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-30 SENSE ', $
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-60 SENSE ', $
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-70 SENSE ', $
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-80 SENSE ', $
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-90 SENSE ', $
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-100 SENSE', $
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-110 SENSE', $
-	  'WIP T2map-kidney-coronal-oblique-BH-T1-TFE-120 SENSE']
-	seq10 =[$
-	  'WIP mt-off-kidney-coronal-oblique-bh SENSE', $
-	  'WIP mt-on-kidney-coronal-oblique-bh SENSE ']
-	seq11 = 'WIP DTI-kidney-coronal-oblique-FB SENSE '
-	seq12 = 'WIP ss-EPI-pCASL-TRAslap-FA40-FS SENSE'
-	seq13 = 'WIP M0-pCASL-FA40 SENSE '
-	seq14 = 'WIP SURVEY_PCA'
-	seq15 = 'WIP PC-left-RT-ECGtrig-fb '
-	seq16 = 'WIP PC-right-RT-ECGtrig-fb'
-	seq17 = 'WIP DCE-kidney-coronal-oblique-FB-dry-run SENSE '
-	seq18 = 'WIP DCE-kidney-coronal-oblique-FB SENSE '
-	seq19 = 'WIP T1W-abdomen-Dixon-post-coronal-BH SENSE '
+	seq1 = '*tfi2d1 ' ; All Localiser images bundled up
+
+	seq2 = '*h2d1_208 ' ; Coronal T2 HASTE
+
+	seq6 = '*fl3d1'  ; 3D SPGR - VFA and dynamic, BH and FB
+
+	Series = string(PMI__Dicom__Read(files,'0018'x,'0024'x))
 
 
-	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+	Orientation = PMI__Dicom__Read(files,'0051'x,'100E'x)  ;Orientation of images
 
-	iBEAt_Import_Turku_10_8__LoadSequence, seq1, Sortby=['Image number','Acquisition time'], Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq2, Sortby=['Image number','Acquisition time'], Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadVolume, seq3, Stdy, files, Series, status
-	iBEAt_Import_Turku_10_8__LoadDixon, seq4, Stdy, files, Series, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq5, Sortby=['Slice location','Echo time'], Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadT1W, seq6, Stdy, files, Series, status
-	iBEAt_Import_Turku_10_8__LoadInversionRecovery, seq7, Stdy, files, Series, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq8, Sortby=['Slice location','Echo time'], Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadT2mapping, seq9, Stdy, files, series, status
-	iBEAt_Import_Turku_10_8__LoadMTmapping, seq10, Stdy, files, series, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq11, Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq12, Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq13, Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq14, Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadPhaseContrast, seq15, Stdy, files, series, status
-	iBEAt_Import_Turku_10_8__LoadPhaseContrast, seq16, Stdy, files, series, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq17, Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadSequence, seq18, Stdy, files, first, status
-	iBEAt_Import_Turku_10_8__LoadDixon, seq19, Stdy, files, Series, status
+
+	TRISTAN_Import_Siemens1_5T__Load3DSPGR, seq6, Stdy, files, Series, status
+	TRISTAN_Import_Siemens1_5T__LoadSequence, seq1, Stdy, files, first, status
+
+	TRISTAN_Import_Siemens1_5T__LoadVolume, seq2, Stdy, files, Series, status
 
 end
