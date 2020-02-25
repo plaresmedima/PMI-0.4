@@ -44,8 +44,8 @@ pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
 	;;;;;;; Initialise
 	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
 	ny = PMI__Dicom__Read(files,'0028'x,'0010'x)
-	nz = 44
-	nt = 18
+	nz = 56
+	nt = 12
 
 	FA = [2,5,10,15,20,25]
 	nFA = n_elements(FA)
@@ -53,10 +53,11 @@ pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
 	vfa = fltarr(max(nx),max(ny),nz,nFA) ;array holding the data
 	image = fltarr(max(nx),max(ny),nz,nt) ;array holding the data
 	for n = 0L, nFA-1 do begin
-		j = where(PMI__Dicom__Read(files,'0018'x,'1314'x) eq FA[n])
+		;j = where(PMI__Dicom__Read(files,'0018'x,'1314'x) eq FA[n])
+		j = indgen(nz*nt, start=n, increment=nFA)
 		files_FA = files[j]
 		z = PMI__Dicom__Read(files_FA,'0020'x,'1041'x) ;Array of Slice locations
-		t = PMI__Dicom__Read(files_FA,'0008'x,'0032'x) ;Array of Acquisition times
+		t = PMI__Dicom__Read(files_FA,'0020'x,'0013'x) ;Array of Acquisition times
 
 		files_FA = PMI__Dicom__Sort(files_FA, z, t) ; returns a 2D string array of file names
 		d = [max(nx),max(ny),nz,nt] ;dimensions of the series
@@ -157,7 +158,7 @@ end
 pro TRISTAN_Import_GE3T__LoadVFA, Sequence, Stdy, files
 
 	sort_z = ['0020'x,'1041'x]
-	sort_t = ['0008'x,'0032'x]
+	sort_t = ['0020'x,'0013'x]
 	z = PMI__Dicom__Read(files,sort_z[0],sort_z[1])
   	t = PMI__Dicom__Read(files,sort_t[0],sort_t[1])
 
@@ -382,7 +383,7 @@ pro TRISTAN_Import_GE3T, Stdy, files, first, status=status
 	seq5 = '15_FB_DYN'  ; 3D SPGR - dynamic FB
 	seq6 = '15_BH_DYN'  ; 3D SPGR - dynamic BH
 
-	;TRISTAN_Import_GE3T__Load3DSPGR_FB, seq3, Stdy, files, status
+	TRISTAN_Import_GE3T__Load3DSPGR_FB, seq3, Stdy, files, status
 	TRISTAN_Import_GE3T__Load3DSPGR_BH, seq4, Stdy, files, status
 	;TRISTAN_Import_GE3T__Load3DSPGR_FBdyn, seq5, Stdy, files, status
 	;TRISTAN_Import_GE3T__Load3DSPGR_BHdyn, seq6, Stdy, files, status
