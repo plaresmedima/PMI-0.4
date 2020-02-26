@@ -54,8 +54,8 @@ pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
 	image = fltarr(max(nx),max(ny),nz,nt) ;array holding the data
 	for n = 0L, nFA-1 do begin
 		;j = where(PMI__Dicom__Read(files,'0018'x,'1314'x) eq FA[n])
-		j = indgen(nz*nt, start=n, increment=nFA)
-		files_FA = files[j]
+		m = nFA*(indgen(nz*nt))+n
+		files_FA = files[m]
 		z = PMI__Dicom__Read(files_FA,'0020'x,'1041'x) ;Array of Slice locations
 		t = PMI__Dicom__Read(files_FA,'0020'x,'0013'x) ;Array of Acquisition times
 
@@ -269,7 +269,7 @@ pro TRISTAN_Import_GE3T__Load3DSPGR_FB, Sequence, Stdy, files, status
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
 	files_FB = files[i]
-
+	print, i[0]
 	; Get VFA T1 map from FB dataset - after motion correction
 	TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files_FB
 
