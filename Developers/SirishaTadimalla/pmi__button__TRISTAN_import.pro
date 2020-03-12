@@ -76,7 +76,7 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 		   endcase
 		 'GE MEDICAL SYSTEMS': Case Version of
 		   'DISCOVERY MR750 ': TRISTAN_Import_GE3T, Stdy, files, first, status=status
-		   'DISCOVERY MR450 ': TRISTAN_Import_GE1_5T, Stdy, files, first, status=status
+		   'DISCOVERY MR450 ': TRISTAN_Import_GE3T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
 		  else: ok = dialog_message(/information, Manufacturer + ' not supported' )

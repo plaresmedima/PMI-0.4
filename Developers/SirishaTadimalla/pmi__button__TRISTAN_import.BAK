@@ -82,7 +82,6 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 		  else: ok = dialog_message(/information, Manufacturer + ' not supported' )
 	Endcase
 
-	TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 
 	PMI__control, ev.top, /refresh, Path=Path
 	return:PMI__Message, status
