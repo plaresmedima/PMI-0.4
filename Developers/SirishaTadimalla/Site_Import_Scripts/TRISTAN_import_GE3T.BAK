@@ -44,48 +44,82 @@ pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
 	;;;;;;; Initialise
 	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
 	ny = PMI__Dicom__Read(files,'0028'x,'0010'x)
+	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
+	t = PMI__Dicom__Read(files,'0020'x,'0100'x) ;Array of temporal position identifiers
+	files = PMI__Dicom__Sort(files, z, t) ; returns a 2D string array of file names
 	nz = 56
-	nt = 12
 
 	FA = [2,5,10,15,20,25]
 	nFA = n_elements(FA)
+	nt = 12
 
 	vfa = fltarr(max(nx),max(ny),nz,nFA) ;array holding the data
-	image = fltarr(max(nx),max(ny),nz,nt) ;array holding the data
-	for n = 0L, nFA-1 do begin
-		;j = where(PMI__Dicom__Read(files,'0018'x,'1314'x) eq FA[n])
-		m = nFA*(indgen(nz*nt))+n
-		files_FA = files[m]
-		z = PMI__Dicom__Read(files_FA,'0020'x,'1041'x) ;Array of Slice locations
-		t = PMI__Dicom__Read(files_FA,'0020'x,'0013'x) ;Array of Acquisition times
 
-		files_FA = PMI__Dicom__Sort(files_FA, z, t) ; returns a 2D string array of file names
-		d = [max(nx),max(ny),nz,nt] ;dimensions of the series
 
-		for k=0L,d[3]-1 do begin ;loop over all slices and times
-			for j=0L,d[2]-1 do begin
-				ind = j + d[2]*k
-				image[*,*,j,k] = PMI__Dicom__ReadImage(files_FA[ind]) ;read image data from file
+	for s=26L,28 do begin ;loop over all slices ;nz-1
+		ind = 0*indgen(12)
+		for t=0L,nt*nFA-1 do begin ; loop over all times and FAs
+			ind[t] = s + nz*t
+		endfor
+		files_FA = files[ind]
+		image = fltarr(max(nx),max(ny),nFA,nt) ;array holding the data
+		for n=0L,nFA-1 do begin
+			for t=0L,nt-1 do begin
+				ind2 = n + nFA*t
+				image[*,*,n,t] = PMI__Dicom__ReadImage(files_FA[ind2]) ;read image data from file
 			endfor
-		endfor
-		stop, n
-		;;;;;; Perform motion correction
-		; Set parameters for MoCoMo
-		in = {res:1E, prec:1E}
-		; Set window
-		win = {p:[0L,0L,0L], n:d[0:2]}
 
-		; Calculate
-		image = TRANSPOSE(image, [3,0,1,2])
-		image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
-		image = TRANSPOSE(image, [1,2,3,0])
-		; Calculate mean over time
-		for j=0L, d[2]-1 do begin ; each slice
-			im = reform(image[*,*,j,*])
-			vfa[*,*,j,n] = TOTAL(im,3)/nt
+			;;;;;; Perform motion correction
+			; Set parameters for MoCoMo
+			in = {res:1E, prec:1E}
+			; Set window
+			win = {p:[0L,0L,0L], n:d[0:2]}
+
+			; Calculate
+			image = TRANSPOSE(image, [3,0,1,2])
+			image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
+			image = TRANSPOSE(image, [1,2,3,0])
+			; Calculate mean over time
+			im = reform(image[*,*,n,*])
+			vfa[*,*,s,n] = TOTAL(im,3)/nt
+			image = 0*image
 		endfor
-		image = 0*image
 	endfor
+
+;	for n = 0L, nFA-1 do begin
+;		;j = where(PMI__Dicom__Read(files,'0018'x,'1314'x) eq FA[n])
+;		m = nFA*(indgen(nz*nt))+n
+;		files_FA = files[m]
+;		z = PMI__Dicom__Read(files_FA,'0020'x,'1041'x) ;Array of Slice locations
+;		t = PMI__Dicom__Read(files_FA,'0020'x,'0013'x) ;Array of Acquisition times
+;
+;		files_FA = PMI__Dicom__Sort(files_FA, z, t) ; returns a 2D string array of file names
+;		d = [max(nx),max(ny),nz,nt] ;dimensions of the series
+;
+;		for k=0L,d[3]-1 do begin ;loop over all slices and times
+;			for j=0L,d[2]-1 do begin
+;				ind = j + d[2]*k
+;				image[*,*,j,k] = PMI__Dicom__ReadImage(files_FA[ind]) ;read image data from file
+;			endfor
+;		endfor
+;
+;		;;;;;; Perform motion correction
+;		; Set parameters for MoCoMo
+;		in = {res:1E, prec:1E}
+;		; Set window
+;		win = {p:[0L,0L,0L], n:d[0:2]}
+;
+;		; Calculate
+;		image = TRANSPOSE(image, [3,0,1,2])
+;		image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
+;		image = TRANSPOSE(image, [1,2,3,0])
+;		; Calculate mean over time
+;		for j=0L, d[2]-1 do begin ; each slice
+;			im = reform(image[*,*,j,*])
+;			vfa[*,*,j,n] = TOTAL(im,3)/nt
+;		endfor
+;		image = 0*image
+;	endfor
 
 	; Calculate T1 map using linear fit
 	TR = PMI__Dicom__Read(files[0],'0018'x,'0080'x) ;msec
@@ -269,7 +303,7 @@ pro TRISTAN_Import_GE3T__Load3DSPGR_FB, Sequence, Stdy, files, status
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
 	files_FB = files[i]
-	print, i[0]
+
 	; Get VFA T1 map from FB dataset - after motion correction
 	TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files_FB
 
