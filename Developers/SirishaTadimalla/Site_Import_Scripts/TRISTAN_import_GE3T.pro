@@ -1,192 +1,39 @@
 
-pro TRISTAN_Import_GE3T__LoadDynamics_MoCo, Sequence, Stdy, files
-
-	; Process dynamic dataset
-	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
-	t = PMI__Dicom__Read(files,'0008'x,'0032'x) ;Array of Acquisition times
-	files = PMI__Dicom__Sort(files, z, t) ; returns a 2D string array of file names
-
-	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)  ;nr of rows
-	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)  ;nr of columns
-	nz = n_elements(z)
-	nt = n_elements(t)
-	d = [nx,ny,nz,nt] ;dimensions of the series
-
-	image = fltarr(nx,ny,nz,nt) ;array holding the data
-
-	for k=0L,d[3]-1 do begin ;loop over all slices and times
-		for j=0L,d[2]-1 do begin
-			ind = j + d[2]*k
-			image[*,*,j,k] = PMI__Dicom__ReadImage(files[ind]) ;read image data from file
-		endfor
-	endfor
-
-	;;;;;; Perform motion correction
-	; Set parameters for MoCoMo
-	in = {res:1E, prec:1E}
-	; Set window
-	win = {p:[0L,0L,0L], n:d[0:2]}
-
-	; Calculate
-	image = TRANSPOSE(image, [3,0,1,2])
-	image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
-	image = TRANSPOSE(image, [1,2,3,0])
-
-	;;;;;; Write series
-	Dcm = Stdy -> New('SERIES', Name=Sequence+'[Motion-free]', Domain = {z:z, t:t, m:[nx,ny]}) ;new series object in display
-	Dcm -> Write, Stdy->DataPath(), image  ;write raw data to disk
-	Dcm -> Trim, [min(image),0.8*max(image)]  ;set default grey scale ranges
-	Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
-end
-
 pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
 
 	;;;;;;; Initialise
-	nx = PMI__Dicom__Read(files,'0028'x,'0011'x)
-	ny = PMI__Dicom__Read(files,'0028'x,'0010'x)
+	nx = max(PMI__Dicom__Read(files,'0028'x,'0011'x))
+	ny = max(PMI__Dicom__Read(files,'0028'x,'0010'x))
 	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
 	t = PMI__Dicom__Read(files,'0020'x,'0100'x) ;Array of temporal position identifiers
 	files = PMI__Dicom__Sort(files, z, t) ; returns a 2D string array of file names
-	nz = 56
 
+	nz = 56
 	FA = [2,5,10,15,20,25]
 	nFA = n_elements(FA)
 	nt = 12
 
-	vfa = fltarr(max(nx),max(ny),nz,nFA) ;array holding the data
-
-
-	for s=26L,28 do begin ;loop over all slices ;nz-1
-		ind = 0*indgen(12)
-		for t=0L,nt*nFA-1 do begin ; loop over all times and FAs
-			ind[t] = s + nz*t
-		endfor
-		stop, ind
+	; for each FA
+	for n = 0L,nFA-1 do begin
+		ind = n + nFA*indgen(nz*nt)
+		print, ind
 		files_FA = files[ind]
-		image = fltarr(max(nx),max(ny),nFA,nt) ;array holding the data
-		for n=0L,nFA-1 do begin
-			for t=0L,nt-1 do begin
-				ind2 = n + nFA*t
-				image[*,*,n,t] = PMI__Dicom__ReadImage(files_FA[ind2]) ;read image data from file
+		; loop over all slices and times
+		d = [nx,ny,nz,nt] ;dimensions of the series
+		image = fltarr(nx,ny,nz,nt) ;array holding the data
+
+		for k=0L,d[3]-1 do begin ;loop over all slices and times
+			for j=0L,d[2]-1 do begin
+				ind2 = k + d[3]*j
+				image[*,*,j,k] = PMI__Dicom__ReadImage(files_FA[ind2]) ;read image data from file
 			endfor
-
-			;;;;;; Perform motion correction
-			; Set parameters for MoCoMo
-			in = {res:1E, prec:1E}
-			; Set window
-			win = {p:[0L,0L,0L], n:d[0:2]}
-
-			; Calculate
-			image = TRANSPOSE(image, [3,0,1,2])
-			image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
-			image = TRANSPOSE(image, [1,2,3,0])
-			; Calculate mean over time
-			im = reform(image[*,*,n,*])
-			vfa[*,*,s,n] = TOTAL(im,3)/nt
-			image = 0*image
-		endfor
-	endfor
-
-;	for n = 0L, nFA-1 do begin
-;		;j = where(PMI__Dicom__Read(files,'0018'x,'1314'x) eq FA[n])
-;		m = nFA*(indgen(nz*nt))+n
-;		files_FA = files[m]
-;		z = PMI__Dicom__Read(files_FA,'0020'x,'1041'x) ;Array of Slice locations
-;		t = PMI__Dicom__Read(files_FA,'0020'x,'0013'x) ;Array of Acquisition times
-;
-;		files_FA = PMI__Dicom__Sort(files_FA, z, t) ; returns a 2D string array of file names
-;		d = [max(nx),max(ny),nz,nt] ;dimensions of the series
-;
-;		for k=0L,d[3]-1 do begin ;loop over all slices and times
-;			for j=0L,d[2]-1 do begin
-;				ind = j + d[2]*k
-;				image[*,*,j,k] = PMI__Dicom__ReadImage(files_FA[ind]) ;read image data from file
-;			endfor
-;		endfor
-;
-;		;;;;;; Perform motion correction
-;		; Set parameters for MoCoMo
-;		in = {res:1E, prec:1E}
-;		; Set window
-;		win = {p:[0L,0L,0L], n:d[0:2]}
-;
-;		; Calculate
-;		image = TRANSPOSE(image, [3,0,1,2])
-;		image = MOCOMO_3D(image, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
-;		image = TRANSPOSE(image, [1,2,3,0])
-;		; Calculate mean over time
-;		for j=0L, d[2]-1 do begin ; each slice
-;			im = reform(image[*,*,j,*])
-;			vfa[*,*,j,n] = TOTAL(im,3)/nt
-;		endfor
-;		image = 0*image
-;	endfor
-
-	; Calculate T1 map using linear fit
-	TR = PMI__Dicom__Read(files[0],'0018'x,'0080'x) ;msec
-	Dom = {z:z, t:t[0], m:d[0:1]}
-    S0_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_S0')
-    R1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_R1 (ms-1)')
-    T1_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_T1 (ms)')
-    FIT_series = Stdy->New('SERIES', Domain= Dom,  Name= Sequence+'_VFA_RMS (%)')
-
-	SVA_slice = fltarr(nFA,d[0]*d[1])
-	S0_slice = fltarr(d[0]*d[1])
-	R1_slice = fltarr(d[0]*d[1])
-	T1_slice = fltarr(d[0]*d[1])
-	FIT_slice = fltarr(d[0]*d[1])
-
-	for j=0L,d[2]-1 do begin ;loop over slices
-		PMI__Message, status, 'Calculating T1 map ', j/(d[2]-1E)
-
-		for k=0L,nFA-1 do SVA_slice[k,*] = vfa[*,*,j,k]
-
-		for i=0L,d[0]*d[1]-1 do begin
-
-			PAR = VFA_Linear_T1fit(TR, FA, reform(SVA_slice[*,i]), RMS = rms)
-
-			S0_slice[i] = PAR[1]
-			R1_slice[i] = PAR[0]
-			T1_slice[i] = 1/PAR[0]
-			Fit_slice[i] = rms
-
 		endfor
 
-		S0_series->Write, Stdy->DataPath(), S0_slice, j
-		R1_series->Write, Stdy->DataPath(), R1_slice, j
-		T1_series->Write, Stdy->DataPath(), T1_slice, j
-		FIT_series->Write, Stdy->DataPath(), Fit_slice, j
-
+	    Dcm = Stdy -> New('SERIES', Name=Sequence, Domain = {z:z, t:indgen(nt), m:[nx,ny]}) ;new series object in display
+		Dcm -> Write, Stdy->DataPath(), image  ;write raw data to disk
+		Dcm -> Trim, [min(image),0.8*max(image)]  ;set default grey scale ranges
+		Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
 	endfor
-
-end
-
-pro TRISTAN_Import_GE3T__LoadDynamics, Sequence, Stdy, files
-
-	z = PMI__Dicom__Read(files,'0020'x,'1041'x) ;Array of Slice locations
-	t = PMI__Dicom__Read(files,'0008'x,'0032'x) ;Array of Acquisition times
-	files = PMI__Dicom__Sort(files, z, t) ; returns a 2D string array of file names
-
-	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)  ;nr of rows
-	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)  ;nr of columns
-	nz = n_elements(z)
-	nt = n_elements(t)
-
-	d = [nx,ny,nz,nt] ;dimensions of the series
-
-	image = fltarr(nx,ny,nz,nt) ;array holding the data
-
-	for k=0L,d[3]-1 do begin ;loop over all slices and times
-		for j=0L,d[2]-1 do begin
-			ind = j + d[2]*k
-			image[*,*,j,k] = PMI__Dicom__ReadImage(files[ind]) ;read image data from file
-		endfor
-	endfor
-
-    Dcm = Stdy -> New('SERIES', Name=Sequence, Domain = {z:z, t:t, m:[nx,ny]}) ;new series object in display
-	Dcm -> Write, Stdy->DataPath(), image  ;write raw data to disk
-	Dcm -> Trim, [min(image),0.8*max(image)]  ;set default grey scale ranges
-	Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
 
 end
 
