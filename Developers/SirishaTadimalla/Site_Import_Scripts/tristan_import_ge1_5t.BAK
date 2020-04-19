@@ -21,7 +21,7 @@ pro TRISTAN_Import_GE1_5T__LoadVFA_MoCo, Sequence, Stdy, files
 		for p=0L,d[4]-1 do begin
 			for j=0L,d[3]-1 do begin
 				ind = j + d[3]*p
-				image[*,*,k-33,j,p] = PMI__Dicom__ReadImage(files[k,ind]) ;read image data from file
+				image[*,*,k-28,j,p] = PMI__Dicom__ReadImage(files[k,ind]) ;read image data from file
 			endfor
 		endfor
 	endfor
