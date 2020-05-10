@@ -224,7 +224,8 @@ end
 pro TRISTAN_Import_Philips3T__Load3DSPGR_BH, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR BH Data'
-	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	;Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
 
@@ -247,7 +248,8 @@ end
 pro TRISTAN_Import_Philips3T__Load3DSPGR_FB, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR FB Data'
-	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	;Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
 	files_FB = files[i]
@@ -271,7 +273,8 @@ pro TRISTAN_Import_Philips3T__LoadRadial, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading radial SPGR Data'
 
-	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	;Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
 
 	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
 	if cnt eq 0 then return
@@ -301,13 +304,16 @@ pro TRISTAN_Import_Philips3T__LoadInversionRecovery, Sequence, Stdy, files, stat
 
 	PMI__Message, status, 'Loading Inversion Recovery Data'
 
-	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	;Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
+
 	i = where(Series eq Sequence, cnt)
 	if cnt eq 0 then return
 	files_IR = files[i]
 
 	; Get magnitude images
 	j = where(PMI__Dicom__Read(files_IR,'0008'x,'0008'x) eq 'ORIGINAL\PRIMARY\M_FFE\M\FFE')
+	print, j
 
 	files_M = files_IR[j]
 
@@ -394,7 +400,8 @@ end
 pro TRISTAN_Import_Philips3T__LoadVolume, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading ' + Sequence
-	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	;Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+	Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
 	i = where(Series eq Sequence, cnt)
 
 
@@ -435,7 +442,8 @@ pro TRISTAN_Import_Philips3T__LoadSequence, Sequence, Stdy, files, first, status
 
   n = n_elements(first)-1
 
-  Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+  ;Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
+  Series = string(PMI__Dicom__Read(files,'0018'x,'1030'x))
   i = where(Series eq Sequence, cnt)
   if cnt eq 0 then return
   Series = Series[i]
@@ -488,17 +496,17 @@ pro TRISTAN_Import_Philips3T, Stdy, files, first, status=status
 ;;;;CHECK SEQUENCE PARAMETERS
 
 ;;;;LOAD THE SERIES
+	print, 'in here'
+	seq1 = 'WIP SURVEY' ; All Localiser images bundled up
 
-	seq1 = 'SURVEY' ; All Localiser images bundled up
+	seq2 = 'WIP T2_haste_cor_mbh' ; Coronal T2 HASTE
+	seq3 = 'WIP T2_haste_tra_mbh' ; Transverse T2 HASTE
 
-	seq2 = 'T2_haste_cor_mbh' ; Coronal T2 HASTE
-	seq3 = 'T2_haste_tra_mbh' ; Transverse T2 HASTE
+	seq4 = 'WIP T1Map_LL_tra_mbh_gre' ; LL T1 mapping
 
-	seq4 = 'T1Map_LL_tra_mbh_gre' ; LL T1 mapping
-
-	seq5 = 'radialSPGR_tra_fb' ; radial VFA and dynamic
-	seq6 = 'SPGR_cor_fb'  ; 3D SPGR - VFA and dynamic, FB
-	seq7 = 'SPGR_cor_bh'  ; 3D SPGR - VFA and dynamic, BH
+	seq5 = 'WIP radialSPGR_tra_fb' ; radial VFA and dynamic
+	seq6 = 'WIP SPGR_cor_fb'  ; 3D SPGR - VFA and dynamic, FB
+	seq7 = 'WIP SPGR_cor_bh'  ; 3D SPGR - VFA and dynamic, BH
 
 
 	TRISTAN_Import_Philips3T__LoadInversionRecovery, seq4, Stdy, files, status

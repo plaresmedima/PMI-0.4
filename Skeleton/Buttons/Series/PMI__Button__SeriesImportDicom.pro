@@ -48,6 +48,7 @@ pro PMI__Button__SeriesImportDicom__LoadMultiFrame, status, cnt, files, NrOfFram
 			im = reform(im,nx,ny,nt,nz,/overwrite)
 			if Manufacturer Eq 'Philips Medical Systems ' then begin  ;Get Acquisition times and rescale factors for Philips Multi-Frame data
 				Groups = Dcm -> Get('5200'x,'9230'x)
+
 				for l=0L,nt-1 do begin
 					Seq = Groups[l] -> Get('2005'x,'140F'x) & AcqTime = Seq[0] -> Get('2005'x,'10A0'x)
 					Dcm -> t, AcqTime, l

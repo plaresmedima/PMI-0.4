@@ -15,6 +15,7 @@
 ;	PMI__Menu__TRISTANRATS, mbar
 ;	PMI__Menu__Jeong, mbar
 
-	PMI__Menu__Sugar, mbar
+	PMI__Menu__TRISTAN, mbar
+
 
 end

@@ -1,5 +1,5 @@
 
-pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
+pro TRISTAN_Import_GE1_5T__LoadVFA_MoCo, Sequence, Stdy, files
 
 	;;;;;;; Initialise
 	nx = max(PMI__Dicom__Read(files,'0028'x,'0011'x))
@@ -93,7 +93,7 @@ pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
 
 end
 
-pro TRISTAN_Import_GE3T__LoadVFA, Sequence, Stdy, files
+pro TRISTAN_Import_GE1_5T__LoadVFA, Sequence, Stdy, files
 
 	sort_z = ['0020'x,'1041'x]
 	sort_t = ['0020'x,'0013'x]
@@ -159,7 +159,7 @@ pro TRISTAN_Import_GE3T__LoadVFA, Sequence, Stdy, files
 end
 
 
-pro TRISTAN_Import_GE3T__Load3DSPGR_BHdyn, Sequence, Stdy, files, status
+pro TRISTAN_Import_GE1_5T__Load3DSPGR_BHdyn, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR BH Data'
 	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
@@ -169,11 +169,11 @@ pro TRISTAN_Import_GE3T__Load3DSPGR_BHdyn, Sequence, Stdy, files, status
 	files_BH = files[i]
 
 	; Load dynamic BH images - no motion correction
-	TRISTAN_Import_GE3T__LoadDynamics, Sequence+'_dynamic', Stdy, files_BH
+	TRISTAN_Import_GE1_5T__LoadDynamics, Sequence+'_dynamic', Stdy, files_BH
 
 end
 
-pro TRISTAN_Import_GE3T__Load3DSPGR_BH, Sequence, Stdy, files, status
+pro TRISTAN_Import_GE1_5T__Load3DSPGR_BH, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR BH Data'
 	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
@@ -183,11 +183,11 @@ pro TRISTAN_Import_GE3T__Load3DSPGR_BH, Sequence, Stdy, files, status
 	files_BH = files[i]
 
 	; Get VFA T1 map from BH dataset - no motion correction
-	TRISTAN_Import_GE3T__LoadVFA, Sequence, Stdy, files_BH
+	TRISTAN_Import_GE1_5T__LoadVFA, Sequence, Stdy, files_BH
 
 end
 
-pro TRISTAN_Import_GE3T__Load3DSPGR_FBdyn, Sequence, Stdy, files, status
+pro TRISTAN_Import_GE1_5T__Load3DSPGR_FBdyn, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR FB dynamic Data'
 	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
@@ -196,11 +196,11 @@ pro TRISTAN_Import_GE3T__Load3DSPGR_FBdyn, Sequence, Stdy, files, status
 	files_FB = files[i]
 
 	; Load dynamic FB images - after motion correction
-	TRISTAN_Import_GE3T__LoadDynamics_MoCo, Sequence+'_dynamic', Stdy, files_FB
+	TRISTAN_Import_GE1_5T__LoadDynamics_MoCo, Sequence+'_dynamic', Stdy, files_FB
 
 end
 
-pro TRISTAN_Import_GE3T__Load3DSPGR_FB, Sequence, Stdy, files, status
+pro TRISTAN_Import_GE1_5T__Load3DSPGR_FB, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR FB Data'
 	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
@@ -209,12 +209,12 @@ pro TRISTAN_Import_GE3T__Load3DSPGR_FB, Sequence, Stdy, files, status
 	files_FB = files[i]
 
 	; Get VFA T1 map from FB dataset - after motion correction
-	TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files_FB
+	TRISTAN_Import_GE1_5T__LoadVFA_MoCo, Sequence, Stdy, files_FB
 
 end
 
 
-pro TRISTAN_Import_GE3T__LoadVolume, Sequence, Stdy, files, status
+pro TRISTAN_Import_GE1_5T__LoadVolume, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading ' + Sequence
 	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
@@ -254,7 +254,7 @@ end
 
 
 
-pro TRISTAN_Import_GE3T__LoadSequence, Sequence, Stdy, files, first, status
+pro TRISTAN_Import_GE1_5T__LoadSequence, Sequence, Stdy, files, first, status
 
   n = n_elements(first)-1
 
@@ -306,7 +306,7 @@ pro TRISTAN_Import_GE3T__LoadSequence, Sequence, Stdy, files, first, status
 end
 
 
-pro TRISTAN_Import_GE3T, Stdy, files, first, status=status
+pro TRISTAN_Import_GE1_5T, Stdy, files, first, status=status
 
 ;;;;CHECK SEQUENCE PARAMETERS
 
@@ -321,13 +321,13 @@ pro TRISTAN_Import_GE3T, Stdy, files, first, status=status
 	seq5 = '15_FB_DYN'  ; 3D SPGR - dynamic FB
 	seq6 = '15_BH_DYN'  ; 3D SPGR - dynamic BH
 
-	TRISTAN_Import_GE3T__Load3DSPGR_FB, seq3, Stdy, files, status
-	TRISTAN_Import_GE3T__Load3DSPGR_BH, seq4, Stdy, files, status
-	;TRISTAN_Import_GE3T__Load3DSPGR_FBdyn, seq5, Stdy, files, status
-	;TRISTAN_Import_GE3T__Load3DSPGR_BHdyn, seq6, Stdy, files, status
+	TRISTAN_Import_GE1_5T__Load3DSPGR_FB, seq3, Stdy, files, status
+	TRISTAN_Import_GE1_5T__Load3DSPGR_BH, seq4, Stdy, files, status
+	;TRISTAN_Import_GE1_5T__Load3DSPGR_FBdyn, seq5, Stdy, files, status
+	;TRISTAN_Import_GE1_5T__Load3DSPGR_BHdyn, seq6, Stdy, files, status
 
-	;TRISTAN_Import_GE3T__LoadSequence, seq1, Stdy, files, first, status
+	;TRISTAN_Import_GE1_5T__LoadSequence, seq1, Stdy, files, first, status
 
-	;TRISTAN_Import_GE3T__LoadVolume, seq2, Stdy, files, status
+	;TRISTAN_Import_GE1_5T__LoadVolume, seq2, Stdy, files, status
 
 end
