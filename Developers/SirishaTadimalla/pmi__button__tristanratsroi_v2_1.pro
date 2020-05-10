@@ -1,7 +1,12 @@
+;17/04/2020: Added Default Field Strength of 7T (in case not specified in DICOM header)
+;To accomdate data from Antaros
 
-FUNCTION PMI__Display__tristanratsroi_v2_0::Constants
+FUNCTION PMI__Display__tristanratsroi_v2_1::Constants
 
 	FieldStrength = self.series->GETVALUE('0018'x,'0087'x)
+
+
+	If FieldStrength Eq 0 then FieldStrength=7.0
 
 	c = {rb:0E, rh:0E, ve:0E, vh:0E, ves:0E, R1l:0E, R1s:0E}
 
@@ -33,7 +38,7 @@ FUNCTION PMI__Display__tristanratsroi_v2_0::Constants
 
 END
 
-PRO PMI__Display__tristanratsroi_v2_0::Fit
+PRO PMI__Display__tristanratsroi_v2_1::Fit
 
 	Self->GET, Model=Model, Time=Time, AifCurve=Aif, RoiCurve=Curve, Indices=ti
 	Self->SET, Message='Fitting...', Sensitive=0
@@ -68,7 +73,7 @@ PRO PMI__Display__tristanratsroi_v2_0::Fit
 	Self->SET, /Sensitive
 END
 
-PRO PMI__Display__tristanratsroi_v2_0::Plot
+PRO PMI__Display__tristanratsroi_v2_1::Plot
 
 	Self->GET, OnDisplay=OnDisplay
 
@@ -133,7 +138,7 @@ END
 
 
 
-FUNCTION PMI__Display__tristanratsroi_v2_0::Event, ev
+FUNCTION PMI__Display__tristanratsroi_v2_1::Event, ev
 
 	Uname = widget_info(ev.id,/uname)
 
@@ -235,13 +240,13 @@ FUNCTION PMI__Display__tristanratsroi_v2_0::Event, ev
 	return, 0B
 END
 
-FUNCTION PMI__Display__Event__tristanratsroi_v2_0, ev
+FUNCTION PMI__Display__Event__tristanratsroi_v2_1, ev
 
 	widget_control, ev.handler, get_uvalue=self
 	return, Self -> Event(ev)
 END
 
-FUNCTION PMI__Display__tristanratsroi_v2_0::DR1, Region
+FUNCTION PMI__Display__tristanratsroi_v2_1::DR1, Region
 
 	case Region of
 		'ROI':Signal=*Self.Curve[0]
@@ -272,7 +277,7 @@ FUNCTION PMI__Display__tristanratsroi_v2_0::DR1, Region
 
 END
 
-FUNCTION PMI__Display__tristanratsroi_v2_0::GetCurve, Region, INDICES=TimeIndices
+FUNCTION PMI__Display__tristanratsroi_v2_1::GetCurve, Region, INDICES=TimeIndices
 
 	Self -> GET, Time=Time, Stdy=Stdy, Region=Region
 	Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
@@ -285,14 +290,14 @@ FUNCTION PMI__Display__tristanratsroi_v2_0::GetCurve, Region, INDICES=TimeIndice
 	return, Signal
 END
 
-FUNCTION PMI__Display__tristanratsroi_v2_0::GetName, Region
+FUNCTION PMI__Display__tristanratsroi_v2_1::GetName, Region
 
 	self->GET, Region=Region
 	return, Region -> Name()
 END
 
 
-PRO PMI__Display__tristanratsroi_v2_0::GET, $
+PRO PMI__Display__tristanratsroi_v2_1::GET, $
  	CursorPos = CursorPos, $
 	Model=Model, Delay=Delay, $
 	Time=Time, Fit=Fit, SignalModel=SignalModel, $
@@ -375,7 +380,7 @@ PRO PMI__Display__tristanratsroi_v2_0::GET, $
 	endif
 END
 
-PRO PMI__Display__tristanratsroi_v2_0::SET, $
+PRO PMI__Display__tristanratsroi_v2_1::SET, $
 	PMI__REFRESH=pmi__refresh, PMI__RESIZE=pmi_resize, $
 	Refresh=Refresh, Erase=Erase, $
 	Message=Message, Sensitive=Sensitive, $
@@ -437,13 +442,13 @@ END
 
 
 
-PRO PMI__Display__tristanratsroi_v2_0::Cleanup
+PRO PMI__Display__tristanratsroi_v2_1::Cleanup
 	widget_control, self.id, /destroy
 	ptr_free, Self.Curve, self.Indices, self.Parameters
 	loadct, 0
 END
 
-FUNCTION PMI__Display__tristanratsroi_v2_0::Init, parent, CursorPos, xsize=xsize, ysize=ysize
+FUNCTION PMI__Display__tristanratsroi_v2_1::Init, parent, CursorPos, xsize=xsize, ysize=ysize
 
 	if n_elements(CursorPos) ne 0 then self.CursorPos = CursorPos
 
@@ -451,7 +456,7 @@ FUNCTION PMI__Display__tristanratsroi_v2_0::Init, parent, CursorPos, xsize=xsize
 
 	PMI__Info, tlb(parent), Stdy=Stdy
 
-	self.id = widget_base(parent,/column,map=0,event_func='PMI__Display__Event__tristanratsroi_v2_0')
+	self.id = widget_base(parent,/column,map=0,event_func='PMI__Display__Event__tristanratsroi_v2_1')
 	Controls = widget_base(self.id,/row,ysize=40,/base_align_center,space=5)
 	self.DrawId	= widget_draw(self.id,/retain)
 
@@ -484,11 +489,11 @@ FUNCTION PMI__Display__tristanratsroi_v2_0::Init, parent, CursorPos, xsize=xsize
 	return, 1
 END
 
-PRO PMI__Display__tristanratsroi_v2_0__Define
+PRO PMI__Display__tristanratsroi_v2_1__Define
 
 	TristanRatModel_v2_0
 
-	Struct = {PMI__Display__tristanratsroi_v2_0 	$
+	Struct = {PMI__Display__tristanratsroi_v2_1 	$
 	,	id: 0L 	$
 	,	DrawId: 0L $
 	,	CursorPos:lonarr(4)	$
@@ -503,7 +508,7 @@ PRO PMI__Display__tristanratsroi_v2_0__Define
 END
 
 
-pro PMI__Button__Event__tristanratsroi_v2_0, ev
+pro PMI__Button__Event__tristanratsroi_v2_1, ev
 
 	PMI__Info, ev.top, Stdy=Stdy
 
@@ -517,7 +522,7 @@ pro PMI__Button__Event__tristanratsroi_v2_0, ev
 		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Number of precontrast scans', Value:4L})])
 	IF v.cancel THEN return
 
-	PMI__Control, ev.top, Viewer = 'PMI__Display__tristanratsroi_v2_0', Display=Display
+	PMI__Control, ev.top, Viewer = 'PMI__Display__tristanratsroi_v2_1', Display=Display
 
 	Display -> Set, /Refresh, $
 		Series = Stdy->Obj(0,ind[v.series]), $
@@ -525,7 +530,7 @@ pro PMI__Button__Event__tristanratsroi_v2_0, ev
 		set_droplist_select = [v.roi,v.aif]
 end
 
-pro PMI__Button__Control__tristanratsroi_v2_0, id, v
+pro PMI__Button__Control__tristanratsroi_v2_1, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -536,15 +541,15 @@ pro PMI__Button__Control__tristanratsroi_v2_0, id, v
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__tristanratsroi_v2_0, parent,value=value, separator=separator
+function PMI__Button__tristanratsroi_v2_1, parent,value=value, separator=separator
 
-	PMI__Display__tristanratsroi_v2_0__Define
+	PMI__Display__tristanratsroi_v2_1__Define
 
 	if n_elements(value) eq 0 then value = 'TRISTAN RAT models (ROI)'
 
 	return, widget_button(parent, $
 		value = value,	$
-		event_pro = 'PMI__Button__Event__tristanratsroi_v2_0',	$
-		pro_set_value = 'PMI__Button__Control__tristanratsroi_v2_0', $
+		event_pro = 'PMI__Button__Event__tristanratsroi_v2_1',	$
+		pro_set_value = 'PMI__Button__Control__tristanratsroi_v2_1', $
 	 	separator = separator )
 end
