@@ -71,7 +71,7 @@ pro PMI__Button__Event__TRISTAN_Import, ev
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
 		 'Philips Medical Systems ': Case Version of
-		 	'Ingenia': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
+		 	'Ingenia ': TRISTAN_Import_Philips1_5T, Stdy, files, first, status=status
 		   else: ok = dialog_message(/information, Manufacturer + ' Version ' + Version + ' not supported' )
 		   endcase
 		 'GE MEDICAL SYSTEMS': Case Version of

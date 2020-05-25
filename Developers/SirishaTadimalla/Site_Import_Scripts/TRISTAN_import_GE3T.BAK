@@ -17,18 +17,18 @@ pro TRISTAN_Import_GE3T__LoadVFA_MoCo, Sequence, Stdy, files
 	; Gather all images into a single 5D image
 	d = [nx,ny,nz,nFA,nt] ;dimensions of the series
 	image = fltarr(nx,ny,nz,nFA,nt)
-	for k=25L, 50 do begin ;0L, d[2]-1 do begin ;loop over all slices and times
+	for k=20L, 45 do begin ;0L, d[2]-1 do begin ;loop over all slices and times
 		for p=0L,d[4]-1 do begin
 			for j=0L,d[3]-1 do begin
 				ind = j + d[3]*p
-				image[*,*,k-25,j,p] = PMI__Dicom__ReadImage(files[k,ind]) ;read image data from file
+				image[*,*,k-20,j,p] = PMI__Dicom__ReadImage(files[k,ind]) ;read image data from file
 			endfor
 		endfor
 	endfor
 
 	; For each FA, create a series and display
 	for j=0L,d[3]-1 do begin
-		Dcm = Stdy -> New('SERIES', Name=Sequence, Domain = {z:z[25:50], t:indgen(nt), m:[nx,ny]}) ;new series object in display
+		Dcm = Stdy -> New('SERIES', Name=Sequence, Domain = {z:z[20:45], t:indgen(nt), m:[nx,ny]}) ;new series object in display
 		Dcm -> Write, Stdy->DataPath(), image[*,*,*,j,*]  ;write raw data to disk
 		Dcm -> Trim, [min(image[*,*,*,j,*]),0.8*max(image[*,*,*,j,*])]  ;set default grey scale ranges
 		Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series

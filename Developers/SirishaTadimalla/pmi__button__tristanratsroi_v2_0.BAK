@@ -3,6 +3,9 @@ FUNCTION PMI__Display__tristanratsroi_v2_0::Constants
 
 	FieldStrength = self.series->GETVALUE('0018'x,'0087'x)
 
+	;17/04/2020: Added Default Field Strength of 4.7T (in case not specified in DICOM header)
+	If FieldStrength Eq 0 then FieldStrength=4.7
+
 	c = {rb:0E, rh:0E, ve:0E, vh:0E, ves:0E, R1l:0E, R1s:0E}
 
 	; Relaxivity measurements provided by Claudia Green, Bayer, sept 2019
@@ -12,12 +15,14 @@ FUNCTION PMI__Display__tristanratsroi_v2_0::Constants
 			c.rb = 6.4 ;relaxivity of blood in Hz/mM ;assume spleen relaxivity is the same
 			c.rh = 7.6 ;relaxivity of hepatocytes
 			c.R1l = 1.3203 ; per sec - liver R1
+		;	c.R1l = 1.20 ; per sec - liver R1
 			c.R1s = 0.7458 ; per sec - spleen R1
 		end
 		7.0: begin
 			c.rb = 6.2 ;relaxivity of blood in Hz/mM ;assume spleen relaxivity is the same
 			c.rh = 6.0 ;relaxivity of hepatocytes
 			c.R1l = 0.8346 ; per sec - liver R1
+		;	c.R1l = 0.85 ; per sec - liver R1
 			c.R1s = 0.6313 ; per sec - spleen R1
 		end
 	Endcase
