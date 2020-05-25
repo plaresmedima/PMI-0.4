@@ -24,6 +24,7 @@ pro PMI__Menu__TRISTAN, parent
 
 	Sid = PMI__Button__TRISTAN_Import(id, value = 'Import DICOMs for a single study')
 	Sid = PMI__Button__TRISTAN_Batch_Import(id, value = 'Import DICOMs for several studies')
+	Sid = PMI__Button__SeriesImportDicomSpecial(id, value = 'Import DICOM Special')
 
 	Sid = PMI__Button__TRISTAN_LinearVFA_T1mapping(id, value='Variable Flip Angle T1-mapping (Pixel)',/separator)
 	Sid = PMI__Button__TRISTAN_MOLLI_T1mapping(id, value='MOLLI T1-mapping (Pixel)')
