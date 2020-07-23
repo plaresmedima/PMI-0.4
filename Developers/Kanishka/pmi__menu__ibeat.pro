@@ -33,13 +33,35 @@ pro PMI__Menu__iBeat, parent
 
     id = widget_button(parent, value='iBEAt',/menu)
 
-    Sid = PMI__Button__iBEAt_Import(id, value = 'Import DICOM')
-    Sid = PMI__Button__MOCOMO_2D_DTI(id, value='DTI analysis')
-    Sid = PMI__Button__MOCOMO_2D_DCE_2CM(id, value='DCE analysis')
- ;  Sid = PMI__Button__MOCOMO_2D_IVIM(id, value='IVIM analysis')
+    Sid = PMI__Button__iBEAt_Import(id, value = 'DICOM import')
 
-    Sid = PMI__Button__iBEAt_BatchProcessSingle(id, value = 'Batch process (single case)', /separator)
-    Sid = PMI__Button__iBEAt_BatchProcessMultiple(id, value = 'Batch process (multiple cases)')
+    Sid = PMI__Button__iBEAt_DTI(id, value='DTI mapping', /separator)
+    Sid = PMI__Button__iBEAt_DCE(id, value='DCE mapping')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='IVIM mapping')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='T1 mapping')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='T2* mapping')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='T2 mapping')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='MTR mapping')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='ASL mapping')
+
+    Sid = PMI__Button__iBEAt_Dummy(id, value='DTI ROI analysis', /separator)
+    Sid = PMI__Button__iBEAt_Dummy(id, value='DCE ROI analysis')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='IVIM ROI analysis')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='T1 ROI analysis')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='T2* ROI analysis')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='T2 ROI analysis')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='MTR ROI analysis')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='ASL ROI analysis')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='PC ROI analysis')
+
+    Sid = PMI__Button__iBEAt_Dummy(id, value='DCE AIF detection', /separator)
+    Sid = PMI__Button__iBEAt_Dummy(id, value='PC ROI detection')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='Sequence co-registration')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='Kidney ROI detection')
+    Sid = PMI__Button__iBEAt_Dummy(id, value='Cortex ROI detection')
+
+    Sid = PMI__Button__iBEAt_Dummy(id, value = 'Batch processing (single case)', /separator)
+    Sid = PMI__Button__iBEAt_Dummy(id, value = 'Batch processing (multiple cases)')
 
 	id = widget_button(parent, value='Bashair',/menu)
 

@@ -251,5 +251,6 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
 	  ENDCASE
     ENDFOR
 
+    Stdy -> SaveStdy
 
 END

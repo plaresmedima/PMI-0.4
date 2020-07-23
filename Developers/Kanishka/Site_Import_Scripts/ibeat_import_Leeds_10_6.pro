@@ -112,9 +112,9 @@ FUNCTION iBEAt_Import_Leeds_10_6__SequenceName, file, number_of_images
   	  IF type EQ 'DERIVED\PRIMARY\T2_STAR MAP\DIS2D ' THEN RETURN, 'T2star_map_pancreas_tra_mbh_T2star'
     ENDIF
     IF PhaseEncoding EQ 'ROW ' THEN BEGIN
-      IF type EQ 'ORIGINAL\PRIMARY\M\DIS2D' THEN RETURN, 'T2map_kidneys_cor-oblique_mbh_magnitude'
-      IF type EQ 'ORIGINAL\PRIMARY\P\DIS2D' THEN RETURN, 'T2map_kidneys_cor-oblique_mbh_phase'
-  	  IF type EQ 'DERIVED\PRIMARY\T2_STAR MAP\DIS2D ' THEN RETURN, 'T2map_kidneys_cor-oblique_mbh_T2star'
+      IF type EQ 'ORIGINAL\PRIMARY\M\DIS2D' THEN RETURN, 'T2star_map_kidneys_cor-oblique_mbh_magnitude'
+      IF type EQ 'ORIGINAL\PRIMARY\P\DIS2D' THEN RETURN, 'T2star_map_kidneys_cor-oblique_mbh_phase'
+  	  IF type EQ 'DERIVED\PRIMARY\T2_STAR MAP\DIS2D ' THEN RETURN, 'T2star_map_kidneys_cor-oblique_mbh_T2star'
     ENDIF
   ENDIF
 
