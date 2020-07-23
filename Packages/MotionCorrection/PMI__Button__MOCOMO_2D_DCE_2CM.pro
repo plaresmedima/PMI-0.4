@@ -112,38 +112,20 @@ pro PMI__Button__Event__MOCOMO_2D_DCE_2CM, ev
     ;Define new image series
 
     Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
-    S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Baseline]')
+    S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Baseline Signal]')
     FB 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Blood Flow (mL/min/100mL)]')
-    TB 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Blood MTT (sec)]')
-    VB 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Blood Volume (%)]')
-    FT 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Tubular Flow (mL/min/100mL)]')
-    TT 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Tubular MTT (min)]')
-    VT 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Apparent Tubular Volume (%)]')
-    FF	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Filtration Fraction (%)]')
-    GF	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[GFR density (mL/min/100mL)]')
+    VD 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Volume of Distribution (%)]')
 
 	;Set time coordinates
 
 	S0 	-> t, Series->t(0)
     FB 	-> t, Series->t(0)
-    TB 	-> t, Series->t(0)
-    VB 	-> t, Series->t(0)
-    FT 	-> t, Series->t(0)
-    TT 	-> t, Series->t(0)
-    VT 	-> t, Series->t(0)
-    FF 	-> t, Series->t(0)
-    GF 	-> t, Series->t(0)
+    VD 	-> t, Series->t(0)
 
 	;Set default windowing
 
 	FB 	-> Trim, [0,400]
-	TB 	-> Trim, [0,30]
-	VB 	-> Trim, [0,100]
-	FT 	-> Trim, [0,20]
-	TT 	-> Trim, [0,3]
-	VT 	-> Trim, [0,50]
-	FF 	-> Trim, [0,15]
-	GF 	-> Trim, [0,20]
+	VD 	-> Trim, [0,100]
 
 	start_time = systime(1)
 
@@ -175,13 +157,7 @@ pro PMI__Button__Event__MOCOMO_2D_DCE_2CM, ev
 		Corr 	-> Write, Stdy->DataPath(), Source, k, -1
 		S0 		-> Write, Stdy->DataPath(), S0k, k
 		FB 		-> Write, Stdy->DataPath(), 6000*Par[*,*,0]/scale/(1-const.Hematocrit), k
-		TB 		-> Write, Stdy->DataPath(), Par[*,*,1], k
-		VB		-> Write, Stdy->DataPath(), 100*Par[*,*,1]*Par[*,*,0]/scale/(1-const.Hematocrit), k
-		FT 		-> Write, Stdy->DataPath(), 6000*Par[*,*,2]/scale, k
-		TT 		-> Write, Stdy->DataPath(), Par[*,*,3]/60, k
-		VT 		-> Write, Stdy->DataPath(), 100*Par[*,*,3]*Par[*,*,2]/scale, k
-		FF		-> Write, Stdy->DataPath(), 100*Par[*,*,2]/(Par[*,*,0]+Par[*,*,2]), k
-		GF		-> Write, Stdy->DataPath(), 6000*(Par[*,*,0]/scale)*Par[*,*,2]/(Par[*,*,0]+Par[*,*,2]), k
+		VD		-> Write, Stdy->DataPath(), 100*(Par[*,*,0]*Par[*,*,1] + Par[*,*,2]*Par[*,*,3])/scale, k
 
 	endfor
 

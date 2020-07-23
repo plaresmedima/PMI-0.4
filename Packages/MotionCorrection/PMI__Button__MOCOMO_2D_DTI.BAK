@@ -101,9 +101,9 @@ pro PMI__Button__Event__MOCOMO_2D_DTI, ev
 
 	;Set default windowing
 
-	TensorDiag 		-> Trim, [0,1.2]
-	TensorOffDiag 	-> Trim, [0,1.2]
-	ADC 			-> Trim, [0,1.2]
+	TensorDiag 		-> Trim, [0,3]
+	TensorOffDiag 	-> Trim, [0,0.5]
+	ADC 			-> Trim, [0,3]
 	FA 				-> Trim, [0,1]
 	LA 				-> Trim, [0,1]
 	PA 				-> Trim, [0,1]

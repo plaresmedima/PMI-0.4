@@ -78,36 +78,19 @@ pro PMI__Button__Event__MOCOMO_2D_DTI, ev
 
 	;Define new image series
 
-    Corr 			= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
-    S0 				= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[S0]' )
-    TensorDiag 		= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Dxx,Dyy,Dzz * 10-3 mm2/s]')
-    TensorOffDiag 	= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Dxy,Dyz,Dzx * 10-3 mm2/s]')
-    ADC 			= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[ADC * 10-3 mm2/s]')
-    FA 				= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Fractional Anisotropy]')
-    LA 				= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Linear Anisotropy]')
-    PA 				= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Planar Anisotropy]')
-    SA 				= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Spherical Anisotropy]')
+    Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
+    S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[S0]' )
+    ADC  = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[ADC * 10-3 mm2/s]')
 
 	;Set time coordinates
 
-    S0 				-> t, Series->t(0)
-    TensorDiag 		-> t, Series->t(0) * (1+FINDGEN(3))
-    TensorOffDiag 	-> t, Series->t(0) * (1+FINDGEN(3))
-    ADC 			-> t, Series->t(0)
-    FA 				-> t, Series->t(0)
-    LA 				-> t, Series->t(0)
-    PA 				-> t, Series->t(0)
-    SA 				-> t, Series->t(0)
+    S0 	-> t, Series->t(0)
+    ADC -> t, Series->t(0)
 
 	;Set default windowing
 
-	TensorDiag 		-> Trim, [0,3]
-	TensorOffDiag 	-> Trim, [0,0.5]
-	ADC 			-> Trim, [0,3]
-	FA 				-> Trim, [0,1]
-	LA 				-> Trim, [0,1]
-	PA 				-> Trim, [0,1]
-	SA 				-> Trim, [0,1]
+	ADC -> Trim, [0,3]
+	FA 	-> Trim, [0,1]
 
 	start_time = systime(1)
 
@@ -137,13 +120,8 @@ pro PMI__Button__Event__MOCOMO_2D_DTI, ev
 
 		Corr 			-> Write, Stdy->DataPath(), Source, k, -1
 		S0 				-> Write, Stdy->DataPath(), EXP(Par[*,*,0]), k
-		TensorDiag 		-> Write, Stdy->DataPath(), 1000*Par[*,*,1:3], k, -1
-		TensorOffDiag 	-> Write, Stdy->DataPath(), 1000*Par[*,*,4:6], k, -1
 		ADC 			-> Write, Stdy->DataPath(), 1000*Map[*,*,0], k
 		FA 				-> Write, Stdy->DataPath(), Map[*,*,1], k
-		LA 				-> Write, Stdy->DataPath(), Map[*,*,2], k
-		PA 				-> Write, Stdy->DataPath(), Map[*,*,3], k
-		SA 				-> Write, Stdy->DataPath(), Map[*,*,4], k
 
 	endfor
 

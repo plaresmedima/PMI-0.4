@@ -1,10 +1,4 @@
-;Menu for the demo version on
-;https://sites.google.com/site/plaresmedima/
 
-;REQUIRES PACKAGES:
-;  Slices
-;  Dynamic
-;  Perfusion
 
 
 pro PMI__Menu__iBeat, parent
