@@ -32,7 +32,8 @@ FUNCTION MOCOMO_2D::NODEFORMATION, nt, grid_size
 END
 
 
-FUNCTION MOCOMO_2D::GRID
+
+PRO MOCOMO_2D::SET_RESOLUTION_LEVELS
 
   ndim = 2
   base = 2.0
@@ -45,7 +46,7 @@ FUNCTION MOCOMO_2D::GRID
   FOVnorm = float(nw)/max(nw)
   nb = lonarr(Order,ndim)
   for i=0L, Order-1 do nb[i,*] = 1 + ceil(FOVnorm*nCells[i])
-  RETURN, nb
+  self.grid = ptr_new(nb)
 
 END
 
@@ -76,10 +77,12 @@ PRO MOCOMO_2D::FFD, F, S, D, xc, yc
 END
 
 
+
 FUNCTION MOCOMO_2D::CHISQ, deformed, target
 
   RETURN, 0.5*total((deformed - Target)^2.)
 END
+
 
 
 FUNCTION MOCOMO_2D::LINESEARCH, Grad, Source, deformed, deformation_field, target, xc, yc, STEPSIZE=stepsize
@@ -300,7 +303,7 @@ END
 
 
 
-PRO MOCOMO_2D::OPTIMIZE, deformed, deformation_field, Source
+PRO MOCOMO_2D::OPTIMIZE, source, deformed, deformation_field
 
   nd = SIZE(deformed, /DIMENSIONS)
   nf = SIZE(deformation_field, /DIMENSIONS)
@@ -318,40 +321,45 @@ END
 
 
 
-PRO MOCOMO_2D::MULTIRESOLUTION, Source, Deformed, deformation_field
+PRO MOCOMO_2D::MULTIRESOLUTION, source, deformed, deformation_field
 
-  ns = SIZE(Source, /DIMENSIONS)
+  self -> OPTIMIZE, source, deformed, deformation_field
 
-  multi_resolution_grid = self->GRID()
-  nr_of_resolution_levels = N_ELEMENTS(multi_resolution_grid[*,0])
+  n_levels = N_ELEMENTS((*self.grid)[*,0])
+  FOR resolution_level=1L, n_levels-1 DO BEGIN
 
-  resolution_level = 0L
-
-  grid_size = REFORM(multi_resolution_grid[resolution_level,*])
-  deformation_field = self->NODEFORMATION(ns[0], grid_size)
-  self -> OPTIMIZE, deformed, deformation_field, Source
-
-  FOR resolution_level=1L, nr_of_resolution_levels-1 DO BEGIN
-
-    grid_size = reform(multi_resolution_grid[resolution_level,*])
+    grid_size = reform((*self.grid)[resolution_level,*])
   	deformation_field = self->SCALEUP(deformation_field, grid_size)
-    self -> OPTIMIZE, deformed, deformation_field, Source
+
+    self -> OPTIMIZE, source, deformed, deformation_field
 
   ENDFOR
 END
 
 
 
-PRO MOCOMO_2D::APPLY, Source, deformation_field, PARAMETERS=Par
+PRO MOCOMO_2D::APPLY, Source, deformation_field, PARAMETERS=Par, NO_MOCO=no_moco
+
+  self -> SET_RESOLUTION_LEVELS
+  ns = SIZE(Source, /DIMENSIONS)
+  grid_size = reform((*self.grid)[0,*])
+  deformation_field = self->NODEFORMATION(ns[0], grid_size)
 
   xw = self.win[0] + LINDGEN(self.win[2]) ;x-coordinates of window pixels
   yw = self.win[1] + LINDGEN(self.win[3]) ;y-coordinates of window pixels
 
-  deformed = Source[*, xw, yw]
-  self -> MULTIRESOLUTION, source, deformed, deformation_field
-  Source[*, xw, yw] = deformed
+  IF NOT KEYWORD_SET(no_moco) THEN BEGIN
+  	deformed = Source[*, xw, yw]
+  	self -> MULTIRESOLUTION, source, deformed, deformation_field
+  	Source[*, xw, yw] = deformed
+  ENDIF
 
-  IF ARG_PRESENT(Par) THEN self.model -> PARAMETERS, Source, Par
+  IF ARG_PRESENT(Par) THEN BEGIN
+  	self.model -> PARAMETERS, Source[*, xw, yw], P
+  	np = SIZE(P,/DIMENSIONS)
+  	Par = FLTARR([np[0],ns[1:*]])
+  	Par[*,xw,yw] = P
+  ENDIF
 
 END
 
@@ -366,6 +374,7 @@ END
 PRO MOCOMO_2D::CLEANUP
 
   OBJ_DESTROY, self.model
+  PTR_FREE, self.grid
 END
 
 
@@ -375,7 +384,7 @@ FUNCTION MOCOMO_2D::INIT, Source, ModelName, Independent, $
   ns = SIZE(Source, /Dimensions)
 
   IF N_ELEMENTS(resolution) EQ 0 THEN resolution = FLOOR(min(ns[1:*])/8E)
-  IF N_ELEMENTS(tolerance) EQ 0 THEN tolerance = 0.1
+  IF N_ELEMENTS(tolerance) EQ 0 THEN tolerance = 1.0
   IF N_ELEMENTS(win) EQ 0 THEN win = {p:[0L,0L], n:ns[1:*]}
 
   self.resolution = resolution
@@ -398,6 +407,7 @@ PRO MOCOMO_2D__DEFINE
     , model: obj_new() $
     , max_number_of_parameter_updates: 100L $
     , max_number_of_gradient_descent_steps: 10000L $
+    , grid:ptr_new() $
     }
 
 

@@ -25,12 +25,12 @@
 
 PRO MOCOMO_2D, Source, ModelName, Independent, $
   GRID_SIZE=grid_size, TOLERANCE=tolerance, WINDOW=win, $
-  DEFORMATION_FIELD=deformation_field, PARAMETERS=par
+  DEFORMATION_FIELD=deformation_field, PARAMETERS=par, NO_MOCO=no_moco
 
   MoCoMo = OBJ_NEW('MOCOMO_2D', Source, ModelName, Independent, $
     GRID_SIZE=grid_size, TOLERANCE=tolerance, WINDOW=win)
 
-  MoCoMo -> APPLY, Source, deformation_field, PARAMETERS=par
+  MoCoMo -> APPLY, Source, deformation_field, PARAMETERS=par, NO_MOCO=no_moco
 
   OBJ_DESTROY, MoCoMo
 

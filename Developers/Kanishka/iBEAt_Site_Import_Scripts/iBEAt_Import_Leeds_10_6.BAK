@@ -34,19 +34,51 @@ end
 
 
 
+
+
 pro iBEAt_Import_Leeds_10_6__LoadDTI, Stdy, Series, files, status
 
   Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
 
 ;Read b-values & gradient vectors
 
-  d = Dcm -> d()
+  d = Dcm -> d() ;[x,y,z,t] dimensions
   bvalues = fltarr(d[3])
   gvector = fltarr(3,d[3])
 
-  for k=0L,d[3]-1 do begin
+  for k=0L,d[3]-1 do begin ;Loop over slices
 
-	PMI__Message, status, 'Reading b-matrix ' + Series, k/(d[3]-1.0)
+	PMI__Message, status, 'Reading b-matrix ' + Series, k/(d[3]-1.0) ;status update for user
+
+    bvalues[k] = PMI__Dicom__Read(files_sort[0,k],'0019'x,'100C'x)
+  	gvector[*,k] = PMI__Dicom__Read(files_sort[0,k],'0019'x,'100E'x)
+
+  endfor
+
+  Dcm -> set, obj_new('DATA_ELEMENT','0019'x,'100C'x,vr='FD',value=bvalues)
+  Dcm -> set, obj_new('DATA_ELEMENT','0019'x,'100E'x,vr='FD',value=gvector)
+
+end
+
+
+
+
+
+pro iBEAt_Import_Leeds_10_6__T1magnitude, Stdy, Series, files, status
+
+  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+
+  RETURN ;temporary until below is fixed
+
+;Read TI-times
+
+  d = Dcm -> d() ;[x,y,z,t] dimensions
+  bvalues = fltarr(d[3])
+  gvector = fltarr(3,d[3])
+
+  for k=0L,d[3]-1 do begin ;Loop over slices
+
+	PMI__Message, status, 'Reading b-matrix ' + Series, k/(d[3]-1.0) ;status update for user
 
     bvalues[k] = PMI__Dicom__Read(files_sort[0,k],'0019'x,'100C'x)
   	gvector[*,k] = PMI__Dicom__Read(files_sort[0,k],'0019'x,'100E'x)
@@ -246,6 +278,8 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
   	      iBEAt_Import_Leeds_10_6__LoadIVIM, Stdy, Name, SeriesFiles, status
   	    'DTI_kidneys_cor-oblique_fb': $
   	      iBEAt_Import_Leeds_10_6__LoadDTI, Stdy, Name, SeriesFiles, status
+  	    'T1map_kidneys_cor-oblique_mbh_magnitude': $
+  	      iBEAt_Import_Leeds_10_6__T1magnitude, Stdy, Name, SeriesFiles, status
 	    ELSE: $
 	      Dcm = iBEAt_Import__LoadSequence(Stdy, Name, SeriesFiles, status)
 	  ENDCASE

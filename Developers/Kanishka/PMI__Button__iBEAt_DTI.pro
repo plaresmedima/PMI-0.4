@@ -1,30 +1,37 @@
 
 
-FUNCTION PMI__Button__Input__iBEAt_DTI, top, series, aif, in, Win
+FUNCTION PMI__Button__Input__iBEAt_DTI, top, series, aif, in, moco, Win
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, roi:0L, res:16E, prec:1E}
+	in = {ser:sel, roi:0L, no_moco:1B}
+	moco = {res:16E, prec:1E}
 
 	WHILE 1 DO BEGIN
 
-		in = PMI__Form(top, Title='Motion correction setup', [$
-		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'DTI series', Value:DynSeries, Select:in.ser}), $
-		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
-		ptr_new({Type:'VALUE'	,Tag:'res', Label:'Gridsize (pixel sizes)', Value:in.res}), $
-		ptr_new({Type:'VALUE'	,Tag:'prec', Label:'Tolerance (pixel sizes)', Value:in.prec}) $
-		])
+		in = PMI__Form(top, Title='iBEAt DTI analysis', [$
+		  ptr_new({Type:'DROPLIST',Tag:'ser', Label:'DTI series', Value:DynSeries, Select:in.ser}), $
+		  ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
+		  ptr_new({Type:'DROPLIST',Tag:'no_moco', Label:'Perform motion correction?', Value:['Yes','No'], Select:in.no_moco}) $
+		  ])
 		IF in.cancel THEN return, 0
 
-    	IF in.res LE 0 THEN BEGIN
-    	  in.res = 16E
-    	  msg = 'Gridsize must be > 0'
+		IF NOT in.no_moco THEN BEGIN
+		  moco = PMI__Form(top, Title='iBEAt DTI MoCo settings', [$
+		    ptr_new({Type:'VALUE'	,Tag:'res', Label:'Deformation Field Resolution (pixel sizes)', Value:moco.res}), $
+		    ptr_new({Type:'VALUE'	,Tag:'prec', Label:'Deformation Field Precision (pixel sizes)', Value:moco.prec}) $
+		    ])
+		  IF moco.cancel THEN return, 0
+		ENDIF
+
+    	IF moco.res LE 0 THEN BEGIN
+    	  moco.res = 16E
+    	  msg = 'Deformation Field Resolution must be > 0'
     	  goto, jump
     	ENDIF
-
-    	IF in.prec LE 0 THEN BEGIN
-    	  in.prec = 1E
-    	  msg = 'Tolerance must be > 0'
+    	IF moco.prec LE 0 THEN BEGIN
+    	  moco.prec = 1E
+    	  msg = 'Deformation Field Precision must be > 0'
     	  goto, jump
     	ENDIF
 
@@ -65,7 +72,7 @@ END
 pro PMI__Button__Event__iBEAt_DTI, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
-    IF NOT PMI__Button__Input__iBEAt_DTI(ev.top,series,aif,in,win) THEN RETURN
+    IF NOT PMI__Button__Input__iBEAt_DTI(ev.top,series,aif,in,moco,win) THEN RETURN
 
 	PMI__Message, status, 'Calculating'
 
@@ -78,6 +85,7 @@ pro PMI__Button__Event__iBEAt_DTI, ev
 
 	;Define new image series
 
+	IF NOT in.no_moco THEN $
     Corr 			= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
     S0 				= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[S0]' )
     TensorDiag 		= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Dxx,Dyy,Dzz * 10-3 mm2/s]')
@@ -126,7 +134,7 @@ pro PMI__Button__Event__iBEAt_DTI, ev
 
 	        Source = TRANSPOSE(Source, [2,0,1])
 	        MOCOMO_2D, source, 'DiffusionTensorImaging', Independent, $
-	          GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k], PARAMETERS=Par
+	          GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])
             DTI_Parameters, Par[*,*,1:*], Map
@@ -135,6 +143,7 @@ pro PMI__Button__Event__iBEAt_DTI, ev
 
 		;Write results to disk
 
+		IF NOT in.no_moco THEN $
 		Corr 			-> Write, Stdy->DataPath(), Source, k, -1
 		S0 				-> Write, Stdy->DataPath(), EXP(Par[*,*,0]), k
 		TensorDiag 		-> Write, Stdy->DataPath(), 1000*Par[*,*,1:3], k, -1

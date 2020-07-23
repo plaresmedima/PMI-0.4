@@ -62,9 +62,13 @@ end
 
 
 
+
+
 pro iBEAt_Import_Leeds_10_6__T1magnitude, Stdy, Series, files, status
 
   Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+
+  RETURN ;temporary until below is fixed
 
 ;Read TI-times
 
@@ -270,14 +274,10 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
       nr = series_number[first[i]]
   	  Name = '[' + strcompress(nr,/remove_all) +']_' + SeriesName[i]
   	  CASE SeriesName[i] OF
-  	    'IVIM_kidneys_cor-oblique_fb': $
-  	      iBEAt_Import_Leeds_10_6__LoadIVIM, Stdy, Name, SeriesFiles, status
-  	    'DTI_kidneys_cor-oblique_fb': $
-  	      iBEAt_Import_Leeds_10_6__LoadDTI, Stdy, Name, SeriesFiles, status
-  	    'T1map_kidneys_cor-oblique_mbh_magnitude': $
-  	      iBEAt_Import_Leeds_10_6__T1magnitude, Stdy, Name, SeriesFiles, status
-	    ELSE: $
-	      Dcm = iBEAt_Import__LoadSequence(Stdy, Name, SeriesFiles, status)
+  	    'IVIM_kidneys_cor-oblique_fb': iBEAt_Import_Leeds_10_6__LoadIVIM, Stdy, Name, SeriesFiles, status
+  	    'DTI_kidneys_cor-oblique_fb': iBEAt_Import_Leeds_10_6__LoadDTI, Stdy, Name, SeriesFiles, status
+  	    'T1map_kidneys_cor-oblique_mbh_magnitude': iBEAt_Import_Leeds_10_6__T1magnitude, Stdy, Name, SeriesFiles, status
+	    ELSE: Dcm = iBEAt_Import__LoadSequence(Stdy, Name, SeriesFiles, status)
 	  ENDCASE
     ENDFOR
 

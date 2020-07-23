@@ -1,6 +1,6 @@
 
 
-FUNCTION PMI__Button__Input__iBEAt_DCE, top, series, aif, in, Win, const
+FUNCTION PMI__Button__Input__iBEAt_DCE, top, series, aif, in, moco, Win, const
 
 	; T1 = ;default for kidney from de Bazelaire JMRI 2004
 	; assuming 25% medulla and 75% cortex, so 1242 = 0.25*1142 + 0.75*1545
@@ -11,31 +11,40 @@ FUNCTION PMI__Button__Input__iBEAt_DCE, top, series, aif, in, Win, const
 	const = {relaxivity:relaxivity, Hematocrit:Hematocrit, T1_blood:T1_blood, T1_tissue:T1_tissue}
 
     PMI__Info, top, Stdy=Stdy
-    DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
-	in = {ser:sel, aif:stdy->sel(1), roi:0L, res:16E, prec:1E, nb:1}
+    DynSeries = Stdy->Names(0,DefDim=3,ind=ind, sel=sel)
+	in = {ser:sel, aif:stdy->sel(1), roi:0L, nb:1, no_moco:1B}
+	moco = {res:16E, prec:1E}
 
 	WHILE 1 DO BEGIN
 
-		in = PMI__Form(top, Title='Motion correction setup', [$
-		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
-		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
-		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb}), $
-		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
-		ptr_new({Type:'VALUE'	,Tag:'res', Label:'Deformation Field Resolution (pixel sizes)', Value:in.res}), $
-		ptr_new({Type:'VALUE'	,Tag:'prec', Label:'Deformation Field Precision (pixel sizes)', Value:in.prec}) $
-		])
+		in = PMI__Form(top, Title='iBEAt DCE analysis', [$
+		  ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
+		  ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
+		  ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb}), $
+		  ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
+		  ptr_new({Type:'DROPLIST',Tag:'no_moco', Label:'Perform motion correction?', Value:['Yes','No'], Select:in.no_moco}) $
+		  ])
 		IF in.cancel THEN return, 0
 
-    	IF in.res LE 0 THEN BEGIN
-    	  in.res = 16E
+		IF NOT in.no_moco THEN BEGIN
+		  moco = PMI__Form(top, Title='iBEAt DCE MoCo settings', [$
+		    ptr_new({Type:'VALUE'	,Tag:'res', Label:'Deformation Field Resolution (pixel sizes)', Value:moco.res}), $
+		    ptr_new({Type:'VALUE'	,Tag:'prec', Label:'Deformation Field Precision (pixel sizes)', Value:moco.prec}) $
+		    ])
+		  IF moco.cancel THEN return, 0
+		ENDIF
+
+    	IF moco.res LE 0 THEN BEGIN
+    	  moco.res = 16E
     	  msg = 'Deformation Field Resolution must be > 0'
     	  goto, jump
     	ENDIF
-    	IF in.prec LE 0 THEN BEGIN
-    	  in.prec = 1E
+    	IF moco.prec LE 0 THEN BEGIN
+    	  moco.prec = 1E
     	  msg = 'Deformation Field Precision must be > 0'
     	  goto, jump
     	ENDIF
+
     	Series = Stdy->Obj(0,ind[in.ser])
     	d = Series->d()
     	Win = replicate({p:[0L,0L], n:d[0:1]}, d[2])
@@ -83,7 +92,6 @@ FUNCTION PMI__Button__Input__iBEAt_DCE, top, series, aif, in, Win, const
     			'Please select another region and/or series']
     	  goto, jump
     	ENDIF
-
     	Aif = LMU__Enhancement(Aif,in.nb,relative=1)
     	Aif /= const.relaxivity*const.T1_blood
     	Aif /= 1-const.Hematocrit
@@ -99,7 +107,7 @@ END
 pro PMI__Button__Event__iBEAt_DCE, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
-    IF NOT PMI__Button__Input__iBEAt_DCE(ev.top,series,aif,in,win,const) THEN RETURN
+    IF NOT PMI__Button__Input__iBEAt_DCE(ev.top,series,aif,in,moco,win,const) THEN RETURN
 
 	PMI__Message, status, 'Calculating'
 
@@ -111,6 +119,7 @@ pro PMI__Button__Event__iBEAt_DCE, ev
 
     ;Define new image series
 
+    IF NOT in.no_moco THEN $
     Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
     S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Baseline]')
     VD   = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Volume of Distribution (%)]')
@@ -122,7 +131,6 @@ pro PMI__Button__Event__iBEAt_DCE, ev
     VT 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Apparent Tubular Volume (%)]')
     FF	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Filtration Fraction (%)]')
     GF	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[GFR density (mL/min/100mL)]')
-
 
 	;Set time coordinates
 
@@ -164,7 +172,7 @@ pro PMI__Button__Event__iBEAt_DCE, ev
 
 	        Source = TRANSPOSE(Source, [2,0,1]) ;time to the front
 	        MOCOMO_2D, Source, 'TwoCompartmentFiltration', independent, $
-	          GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k], PARAMETERS=Par
+	          GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
             Source = TRANSPOSE(Source, [1,2,0]) ;time to the back
             Par = PHYSICAL_2CFM_PARS(Par)
             Par = TRANSPOSE(Par, [1,2,0])
@@ -178,6 +186,7 @@ pro PMI__Button__Event__iBEAt_DCE, ev
 
 		;Write results to disk
 
+		IF NOT in.no_moco THEN $
 		Corr 	-> Write, Stdy->DataPath(), Source, k, -1
 		S0 		-> Write, Stdy->DataPath(), S0k, k
 		VD 		-> Write, Stdy->DataPath(), 100*(Par[*,*,0]*Par[*,*,1]+Par[*,*,2]*Par[*,*,3]), k
