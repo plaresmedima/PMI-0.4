@@ -1,81 +1,96 @@
 
-FUNCTION PMI__Button__iBEAt_Import__QueryFolder, files, first, status=status
+FUNCTION PMI__Button__iBEAt_Import__ExtractDICOM, status, files
 
-
-;;;;SELECT ONLY DICOM IMAGE DATA AND READ SERIES UID
-
-	n = n_elements(files)
-	UID = strarr(n)
+    n = n_elements(files)
+	dicom = bytarr(n)
 	for i=0L,n-1 do begin
-		PMI__Message, status, 'Reading DICOM folder', i/(n-1E)
-		if PMI__Dicom__Valid(files[i]) then begin
-			UID[i] = PMI__Dicom__Read(files[i],'0020'x,'000E'x, ok=ok) ;identify series on series UID
-		endif
+	  PMI__Message, status, 'Extracting DICOM data', i/(n-1E)
+	  dicom[i] = PMI__Dicom__Valid(files[i])
 	endfor
-
-	i = where(UID ne '',n)
+	i = where(dicom EQ 1B, n)
 	if n eq 0 then begin
 		ok = dialog_message(/information,'No DICOM image data in this folder')
-		return, 0
+		RETURN, 0B
 	endif
 	files = files[i]
-	UID = UID[i]
-
-
-;;;;SORT THE SERIES AND SELECT FIRST FILE OF EACH
-	ind = sort(UID)
-	UID = UID[ind]
-	files = files[ind]
-	nSeries = n_elements(reduce(UID,first))
-	first = [first,n]
-
-	return, 1
+	RETURN, 1B
 END
 
 
-pro PMI__Button__Event__iBEAt_Import, ev
 
-;;;;SELECT A FOLDER
+
+FUNCTION PMI__Button__iBEAt_Import__Version, file, site
+
+	IF site EQ 'TURKU PET centre' THEN BEGIN
+	  RETURN, PMI__Dicom__Read(file,'2001'x,'10C8'x)
+	ENDIF
+
+	IF site EQ 'Leeds AIC' THEN BEGIN
+	  RETURN, 'BEAT-DKD_10_6'
+	ENDIF
+END
+
+
+
+
+
+
+FUNCTION PMI__Button__iBEAt_Import__Site, file
+
+	Site = PMI__Dicom__Read(file,'0008'x,'0080'x)
+	IF Site NE 0B THEN RETURN, site ;Turku
+
+	value = PMI__Dicom__Read(file,'0040'x,'0254'x)
+	IF value EQ 'Abdominal^SS BEAT Kidney' THEN RETURN, 'Leeds AIC'
+
+	RETURN, 1B
+END
+
+
+
+
+
+
+PRO PMI__Button__Event__iBEAt_Import, ev
+
+;Select a folder and get all DICOM files in the folder
 
     PMI__info, ev.top, State=s, Stdy=Stdy, Status=Status
-    if not s->get_dir(title='Please select the DICOM folder', files=files, cnt=n) then return
-	if n eq 0 then begin
+    IF NOT s->get_dir(title='Please select the DICOM folder', files=files, cnt=n) THEN RETURN
+	IF n EQ 0 THEN BEGIN
 		ok = dialog_message(/information,'This folder is empty')
-		return
-	endif
+		RETURN
+	ENDIF
+    IF NOT PMI__Button__iBEAt_Import__ExtractDICOM(status, files) THEN GOTO, RETURN
 
-	IF NOT PMI__Button__iBEAt_Import__QueryFolder(files, first, status=status) THEN RETURN
+;Identify site and version and launch import script
 
-;; files = an array of strings with DICOM file names, sorted by Series UID
-;; first = an array of indices for the first file of each series
+	Site = PMI__Button__iBEAt_Import__Site(files[0])
+	Version = PMI__Button__iBEAt_Import__Version(files[0], Site)
 
-	Site = PMI__Dicom__Read(files[0],'0008'x,'0080'x)
-	Version = PMI__Dicom__Read(files[0],'2001'x,'10C8'x)
+	CASE Site OF
 
-	Case Site of
 		'TURKU PET centre': Case Version of
-		   'BEAT_DKD_10.5 ': ;iBEAt_Import_Turku_10_5, Stdy, files, first, status=status
-		   'BEAT_DKD_10.8 ': iBEAt_Import_Turku_10_8, Stdy, files, first, status=status
-		   else: ok = dialog_message(/information, Site + ' Version number ' + Version + ' not supported' )
+		 ;  'BEAT_DKD_10.8 ': iBEAt_Import_Turku_10_8, Stdy, files, status=status
+		   else: ok = dialog_message(/information, Site + ' Version number ' + Version + ' not yet supported' )
 		   endcase
+
 		 'Leeds AIC': Case Version of
-		   'BEAT-DKD_10_1': ;iBEAt_Import_Leeds_10_1, Stdy, files, first, status=status
-		   'BEAT-DKD_10_2': ;iBEAt_Import_Leeds_10_2, Stdy, files, first, status=status
-		   'BEAT-DKD_10_5': iBEAt_Import_Leeds_10_5, Stdy, files, first, status=status
-		    else: ok = dialog_message(/information, Site + ' Version number ' + Version + ' not supported' )
-		  endcase
-		 'Bordeaux': Case Version of
-		   'BEAT-DKD_10_1': ;iBEAt_Import_Bordeaux_10_1, Stdy, files, first, status=status
-		   'BEAT-DKD_10_2': ;iBEAt_Import_Bordeaux_10_2, Stdy, files, first, status=status
-		    else: ok = dialog_message(/information, Site + ' Version number ' + Version + ' not supported' )
+		   'BEAT-DKD_10_6': iBEAt_Import_Leeds_10_6, Stdy, files, status=status
+		    else: ok = dialog_message(/information, Site + ' Version number ' + Version + ' not yet supported' )
 		    endcase
-		  else: ok = dialog_message(/information, Site + ' not supported' )
-	Endcase
+
+		  ELSE: ok = dialog_message(/information, Site + ' not yet supported' )
+
+	ENDCASE
 
 	PMI__control, ev.top, /refresh, Path=Path
 	return:PMI__Message, status
 
-end
+END
+
+
+
 
 
 

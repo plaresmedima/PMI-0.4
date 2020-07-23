@@ -568,7 +568,9 @@ pro PMI__Button__Event__KidneyModelsROI_iBEAt, ev
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Length of baseline (# of dynamics)', Value:1L}),$
 		ptr_new({Type:'VALUE'	,Tag:'hct'	 , Label:'Patients hematocrit', Value:0.45}),$
-		ptr_new({Type:'VALUE'	,Tag:'T1'	 , Label:'Tissue precontrast T1 (msec)', Value:1142.0})]) ;default for kidney from de Bazelaire JMRI 2004
+		ptr_new({Type:'VALUE'	,Tag:'T1'	 , Label:'Tissue precontrast T1 (msec)', Value:1242.0})])
+
+		; T1 = ;default for kidney from de Bazelaire JMRI 2004, assuming 25% medulla and 75% cortex, so 1242 = 0.25*1142 + 0.75*1545
 	IF v.cancel THEN return
 
 	PMI__Control, ev.top, Viewer = 'PMI__Display__KidneyModelsROI_iBEAt', Display=Display

@@ -1,4 +1,4 @@
-;17/04/2020: Added Default Field Strength of 4.7T (in case not specified in DICOM header)
+;17/04/2020: Added Default Field Strength of 7T (in case not specified in DICOM header)
 ;To accomdate data from Antaros
 
 FUNCTION PMI__Display__tristanratsroi_v2_1::Constants

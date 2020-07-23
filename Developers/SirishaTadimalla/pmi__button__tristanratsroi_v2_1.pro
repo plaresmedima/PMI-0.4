@@ -5,7 +5,6 @@ FUNCTION PMI__Display__tristanratsroi_v2_1::Constants
 
 	FieldStrength = self.series->GETVALUE('0018'x,'0087'x)
 
-
 	If FieldStrength Eq 0 then FieldStrength=7.0
 
 	c = {rb:0E, rh:0E, ve:0E, vh:0E, ves:0E, R1l:0E, R1s:0E}
