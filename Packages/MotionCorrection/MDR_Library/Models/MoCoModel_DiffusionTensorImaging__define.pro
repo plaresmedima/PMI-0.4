@@ -4,14 +4,22 @@
 ;;		REQUIRED                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;Inverse model on single pixel level
+;Input: signals S for a single pixel
+;Returns: fitted parameters P
 
 FUNCTION MoCoModel_DiffusionTensorImaging::PIXEL_PARAMETERS, S, FIT=F
 
+  ;Tale the ln of the signal
   lnS = S
   pos = WHERE(S GT 0, npos)
   IF npos GT 0 THEN lnS[pos] = ALOG(S[pos])
 
+  ;Multiply the ln with the inverse matrix
   P = (*self.matrix_inverse) ## lnS
+
+  ;Force all results to be positive
+  ;FIX: lnS CAN BE NEGATIVE
   P >= 0
 
   IF ARG_PRESENT(F) THEN F = self->PIXEL_FORWARD(P)
@@ -21,7 +29,13 @@ FUNCTION MoCoModel_DiffusionTensorImaging::PIXEL_PARAMETERS, S, FIT=F
 END
 
 
-
+;Forward model on single-pixel level
+;Input:
+;	DTI model parameters P = 1D array with DTI parameters for 1 pixel
+;	P[0] = lnS0
+;	P[1] = Dxx etc
+;Returns:
+;	fitted signals S for a single pixel
 
 FUNCTION MoCoModel_DiffusionTensorImaging::PIXEL_FORWARD, P, S
 
