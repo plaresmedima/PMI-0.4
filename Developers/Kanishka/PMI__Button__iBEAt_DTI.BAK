@@ -134,7 +134,7 @@ pro PMI__Button__Event__iBEAt_DTI, ev
 
 	        Source = TRANSPOSE(Source, [2,0,1])
 	        MOCOMO_2D, source, 'DiffusionTensorImaging', Independent, $
-	          GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
+	          GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])
             DTI_Parameters, Par[*,*,1:*], Map
