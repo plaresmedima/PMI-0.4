@@ -18,9 +18,8 @@ FUNCTION MoCoModel_DiffusionTensorImaging::PIXEL_PARAMETERS, S, FIT=F
   ;Multiply the ln with the inverse matrix
   P = (*self.matrix_inverse) ## lnS
 
-  ;Force all results to be positive
-  ;FIX: lnS CAN BE NEGATIVE
-  P >= 0
+  ;Force all D-tensor components to be positive
+  P[1:*] = P[1:*] > 0
 
   IF ARG_PRESENT(F) THEN F = self->PIXEL_FORWARD(P)
 
