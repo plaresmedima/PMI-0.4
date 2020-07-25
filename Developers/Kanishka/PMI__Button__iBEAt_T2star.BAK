@@ -1,6 +1,6 @@
 
 
-FUNCTION PMI__Button__Input__iBEAt_IVIM, top, series, aif, in, moco, Win
+FUNCTION PMI__Button__Input__iBEAt_T2star, top, series, aif, in, moco, Win
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -9,15 +9,15 @@ FUNCTION PMI__Button__Input__iBEAt_IVIM, top, series, aif, in, moco, Win
 
 	WHILE 1 DO BEGIN
 
-		in = PMI__Form(top, Title='iBEAt IVIM analysis', [$
-		  ptr_new({Type:'DROPLIST',Tag:'ser', Label:'IVIM series', Value:DynSeries, Select:in.ser}), $
+		in = PMI__Form(top, Title='iBEAt T2star analysis', [$
+		  ptr_new({Type:'DROPLIST',Tag:'ser', Label:'T2star series', Value:DynSeries, Select:in.ser}), $
 		  ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
 		  ptr_new({Type:'DROPLIST',Tag:'no_moco', Label:'Perform motion correction?', Value:['Yes','No'], Select:in.no_moco}) $
 		  ])
 		IF in.cancel THEN return, 0
 
 		IF NOT in.no_moco THEN BEGIN
-		  moco = PMI__Form(top, Title='iBEAt IVIM MoCo settings', [$
+		  moco = PMI__Form(top, Title='iBEAt T2star MoCo settings', [$
 		    ptr_new({Type:'VALUE'	,Tag:'res', Label:'Deformation Field Resolution (pixel sizes)', Value:moco.res}), $
 		    ptr_new({Type:'VALUE'	,Tag:'prec', Label:'Deformation Field Precision (pixel sizes)', Value:moco.prec}) $
 		    ])
@@ -69,10 +69,10 @@ END
 
 
 
-pro PMI__Button__Event__iBEAt_IVIM, ev
+pro PMI__Button__Event__iBEAt_T2star, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
-    IF NOT PMI__Button__Input__iBEAt_IVIM(ev.top,series,aif,in,moco,win) THEN RETURN
+    IF NOT PMI__Button__Input__iBEAt_T2star(ev.top,series,aif,in,moco,win) THEN RETURN
 
 	PMI__Message, status, 'Calculating'
 
@@ -110,9 +110,9 @@ pro PMI__Button__Event__iBEAt_IVIM, ev
 	;Set default windowing
 
 	TensorSlow 	-> Trim, [0,3]
-	TensorFast 	-> Trim, [0,0.5]
+	TensorFast 	-> Trim, [0,10]
 	ADCslow		-> Trim, [0,3]
-	ADCfast 	-> Trim, [0,0.5]
+	ADCfast 	-> Trim, [0,10]
 	FastFrac	-> Trim, [0,1]
 
 	start_time = systime(1)
@@ -131,11 +131,11 @@ pro PMI__Button__Event__iBEAt_IVIM, ev
     	if product(win[k].n) gt 0 then begin
 
 	        Source = TRANSPOSE(Source, [2,0,1])
-	        MOCOMO_2D, source, 'IVIM', Independent, $
+	        MOCOMO_2D, source, 'T2star', Independent, $
 	          GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])
-            IVIM_Parameters, Par, Map
+            T2star_Parameters, Par, Map
 
     	endif
 
@@ -163,7 +163,7 @@ end
 
 
 
-pro PMI__Button__Control__iBEAt_IVIM, id, v
+pro PMI__Button__Control__iBEAt_T2star, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
@@ -175,16 +175,16 @@ end
 
 
 
-function PMI__Button__iBEAt_IVIM, parent,value=value,separator=separator
+function PMI__Button__iBEAt_T2star, parent,value=value,separator=separator
 
-	MoCoModel_IVIM__DEFINE
+	MoCoModel_T2star__DEFINE
 
-    if n_elements(value) eq 0 then value = 'IVIM motion correction'
+    if n_elements(value) eq 0 then value = 'T2star motion correction'
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__iBEAt_IVIM' $
-    ,	pro_set_value = 'PMI__Button__Control__iBEAt_IVIM' $
+    ,  	event_pro = 'PMI__Button__Event__iBEAt_T2star' $
+    ,	pro_set_value = 'PMI__Button__Control__iBEAt_T2star' $
     ,  	separator = separator )
 
     return, id

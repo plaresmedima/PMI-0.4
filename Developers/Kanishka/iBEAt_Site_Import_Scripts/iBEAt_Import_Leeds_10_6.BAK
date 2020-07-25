@@ -1,3 +1,28 @@
+pro iBEAt_Import_Leeds_10_6__LoadT2star, Stdy, Series, files, status
+
+  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+
+;Read echo times
+
+  d = Dcm -> d() ;[x,y,z,t] dimensions
+  TE = fltarr(d[3])
+
+  for k=0L,d[3]-1 do begin ;Loop over slices
+
+	PMI__Message, status, 'Reading echo times ' + Series, k/(d[3]-1.0) ;status update for user
+    TE[k] = PMI__Dicom__Read(files_sort[0,k],'0018'x,'0081'x)
+
+  endfor
+
+  print, TE
+
+  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0081'x,vr='FD',value=TE)
+
+  print, Dcm -> GETVALUE('0018'x,'0081'x)
+
+end
+
+
 
 
 pro iBEAt_Import_Leeds_10_6__LoadIVIM, Stdy, Series, files, status
@@ -64,7 +89,7 @@ end
 
 
 
-pro iBEAt_Import_Leeds_10_6__T1magnitude, Stdy, Series, files, status
+pro iBEAt_Import_Leeds_10_6__LoadT1, Stdy, Series, files, status
 
   Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
 
@@ -274,14 +299,14 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
       nr = series_number[first[i]]
   	  Name = '[' + strcompress(nr,/remove_all) +']_' + SeriesName[i]
   	  CASE SeriesName[i] OF
-  	    'IVIM_kidneys_cor-oblique_fb': $
-  	      iBEAt_Import_Leeds_10_6__LoadIVIM, Stdy, Name, SeriesFiles, status
-  	    'DTI_kidneys_cor-oblique_fb': $
-  	      iBEAt_Import_Leeds_10_6__LoadDTI, Stdy, Name, SeriesFiles, status
-  	    'T1map_kidneys_cor-oblique_mbh_magnitude': $
-  	      iBEAt_Import_Leeds_10_6__T1magnitude, Stdy, Name, SeriesFiles, status
-	    ELSE: $
-	      Dcm = iBEAt_Import__LoadSequence(Stdy, Name, SeriesFiles, status)
+
+  	    'IVIM_kidneys_cor-oblique_fb': 					iBEAt_Import_Leeds_10_6__LoadIVIM, 		Stdy, Name, SeriesFiles, status
+  	    'DTI_kidneys_cor-oblique_fb': 					iBEAt_Import_Leeds_10_6__LoadDTI, 		Stdy, Name, SeriesFiles, status
+  	    'T1map_kidneys_cor-oblique_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT1, 		Stdy, Name, SeriesFiles, status
+  	    'T2star_map_pancreas_tra_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
+  	    'T2star_map_kidneys_cor-oblique_mbh_magnitude': iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
+
+	    ELSE: Dcm = iBEAt_Import__LoadSequence(Stdy, Name, SeriesFiles, status)
 	  ENDCASE
     ENDFOR
 

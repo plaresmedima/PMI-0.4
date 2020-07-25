@@ -33,7 +33,7 @@ pro PMI__Menu__iBeat, parent
     Sid = PMI__Button__iBEAt_DCE(id, value='DCE mapping')
     Sid = PMI__Button__iBEAt_IVIM(id, value='IVIM mapping')
     Sid = PMI__Button__iBEAt_Dummy(id, value='T1 mapping')
-    Sid = PMI__Button__iBEAt_Dummy(id, value='T2* mapping')
+    Sid = PMI__Button__iBEAt_T2star(id, value='T2* mapping')
     Sid = PMI__Button__iBEAt_Dummy(id, value='T2 mapping')
     Sid = PMI__Button__iBEAt_Dummy(id, value='MTR mapping')
     Sid = PMI__Button__iBEAt_Dummy(id, value='ASL mapping')
