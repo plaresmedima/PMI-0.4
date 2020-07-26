@@ -1,3 +1,17 @@
+pro iBEAt_Import_Leeds_10_6__LoadDCE, Stdy, Series, files, status
+
+  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+
+  ;TR (checked in Siemens DICOM header, 12/11/2019)
+  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0080'x,vr='DS',value=2.2)
+
+  ;NumberOfPhaseEncodes acquired ;(checked in Siemens DICOM header, 12/11/2019)
+  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0089'x,vr='IS',value=76)
+
+end
+
+
+
 pro iBEAt_Import_Leeds_10_6__LoadT2star, Stdy, Series, files, status
 
   Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
@@ -301,6 +315,7 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
   	    'T1map_kidneys_cor-oblique_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT1, 		Stdy, Name, SeriesFiles, status
   	    'T2star_map_pancreas_tra_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
   	    'T2star_map_kidneys_cor-oblique_mbh_magnitude': iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
+  	    'DCE_kidneys_cor-oblique_fb':					iBEAt_Import_Leeds_10_6__LoadDCE,	 	Stdy, Name, SeriesFiles, status
 
 	    ELSE: Dcm = iBEAt_Import__LoadSequence(Stdy, Name, SeriesFiles, status)
 	  ENDCASE
