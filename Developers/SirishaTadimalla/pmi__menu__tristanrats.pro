@@ -8,9 +8,8 @@ pro PMI__Menu__TRISTANRATS, parent
 
     id = widget_button(parent, value='TRISTAN Rat Assay',/menu)
 
-	Sid = PMI__Button__SeriesImportTristanRatDicom(id, value='Import DICOM v2.0 ')
-;	Sid = PMI__Button__TristanRatsRoi_v2_0(id, value='Fit Rat Gadoxetate model v2.0')
-	Sid = PMI__Button__TristanRatsRoi_v2_1(id, value='Fit Rat Gadoxetate model v2.0')
+	Sid = PMI__Button__SeriesImportTristanRatDicom(id, value='Import DICOM v2.0')
+	Sid = PMI__Button__TristanRatsRoi_v3_1(id, value='Fit Rat Gadoxetate model v3.1')
 	Sid = PMI__Button__TristanRatVFA(id, value='Variable Flip Angle T1-mapping', /separator)
 
 ;	Sid = PMI__Button__tristanratsroi(id, value='Fit Rat Gadoxetate model v1.0')

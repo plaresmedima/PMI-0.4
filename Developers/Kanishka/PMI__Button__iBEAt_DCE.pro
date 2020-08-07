@@ -179,7 +179,10 @@ pro PMI__Button__Event__iBEAt_DCE, ev
 
     	endif
 
-		S0k = TOTAL(Source[*,*,0:independent.n0-1],3)/independent.n0
+		IF independent.n0 EQ 1 $
+		THEN S0k = REFORM(Source[*,*,0]) $
+		ELSE S0k = TOTAL(Source[*,*,0:independent.n0-1],3)/independent.n0
+
 		scale = S0k * const.T1_tissue * const.relaxivity
 		Par[*,*,0] /= scale
 		Par[*,*,2] /= scale

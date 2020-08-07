@@ -1,15 +1,11 @@
-;17/04/2020: Added Default Field Strength of 7T (in case not specified in DICOM header)
-;To accomdate data from Antaros
 
 FUNCTION PMI__Display__tristanratsroi_v3_0::Constants
-
-	FieldStrength = self.series->GETVALUE('0018'x,'0087'x)
-
-	If FieldStrength Eq 0 then FieldStrength=7.0 ;ASK USER TO CHECK
 
 	c = {rb:0E, rh:0E, ve:0E, vh:0E, ves:0E, R1l:0E, R1s:0E}
 
 	; Relaxivity measurements provided by Claudia Green, Bayer, sept 2019
+
+	FieldStrength = self.series->GETVALUE('0018'x,'0087'x)
 
 	Case floor(FieldStrength) of
 		4.0: begin
@@ -198,7 +194,7 @@ FUNCTION PMI__Display__tristanratsroi_v3_0::Event, ev
 		Self->GET, Time=Time, RoiCurve=RoiCurve, AifCurve=AifCurve, Fit=Fit, Model=Model, Roiname=Roiname, Indices=Ind
 		if Uname eq 'Export' then begin
 			PMI__Info, ev.top, Stdy=Stdy
-			Path = Stdy->Datapath() + 'TRISTAN Rat Model v2.0 (ROI)'
+			Path = Stdy->Datapath() + 'TRISTAN Rat Model v3.0 (ROI)'
 			file_mkdir, Path
 			File = Path + '\' + Roiname + '__SI_' + Model
 		endif else begin
@@ -252,15 +248,13 @@ FUNCTION PMI__Display__tristanratsroi_v3_0::DR1, Region
 
 	S0 = total(Signal[0:self.baseline-1])/self.baseline
 
-	IF self.TR EQ 0 THEN BEGIN
-		self.TR = self.series->GETVALUE('0018'x,'0080'x)
-		self.FA = 20.0; self.series->GETVALUE('0018'x,'1314'x)
-	ENDIF
+	TR = self.series->GETVALUE('0018'x,'0080'x)
+	FA = 20.0; self.series->GETVALUE('0018'x,'1314'x)
 
 	c = self->constants()
 	case Region of
-		'ROI':return, Concentration_SPGRESS(Signal, S0, 1000/c.R1l, self.FA, self.TR, 1.0) ;change in R1 (1/sec)
-		'AIF':return, Concentration_SPGRESS(Signal, S0, 1000/c.R1s, self.FA, self.TR, 1.0) ;change in R1 (1/sec)
+		'ROI':return, Concentration_SPGRESS(Signal, S0, 1000/c.R1l, FA, TR, 1.0) ;change in R1 (1/sec)
+		'AIF':return, Concentration_SPGRESS(Signal, S0, 1000/c.R1s, FA, TR, 1.0) ;change in R1 (1/sec)
 	endcase
 
 END
@@ -461,7 +455,7 @@ FUNCTION PMI__Display__tristanratsroi_v3_0::Init, parent, CursorPos, xsize=xsize
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['TRISTAN Rat Model v2.0'])
+			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['TRISTAN Rat Model v3.0'])
   			widget_control, id, set_droplist_select = 0, sensitive=0
 
 		Base = widget_base(Controls,/row,/frame,/nonexclusive)
@@ -490,8 +484,6 @@ PRO PMI__Display__tristanratsroi_v3_0__Define
 	,	Parameters: ptr_new() $
 	,	Series: obj_new() $
 	,	Baseline: 0L $
-	,	TR: 0E $
-	,	FA: 0E $
 	}
 END
 
@@ -510,10 +502,19 @@ pro PMI__Button__Event__tristanratsroi_v3_0, ev
 		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Number of precontrast scans', Value:5L})])
 	IF v.cancel THEN return
 
+	Series = Stdy->Obj(0,ind[v.series])
+	FieldStrength = series->GETVALUE('0018'x,'0087'x)
+	IF FieldStrength EQ 0 THEN BEGIN
+		in = PMI__Form(ev.top, Title='Verify field strength', [$
+			ptr_new({Type:'VALUE',Tag:'field', Label:'Field strength (Tesla)', Value:7D})])
+		IF in.cancel THEN return
+		Series -> set, obj_new('DATA_ELEMENT','0018'x,'0087'x,vr='DS',name='Magnetic Field Strength',value=in.field)
+	ENDIF
+
 	PMI__Control, ev.top, Viewer = 'PMI__Display__tristanratsroi_v3_0', Display=Display
 
 	Display -> Set, /Refresh, $
-		Series = Stdy->Obj(0,ind[v.series]), $
+		Series = Series, $
 		Baseline = v.nbase, $
 		set_droplist_select = [v.roi,v.aif]
 end
