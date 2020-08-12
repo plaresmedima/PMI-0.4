@@ -12,11 +12,11 @@
 	;Please name all your menus "PMI__Menu__XXXXX"
 
 ;	PMI__Menu__iBEAt, mbar
-;	PMI__Menu__TRISTANRATS, mbar
+	PMI__Menu__TRISTANRATS, mbar
 ;	PMI__Menu__Jeong, mbar
 ;	PMI__Menu__Steven, mbar
 ;	PMI__Menu__Shapiro, mbar
-	PMI__Menu__Hughes, mbar
+;	PMI__Menu__Hughes, mbar
 
 
 end

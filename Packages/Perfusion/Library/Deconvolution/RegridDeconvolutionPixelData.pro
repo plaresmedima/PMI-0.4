@@ -1,46 +1,6 @@
-;
-;
-;    Copyright (C) 2005 Steven Sourbron
-;
-;    This program is free software; you can redistribute it and/or modify
-;    it under the terms of the GNU General Public License as published by
-;    the Free Software Foundation; either version 2 of the License, or
-;    (at your option) any later version.
-;
-;    This program is distributed in the hope that it will be useful,
-;    but WITHOUT ANY WARRANTY; without even the implied warranty of
-;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;    GNU General Public License for more details.
-;
-;    You should have received a copy of the GNU General Public License along
-;    with this program; if not, write to the Free Software Foundation, Inc.,
-;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-;
-;
-;
 
 
-function RegridDeconvolutionData, time, aif, time_regr, aif_regr
 
-	time_regr = time
-	aif_regr = aif
-
-	n = n_elements(time)
-	dtime = time[1:n-1]-time[0:n-2]
-	dt = min(dtime,max=mdt)
-	if dt eq 0 then dt=1.0
-	if (mdt-dt)/dt lt 0.1 then return, 0
-
-    nt = floor(time[n-1]/dt)
-	if nt gt 300 then begin
-		nt = 300.
-		dt = time[n-1]/nt
-	endif
-	time_regr = dt*dindgen(1+nt)
-	aif_regr = interpol(aif,time,time_regr)
-
-	return, 1
-end
 
 pro RegridDeconvolutionPixelData,time,p,aif,time_regr=time_regr,aif_regr=aif_regr
 

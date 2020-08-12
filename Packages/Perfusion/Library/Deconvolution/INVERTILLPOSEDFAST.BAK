@@ -19,20 +19,41 @@
 ;
 ;
 
+FUNCTION INVERTILLPOSEDFASTINV, W, REGPAR=par, REGPROC=reg
+
+	if n_elements(reg) eq 0 then reg = 'TSVD'
+	if n_elements(par) eq 0 then par = 0.15
+
+	m = max(W)*par
+
+	case reg of
+		'STIK': D = W/(W^2+m^2)
+		'TSVD': begin
+			D = fltarr(n_elements(W))
+			i = where(W gt m,n)
+			if n gt 0 then D[i]=1/W[i]
+			end
+	endcase
+
+	return, D
+END
 
 
+PRO INVERTILLPOSEDFAST, B, A, ID=id, _EXTRA=e
 
-pro RegridDeconvolutionPixelData,time,p,aif,time_regr=time_regr,aif_regr=aif_regr
+	PMI__Message, id, 'Deconvolving..'
 
-	if not RegridDeconvolutionData(time, aif, time_regr, aif_regr) then return
+	svdc, A, W,U,V, /double
 
-	d = size(p,/dimensions)
-	nt = n_elements(time_regr)
-	p_regr = fltarr(d[0],nt)
-	for i=0L,d[0]-1 do begin
-		curve = reform(p[i,*],/overwrite)
-		p_regr[i,*] = interpol(curve,time,time_regr)
-	endfor
-	p = p_regr
+	r = n_elements(A[0,*])
+	c = n_elements(A[*,0])
 
-end
+;r must LE c
+
+	D = INVERTILLPOSEDFASTINV(W[0:r-1],_EXTRA=e)
+	X = transpose(U[0:r-1,*])
+	for i=0L,r-1 do X[*,i] = D[i]*X[*,i]
+	X = V[0:r-1,*] ## X
+
+	B = X ## B
+END
