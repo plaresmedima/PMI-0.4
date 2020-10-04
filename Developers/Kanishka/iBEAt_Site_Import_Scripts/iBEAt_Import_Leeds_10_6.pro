@@ -21,10 +21,10 @@ pro iBEAt_Import_Leeds_10_6__LoadT2star, Stdy, Series, files, status
   d = Dcm -> d() ;[x,y,z,t] dimensions
   TE = fltarr(d[3])
 
-  for k=0L,d[3]-1 do begin ;Loop over slices
+  for k=0L,d[3]-1 do begin ;Loop over time
 
 	PMI__Message, status, 'Reading echo times ' + Series, k/(d[3]-1.0) ;status update for user
-    TE[k] = PMI__Dicom__Read(files_sort[0,k],'0018'x,'0081'x)
+    TE[k] = PMI__Dicom__Read(files_sort[0,k],'0018'x,'0081'x) ; acquisition time k
 
   endfor
 
@@ -97,7 +97,87 @@ end
 
 
 
+FUNCTION iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI_NEW, Stdy, Series, files, status, SORTED_FILES=files_sort
 
+  PMI__Message, status, 'Sorting ' + Series
+
+  z = PMI__Dicom__Read(files,'0020'x,'1041'x); slice location
+  t = PMI__Dicom__Read(files,'0018'x,'0082'x); inversion times
+  files_sort = PMI__Dicom__Sort(files, z, t)
+
+
+  nx = PMI__Dicom__Read(files_sort,'0028'x,'0011'x) ; x coordinates for files
+  ny = PMI__Dicom__Read(files_sort,'0028'x,'0010'x) ; y coordinates for files
+
+  d = [max(nx),max(ny),n_elements(z),n_elements(t)]
+  Dcm = Stdy -> New('SERIES', Name = Series, Domain = {z:z, t:t, m:d[0:1]})
+
+  x = (d[0]-nx)/2
+  y = (d[1]-ny)/2
+
+  im = fltarr(d[0],d[1])
+  range = [0E,0E]
+  for k=0L,d[2]*d[3]-1 do begin
+
+	PMI__Message, status, 'Loading ' + Series, k/(d[2]*d[3]-1.0)
+
+	image = PMI__Dicom__ReadImage(files_sort[k])
+	if size(image,/n_dimensions) ne 0 then begin
+		im[x[k]:x[k]+nx[k]-1,y[k]:y[k]+ny[k]-1] = image
+		range[0] = min([range[0],min(image,max=max)])
+		range[1] = max([range[1],max])
+	endif
+	Dcm -> Write, Stdy->DataPath(), im, k
+	im *= 0
+
+  endfor
+
+  Dcm -> Trim, [range[0],0.8*range[1]]
+  Dcm -> ReadDicom, files_sort[0]
+
+  RETURN, Dcm
+
+end
+
+
+
+
+; T1 mapping using MOLLI scheme
+pro iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI, Stdy, Series, files, status
+
+Dcm = iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI_NEW(Stdy, Series, files, status, SORTED_FILES=files_sort) ; ORIGINAL IMPORT: FROM STEVEN
+
+ d = Dcm -> d() ;[x,y,z,t] dimensions; x,y, slice location:z, acquisition time:t
+ TI = fltarr(d[2],d[3]); Original TI with size(5 col; 28 rows)
+ Acq_time_TI = fltarr(d[2],d[3]) ; acquisition times: 5 columns; 28 rows
+ slice_loc = fltarr(d[2],d[3])
+
+
+  for k=0L,d[3]-1 do begin ;Loop over acquistion time d[3] = 28
+
+     PMI__Message, status, 'Reading  TI times ' + Series, k/(d[3]-1.0) ;status update for user + WITH COUNTER
+
+     for l= 0L,d[2]-1 do begin ; loop over slices: d[2] = 5
+
+         TI[l,k] = PMI__Dicom__Read(files_sort[l,k],'0018'x,'0082'x) ; ; TI[col:5,rows:28]
+         Acq_time_TI[l,k] = PMI__Dicom__Read(files_sort[l,k], '0008'x,'0032'x) ; acquisition time k; slice l; [l,k] columns (5); rows (28)
+         slice_loc[l,k] = PMI__Dicom__Read(files_sort[l,k], '0020'x,'1041'x); slice locations
+
+    endfor
+  endfor
+
+ PRINT, Acq_time_TI
+ PRINT, TI
+
+
+ Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0082'x,vr='FD',value=TI) ; set object with sorted TI
+
+
+end
+
+
+
+; old: function to be removed
 
 pro iBEAt_Import_Leeds_10_6__LoadT1, Stdy, Series, files, status
 
@@ -312,7 +392,7 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
 
   	    'IVIM_kidneys_cor-oblique_fb': 					iBEAt_Import_Leeds_10_6__LoadIVIM, 		Stdy, Name, SeriesFiles, status
   	    'DTI_kidneys_cor-oblique_fb': 					iBEAt_Import_Leeds_10_6__LoadDTI, 		Stdy, Name, SeriesFiles, status
-  	    'T1map_kidneys_cor-oblique_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT1, 		Stdy, Name, SeriesFiles, status
+  	    'T1map_kidneys_cor-oblique_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI,Stdy, Name, SeriesFiles, status
   	    'T2star_map_pancreas_tra_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
   	    'T2star_map_kidneys_cor-oblique_mbh_magnitude': iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
   	    'DCE_kidneys_cor-oblique_fb':					iBEAt_Import_Leeds_10_6__LoadDCE,	 	Stdy, Name, SeriesFiles, status
