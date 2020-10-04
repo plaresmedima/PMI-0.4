@@ -32,6 +32,56 @@ pro iBEAt_Import_Leeds_10_6__LoadT2star, Stdy, Series, files, status
 
 end
 
+pro iBEAt_Import_Leeds_10_6__LoadT2, Stdy, Series, files, status
+
+  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+
+;Read T2 Prep times
+
+  d = Dcm -> d() ;[x,y,z,t] dimensions; x,y, slice location:z, acquisition time:t
+ ; PrepTimeTest = fltarr(d[3])
+  PrepTime = [0.0, 30.0, 40.0, 50.0,60.0,70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
+
+  PRINT, PrepTime
+
+ Acq_time_T2 = fltarr(d[2],d[3]) ; acquisition times: 5 columns; 28 rows
+ slice_loc_T2 = fltarr(d[2],d[3])
+
+
+  for k=0L,d[3]-1 do begin ;Loop over acquistion time d[3] = 11
+
+     PMI__Message, status, 'Reading  TI times ' + Series, k/(d[3]-1.0) ;status update for user + WITH COUNTER
+
+     for l= 0L,d[2]-1 do begin ; loop over slices: d[2] = 5
+
+         Acq_time_T2[l,k] = PMI__Dicom__Read(files_sort[l,k], '0008'x,'0032'x) ; acquisition time k; slice l; [l,k] columns (5); rows (28)
+         slice_loc_T2[l,k] = PMI__Dicom__Read(files_sort[l,k], '0020'x,'1041'x); slice locations
+
+    endfor
+  endfor
+
+ PRINT, Acq_time_T2
+ PRINT, slice_loc_T2
+
+; return
+
+
+;  for k=0L,d[3]-1 do begin ;Loop over time
+;
+;	PMI__Message, status, 'Reading Prep times ' + Series, k/(d[3]-1.0) ;status update for user
+;    PrepTimeTest[k] = PMI__Dicom__Read(files_sort[0,k],'0020'x,'4000'x) ; acquisition time k
+;    PRINT, PrepTimeTest
+;
+;  endfor
+
+;  return
+
+  Dcm -> set, obj_new('DATA_ELEMENT','0020'x,'4000'x,vr='FD',value=PrepTime)
+
+
+
+end
+
 
 
 
@@ -396,6 +446,10 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
   	    'T2star_map_pancreas_tra_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
   	    'T2star_map_kidneys_cor-oblique_mbh_magnitude': iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
   	    'DCE_kidneys_cor-oblique_fb':					iBEAt_Import_Leeds_10_6__LoadDCE,	 	Stdy, Name, SeriesFiles, status
+        'T2map_kidneys_cor-oblique_mbh_magnitude':		iBEAt_Import_Leeds_10_6__LoadT2,	 	Stdy, Name, SeriesFiles, status
+
+
+
 
 	    ELSE: Dcm = iBEAt_Import__LoadSequence(Stdy, Name, SeriesFiles, status)
 	  ENDCASE

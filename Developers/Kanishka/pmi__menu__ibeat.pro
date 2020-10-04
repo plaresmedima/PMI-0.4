@@ -31,7 +31,7 @@ pro PMI__Menu__iBeat, parent
 
     Sid = PMI__Button__iBEAt_T1mapMOLLI(id, value='T1 mapping', /separator)
     Sid = PMI__Button__iBEAt_T2star(id, value='T2* mapping')
-    Sid = PMI__Button__iBEAt_Dummy(id, value='T2 mapping')
+    Sid = PMI__Button__iBEAt_T2Map(id, value='T2 mapping')
     Sid = PMI__Button__iBEAt_DTI(id, value='DTI mapping')
     Sid = PMI__Button__iBEAt_IVIM(id, value='IVIM mapping')
     Sid = PMI__Button__iBEAt_DCE(id, value='DCE mapping')
