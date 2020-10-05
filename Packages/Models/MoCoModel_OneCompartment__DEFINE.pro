@@ -26,7 +26,7 @@ FUNCTION MoCoModel_OneCompartment::PIXEL_PARAMETERS, S, FIT=F
   dt = *self.dt
   ct1 = [0, TOTAL( dt*(ct[0:n-2]+ct[1:n-1]) , /cumulative)]
 
-  (*self.matrix)[0,*] = ct1
+  (*self.matrix)[1,*] = -ct1
 
   SVDC, *self.matrix, W, U, V
   Y = TRANSPOSE(U) ## TRANSPOSE([ct])
@@ -53,7 +53,7 @@ FUNCTION MoCoModel_OneCompartment::PIXEL_FORWARD, P, S
   dt = *self.dt
   ct1 = [0, TOTAL( dt*(ct[0:n-2]+ct[1:n-1]) , /cumulative)]
 
-  (*self.matrix)[0,*] = ct1
+  (*self.matrix)[1,*] = -ct1
 
   RETURN, S0 + (*self.matrix) ## P
 
@@ -83,7 +83,7 @@ FUNCTION MoCoModel_OneCompartment::INIT, fixed_parameters
   dt = (t[1:n-1]-t[0:n-2])/2E
   ca1 = [0, TOTAL( dt*(ca[0:n-2]+ca[1:n-1]) , /cumulative)]
 
-  matrix = TRANSPOSE([[ca1],[ca1]])
+  matrix = TRANSPOSE([[ca1],[-ca1]])
 
   self.n0 = fixed_parameters.n0
   self.dt = ptr_new(dt)

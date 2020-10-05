@@ -103,7 +103,7 @@ pro PMI__Button__Event__MOCOMO_2D_DCEModelFree, ev
 
 	PMI__Message, status, 'Calculating'
 
-	;Get aif and time points
+	;Get independent parameters
 
 	d = Series -> d()
 	time = Series->t() - Series->t(0)
@@ -129,6 +129,7 @@ pro PMI__Button__Event__MOCOMO_2D_DCEModelFree, ev
 	VD 	-> Trim, [0,100]
 
 	start_time = systime(1)
+	Model = 'DCEModelFree'
 
 	;Loop over all slices
 
@@ -136,32 +137,29 @@ pro PMI__Button__Event__MOCOMO_2D_DCEModelFree, ev
 
 		PMI__Message, status, 'Calculating', k/(d[2]-1E)
 
+		Par = FLTARR(d[3],d[0],d[1])
   		Source = Series->Read(Stdy->DataPath(), k, -1)
 
     	IF product(win[k].n) GT 0 THEN BEGIN
 
 	        Source = TRANSPOSE(Source, [2,0,1]) ;time to the front
-	        MOCOMO, Source, 'TwoCompartmentFiltration', independent, $
-	          GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k], PARAMETERS=Par
+	        MOCOMO, Source, Model, independent, GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k]
+	        Fit = MoCoModelFit(Source, Model, Independent, PARAMETERS=Par)
             Source = TRANSPOSE(Source, [1,2,0]) ;time to the back
-            Par = TRANSPOSE(Par, [1,2,0])
 
     	ENDIF
 
-		IF independent.n0 EQ 1 $
-		THEN S0k = REFORM(Source[*,*,0]) $
+		IF independent.n0 EQ 1 THEN S0k = REFORM(Source[*,*,0]) $
 		ELSE S0k = TOTAL(Source[*,*,0:independent.n0-1],3)/independent.n0
 
-		Corr -> Write, Stdy->DataPath(), Source, k, -1
-		S0 -> Write, Stdy->DataPath(), S0k, k
+		scale = S0k * const.T1_tissue * const.relaxivity
 
-		IF product(win[k].n) GT 0 THEN BEGIN
+		;Write results to disk
 
-			scale = S0k * const.T1_tissue * const.relaxivity
-			FB -> Write, Stdy->DataPath(), 6000*MAX(Par,DIMENSION=3)/scale/(1-const.Hematocrit), k
-			VD -> Write, Stdy->DataPath(), 100*dt*TOTAL(Par,3)/scale, k
-
-		ENDIF
+		Corr 	-> Write, Stdy->DataPath(), Source, k, -1
+		S0 		-> Write, Stdy->DataPath(), S0k, k
+		FB 		-> Write, Stdy->DataPath(), 6000.0*MAX(Par,DIMENSION=1)/scale/(1-const.Hematocrit), k
+		VD		-> Write, Stdy->DataPath(), 100*dt*TOTAL(Par,1)/scale, k
 
 	endfor
 

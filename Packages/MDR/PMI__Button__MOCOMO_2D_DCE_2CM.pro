@@ -103,7 +103,7 @@ pro PMI__Button__Event__MOCOMO_2D_DCE_2CM, ev
 
 	PMI__Message, status, 'Calculating'
 
-	;Get aif and time points
+	;Get independent parameters
 
 	d = Series -> d()
 	time = Series->t() - Series->t(0)
@@ -185,6 +185,8 @@ end
 
 
 function PMI__Button__MOCOMO_2D_DCE_2CM, parent,value=value,separator=separator
+
+	MoCoModel_TwoCompartmentFiltration__DEFINE
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 

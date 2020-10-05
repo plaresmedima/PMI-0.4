@@ -125,6 +125,8 @@ end
 
 function PMI__Button__MOCOMO_2D_CONST, parent,value=value,separator=separator
 
+	MoCoModel_Constant__DEFINE
+
     if n_elements(value) eq 0 then value = 'PK motion correction'
 
     id = widget_button(parent $

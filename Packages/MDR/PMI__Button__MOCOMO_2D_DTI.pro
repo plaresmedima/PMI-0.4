@@ -1,6 +1,6 @@
 
 
-FUNCTION PMI__Button__Input__MOCOMO_2D_DTI, top, series, aif, in, Win
+FUNCTION PMI__Button__Input__MOCOMO_2D_DTI, top, series, in, Win
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -65,11 +65,11 @@ END
 pro PMI__Button__Event__MOCOMO_2D_DTI, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
-    IF NOT PMI__Button__Input__MOCOMO_2D_DTI(ev.top,series,aif,in,win) THEN RETURN
+    IF NOT PMI__Button__Input__MOCOMO_2D_DTI(ev.top,series,in,win) THEN RETURN
 
 	PMI__Message, status, 'Calculating'
 
-	;Get b-values and gradient vectors
+	;Get independent parameters
 
 	d = Series -> d()
     b = Series -> GETVALUE('0019'x,'100C'x)
@@ -81,11 +81,13 @@ pro PMI__Button__Event__MOCOMO_2D_DTI, ev
     Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
     S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[S0]' )
     ADC  = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[ADC * 10-3 mm2/s]')
+    FA   = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[FA]')
 
 	;Set time coordinates
 
     S0 	-> t, Series->t(0)
     ADC -> t, Series->t(0)
+    FA  -> t, Series->t(0)
 
 	;Set default windowing
 
@@ -93,6 +95,7 @@ pro PMI__Button__Event__MOCOMO_2D_DTI, ev
 	FA 	-> Trim, [0,1]
 
 	start_time = systime(1)
+	Model = 'DiffusionTensorImaging'
 
 	;Loop over all slices
 
@@ -108,20 +111,20 @@ pro PMI__Button__Event__MOCOMO_2D_DTI, ev
     	if product(win[k].n) gt 0 then begin
 
 	        Source = TRANSPOSE(Source, [2,0,1])
-	        MOCOMO, source, 'DiffusionTensorImaging', Independent, $
-	          GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k], PARAMETERS=Par
+	        MOCOMO, source, Model, Independent, GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k]
+	        Fit = MoCoModelFit(Source, Model, Independent, PARAMETERS=Par)
+	        Par = TRANSPOSE(Par, [1,2,0])
             Source = TRANSPOSE(Source, [1,2,0])
-            Par = TRANSPOSE(Par, [1,2,0])
             DTI_Parameters, Par[*,*,1:*], Map
 
     	endif
 
 		;Write results to disk
 
-		Corr 			-> Write, Stdy->DataPath(), Source, k, -1
-		S0 				-> Write, Stdy->DataPath(), EXP(Par[*,*,0]), k
-		ADC 			-> Write, Stdy->DataPath(), 1000*Map[*,*,0], k
-		FA 				-> Write, Stdy->DataPath(), Map[*,*,1], k
+		Corr -> Write, Stdy->DataPath(), Source, k, -1
+		S0 	 -> Write, Stdy->DataPath(), EXP(Par[*,*,0]), k
+		ADC  -> Write, Stdy->DataPath(), 1000*Map[*,*,0], k
+		FA 	 -> Write, Stdy->DataPath(), Map[*,*,1], k
 
 	endfor
 

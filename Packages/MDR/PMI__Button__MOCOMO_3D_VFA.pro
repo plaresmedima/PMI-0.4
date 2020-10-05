@@ -1,13 +1,14 @@
-FUNCTION PMI__Button__Input__MOCOMO_3D_VFA, top, series, aif, in, Win
+FUNCTION PMI__Button__Input__MOCOMO_3D_VFA, top, series, in, Win
 
     PMI__Info, top, Stdy=Stdy
-    SeriesNames = Stdy->Names(0)
-    in = {vfa:0L, res:16E, prec:1E}
+    DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
+	in = {ser:sel, roi:0L, res:16E, prec:1E}
 
 	WHILE 1 DO BEGIN
 
-		in = PMI__Form(top, Title='VFA Motion correction setup', [$
-		ptr_new({Type:'LIST'	,Tag:'vfa', Label:'Select VFA series', Value:SeriesNames, Select:in.vfa}), $
+		in = PMI__Form(top, Title='Motion correction setup', [$
+		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
+		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
 		ptr_new({Type:'VALUE'	,Tag:'res', Label:'Deformation Field Resolution (pixel sizes)', Value:in.res}), $
 		ptr_new({Type:'VALUE'	,Tag:'prec', Label:'Deformation Field Precision (pixel sizes)', Value:in.prec}) $
 		])
@@ -25,6 +26,34 @@ FUNCTION PMI__Button__Input__MOCOMO_3D_VFA, top, series, aif, in, Win
     	ENDIF
 
     	Series = Stdy->Obj(0,ind[in.ser])
+    	d = Series->d()
+    	Win = {p:[0L,0L,0L], n:d[0:2]}
+    	IF in.roi GT 0 THEN BEGIN
+    	  Region = Stdy->Obj(1,in.roi-1)
+    	  dim = Region->d()
+    	  if dim[3] gt 1 then begin
+    	    msg = 'Region of interest must be drawn on a static image'
+    	    goto, jump
+    	  endif
+    	  Indices = Region->Where(Stdy->DataPath(), n=cnt)
+    	  if cnt eq 0 then begin
+    	    msg = 'Region is not defined on this series'
+    	    goto, jump
+    	  endif
+    	  Pos = ARRAY_INDICES(dim[0:2], Indices, /DIMENSIONS)
+    	  Win.p = [$
+    	    min(Pos[0,*]),$
+    	    min(Pos[1,*]),$
+    	    min(Pos[2,*])]
+    	  Win.n = [$
+    	    1+max(Pos[0,*])-min(Pos[0,*]),$
+    	    1+max(Pos[1,*])-min(Pos[1,*]),$
+    	    1+max(Pos[2,*])-min(Pos[2,*])]
+    	  if min(Win.n) le 1 then begin
+    	    msg = 'Region of interest must cover more than 1 slice'
+    	    goto, jump
+    	  endif
+    	ENDIF
 
 		return, 1
         JUMP: IF 'Cancel' EQ dialog_message(msg,/information,/cancel) THEN return, 0
@@ -32,31 +61,63 @@ FUNCTION PMI__Button__Input__MOCOMO_3D_VFA, top, series, aif, in, Win
   	ENDWHILE
 END
 
+
 pro PMI__Button__Event__MOCOMO_3D_VFA, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
-	PMI__Message, status, 'Preparing calculation..'
+    IF NOT PMI__Button__Input__MOCOMO_3D_VFA(ev.top,series,in,win) THEN RETURN
 
-    IF NOT PMI__Button__Input__MOCOMO_3D_VFA(ev.top,series,aif,in,win) THEN RETURN
+	PMI__Message, status, 'Preparing..'
 
-	PMI__Message, status, 'Preparing calculation..'
+	;Get independent parameters
 
-	time = Series->t() - Series->t(0)
+	FA = Series -> t()
+	TR = Series -> GETVALUE('0018'x,'0080'x)
+	Independent = [TR,FA]
+
+	;Define new image series
+
+    Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name() + '[MoCo]' )
+    S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name() + '[S0]')
+    T1 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name() + '[T1 (msec)]')
+
+	;Set time coordinates
+
+	S0 	-> t, Series->t(0)
+    T1 	-> t, Series->t(0)
+
+	;Set default windowing
+
+	Corr -> Trim, Series->Trim()
+	S0 	 -> Trim, Series->Trim()
+	T1 	 -> Trim, [0,2000.0]
+
+	;Start calculation
+
+	PMI__Message, status, 'Calculating..'
+	start_time = systime(1)
+
 	Source = Series->Read(Stdy->DataPath())
 
-    PMI__Message, status, 'Calculating..'
-tt=systime(1)
+	;Perform MDR
+
+	Model = 'VariableFlipAngle'
 	Source = TRANSPOSE(Source, [3,0,1,2])
-	Source = MOCOMO_3D(Source, 'QIM_VFA', [Time, aif, in.nb], in.res, in.prec, Win=win)
+	MOCOMO, Source, Model, independent, GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win
+	Fit = MoCoModelFit(Source, Model, Independent, PARAMETERS=Par)
     Source = TRANSPOSE(Source, [1,2,3,0])
-    Dom = {z:Series->z(), t:Series->t(), m:Series->m()}
-    Corr = Stdy->New('SERIES', Domain=Dom,  Name=Series->name() + '[Motion-free]' )
+
+	;Write results to disk
+
 	Corr -> Write, Stdy->DataPath(), Source
-	Corr -> Trim, Series->Trim()
-print,(systime(1)-tt)/60.
+	S0 	 -> Write, Stdy->DataPath(), Par[0,*,*,*]
+	T1 	 -> Write, Stdy->DataPath(), REMOVE_INF(1/Par[1,*,*,*])
+
+	print, 'calculation time (min): ', (systime(1)-start_time)/60.
 
     PMI__Control, ev.top, /refresh
 end
+
 
 
 pro PMI__Button__Control__MOCOMO_3D_VFA, id, v
@@ -70,11 +131,13 @@ pro PMI__Button__Control__MOCOMO_3D_VFA, id, v
     widget_control, id, sensitive=sensitive
 end
 
+
+
 function PMI__Button__MOCOMO_3D_VFA, parent,value=value,separator=separator
 
-	QIM_VFA ;Model to fit
+	MoCoModel_VariableFlipAngle__DEFINE
 
-    if n_elements(value) eq 0 then value = 'PK motion correction'
+    if n_elements(value) eq 0 then value = 'VFA motion correction'
 
     id = widget_button(parent $
     ,   value = value  $

@@ -18,12 +18,12 @@ pro PMI__Menu__MoCoMo, parent
 
     Sid = PMI__Button__MOCOMO_3D_DCE_2CM(id, value='3D DCE 2CM')
     Sid = PMI__Button__MOCOMO_3D_CONST(id, value='3D Constant')
- ;   Sid = PMI__Button__MOCOMO_3D_VFA(id, value='3D VFA')
+    Sid = PMI__Button__MOCOMO_3D_VFA(id, value='3D VFA')
  	Sid = PMI__Button__MOCOMO_2D_DCE_2CM(id, value='2D DCE 2CM', /separator)
  	Sid = PMI__Button__MOCOMO_2D_CONST(id, value='2D Constant')
- ;   Sid = PMI__Button__MOCOMO_2D_DCE_1CM(id, value='2D DCE 1CM')
+    Sid = PMI__Button__MOCOMO_2D_DCE_1CM(id, value='2D DCE 1CM')
  ;   Sid = PMI__Button__MOCOMO_2D_DCE_1CMD(id, value='2D DCE 1CM + Delay')
- ;   Sid = PMI__Button__MOCOMO_2D_DCEmodelfree(id, value='2D DCE Model-Free')
- ;   Sid = PMI__Button__MOCOMO_2D_DTI(id, value='2D DTI', /separator)
+    Sid = PMI__Button__MOCOMO_2D_DCEmodelfree(id, value='2D DCE Model-Free')
+    Sid = PMI__Button__MOCOMO_2D_DTI(id, value='2D DTI', /separator)
 
 end

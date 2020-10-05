@@ -1,11 +1,14 @@
-;
-;
-;    Copyright (C) 2018 Steven Sourbron
-;
 
-;
 
-FUNCTION PMI__Button__Input__MOCOMO_2D_DCE_1CM, top, series, aif, in, Win
+FUNCTION PMI__Button__Input__MOCOMO_2D_DCE_1CM, top, series, aif, in, Win, const
+
+	; T1 = ;default for kidney from de Bazelaire JMRI 2004
+	; assuming 25% medulla and 75% cortex, so 1242 = 0.25*1142 + 0.75*1545
+	relaxivity = 3.6 ;Hz/mM (DOTAREM)
+	Hematocrit = 0.45
+	T1_blood = 1.0 / (0.52 * Hematocrit + 0.38)  ; sec, Lu MRM 2004
+	T1_Tissue = 1.242 ;sec
+	const = {relaxivity:relaxivity, Hematocrit:Hematocrit, T1_blood:T1_blood, T1_tissue:T1_tissue}
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -87,33 +90,77 @@ FUNCTION PMI__Button__Input__MOCOMO_2D_DCE_1CM, top, series, aif, in, Win
   	ENDWHILE
 END
 
+
+
 pro PMI__Button__Event__MOCOMO_2D_DCE_1CM, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
-
-    IF NOT PMI__Button__Input__MOCOMO_2D_DCE_1CM(ev.top,series,aif,in,win) THEN RETURN
+    IF NOT PMI__Button__Input__MOCOMO_2D_DCE_1CM(ev.top,series,aif,in,win,const) THEN RETURN
 
 	PMI__Message, status, 'Calculating'
 
-	time = Series->t() - Series->t(0)
-	d = Series -> d()
-    Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Motion-free]' )
+	;Get independent parameters
 
-tt = systime(1)
+	d = Series -> d()
+	time = Series->t() - Series->t(0)
+	independent = {t:time, ca:aif, n0:in.nb}
+
+	;Define new image series
+
+    Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
+    S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Baseline Signal]')
+    FB 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Blood Flow (mL/min/100mL)]')
+    VD 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Volume of Distribution (%)]')
+
+	;Set time coordinates
+
+	S0 	-> t, Series->t(0)
+    FB 	-> t, Series->t(0)
+    VD 	-> t, Series->t(0)
+
+	;Set default windowing
+
+	FB 	-> Trim, [0,400]
+	VD 	-> Trim, [0,100]
+
+	start_time = systime(1)
+	Model = 'OneCompartment'
+
+	;Loop over all slices
 
     for k=0L,d[2]-1 do begin
 
 		PMI__Message, status, 'Calculating', k/(d[2]-1E)
+
+		Par = FLTARR(d[0],d[1],2)
   		Source = Series->Read(Stdy->DataPath(), k, -1)
+
     	if product(win[k].n) gt 0 then begin
-	        Source = TRANSPOSE(Source, [2,0,1])
-	        Source = MOCOMO(Source, 'QIM_DCE_1CM', [Time, aif, in.nb], in.res, in.prec, Win=win[k])
-            Source = TRANSPOSE(Source, [1,2,0])
+
+	        Source = TRANSPOSE(Source, [2,0,1]) ;time to the front
+	        MOCOMO, Source, Model, independent, $
+	          GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k]
+	        Fit = MoCoModelFit(Source, Model, Independent, PARAMETERS=Par)
+	        Par = TRANSPOSE(Par, [1,2,0])
+            Source = TRANSPOSE(Source, [1,2,0]) ;time to the back
+
 		endif
-		Corr -> Write, Stdy->DataPath(), Source, k, -1
+
+		IF independent.n0 EQ 1 THEN S0k = REFORM(Source[*,*,0]) $
+		ELSE S0k = TOTAL(Source[*,*,0:independent.n0-1],3)/independent.n0
+
+		scale = S0k * const.T1_tissue * const.relaxivity
+
+		;Write results to disk
+
+		Corr 	-> Write, Stdy->DataPath(), Source, k, -1
+		S0 		-> Write, Stdy->DataPath(), S0k, k
+		FB 		-> Write, Stdy->DataPath(), 6000*Par[*,*,0]/scale/(1-const.Hematocrit), k
+		VD		-> Write, Stdy->DataPath(), 100*REMOVE_INF(Par[*,*,0]/Par[*,*,1]/scale), k
+
 	endfor
 
-print,(systime(1)-tt)/60.
+	print, 'calculation time (min): ', (systime(1)-start_time)/60.
 
     PMI__Control, ev.top, /refresh
 end
@@ -132,7 +179,7 @@ end
 
 function PMI__Button__MOCOMO_2D_DCE_1CM, parent,value=value,separator=separator
 
-	QIM_DCE_1CM
+	MoCoModel_OneCompartment__DEFINE
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 

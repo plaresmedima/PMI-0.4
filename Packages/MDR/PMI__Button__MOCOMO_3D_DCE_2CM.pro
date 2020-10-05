@@ -106,7 +106,7 @@ PRO PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
 
 	PMI__Message, status, 'Calculating..'
 
-	;Get aif and time points
+	;Get independent parameters
 
 	d = Series -> d()
 	time = Series->t() - Series->t(0)
@@ -135,7 +135,6 @@ PRO PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
 	PMI__Message, status, 'Calculating..'
 	start_time = systime(1)
 
-	Par = FLTARR(d[0],d[1],d[2],4)
 	Source = Series->Read(Stdy->DataPath())
 
 	;Perform MDR
