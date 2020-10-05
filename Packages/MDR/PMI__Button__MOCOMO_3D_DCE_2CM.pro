@@ -1,0 +1,195 @@
+FUNCTION PMI__Button__Input__MOCOMO_3D_DCE_2CM, top, series, aif, in, Win, const
+
+	; T1 = ;default for kidney from de Bazelaire JMRI 2004
+	; assuming 25% medulla and 75% cortex, so 1242 = 0.25*1142 + 0.75*1545
+	relaxivity = 3.6 ;Hz/mM (DOTAREM)
+	Hematocrit = 0.45
+	T1_blood = 1.0 / (0.52 * Hematocrit + 0.38)  ; sec, Lu MRM 2004
+	T1_Tissue = 1.242 ;sec
+	const = {relaxivity:relaxivity, Hematocrit:Hematocrit, T1_blood:T1_blood, T1_tissue:T1_tissue}
+
+    PMI__Info, top, Stdy=Stdy
+    DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
+	in = {ser:sel, aif:stdy->sel(1), roi:0L, res:16E, prec:1E, nb:1}
+
+	WHILE 1 DO BEGIN
+
+		in = PMI__Form(top, Title='Motion correction setup', [$
+		ptr_new({Type:'DROPLIST',Tag:'ser', Label:'Dynamic series', Value:DynSeries, Select:in.ser}), $
+		ptr_new({Type:'DROPLIST',Tag:'aif', Label:'Arterial Region', Value:Stdy->names(1), Select:in.aif}), $
+		ptr_new({Type:'VALUE'	,Tag:'nb' , Label:'Length of baseline (# of dynamics)', Value:in.nb}), $
+		ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
+		ptr_new({Type:'VALUE'	,Tag:'res', Label:'Deformation Field Resolution (pixel sizes)', Value:in.res}), $
+		ptr_new({Type:'VALUE'	,Tag:'prec', Label:'Deformation Field Precision (pixel sizes)', Value:in.prec}) $
+		])
+		IF in.cancel THEN return, 0
+
+    	IF in.res LE 0 THEN BEGIN
+    	  in.res = 16E
+    	  msg = 'Deformation Field Resolution must be > 0'
+    	  goto, jump
+    	ENDIF
+    	IF in.prec LE 0 THEN BEGIN
+    	  in.prec = 1E
+    	  msg = 'Deformation Field Precision must be > 0'
+    	  goto, jump
+    	ENDIF
+
+    	Series = Stdy->Obj(0,ind[in.ser])
+    	d = Series->d()
+    	Win = {p:[0L,0L,0L], n:d[0:2]}
+    	IF in.roi GT 0 THEN BEGIN
+    	  Region = Stdy->Obj(1,in.roi-1)
+    	  dim = Region->d()
+    	  if dim[3] gt 1 then begin
+    	    msg = 'Region of interest must be drawn on a static image'
+    	    goto, jump
+    	  endif
+    	  Indices = Region->Where(Stdy->DataPath(), n=cnt)
+    	  if cnt eq 0 then begin
+    	    msg = 'Region is not defined on this series'
+    	    goto, jump
+    	  endif
+    	  Pos = ARRAY_INDICES(dim[0:2], Indices, /DIMENSIONS)
+    	  Win.p = [$
+    	    min(Pos[0,*]),$
+    	    min(Pos[1,*]),$
+    	    min(Pos[2,*])]
+    	  Win.n = [$
+    	    1+max(Pos[0,*])-min(Pos[0,*]),$
+    	    1+max(Pos[1,*])-min(Pos[1,*]),$
+    	    1+max(Pos[2,*])-min(Pos[2,*])]
+    	  if min(Win.n) le 1 then begin
+    	    msg = 'Region of interest must cover more than 1 slice'
+    	    goto, jump
+    	  endif
+    	ENDIF
+    	IF in.nb LT 1 THEN BEGIN
+    	  in.nb = 10
+    	  msg = ['Baseline length must be > 1',$
+    		  'Please select another baseline length']
+    	  goto, jump
+    	ENDIF
+    	IF in.nb GT d[3] THEN BEGIN
+    	  in.nb = 10
+    	  msg = ['Baseline length must be less than the total number of dynamics',$
+    		  'Please select another baseline length']
+    	  goto, jump
+    	ENDIF
+	   	Aif = PMI__RoiCurve(Stdy->DataPath(), Series, Stdy->Obj(1,in.aif), status, cnt=cnt)
+    	IF cnt EQ 0 THEN BEGIN
+    	  msg = ['Arterial region is empty on this series',$
+    			'Please select another region and/or series']
+    	  goto, jump
+    	ENDIF
+    	IF n_elements(Aif) NE d[3] THEN BEGIN
+    	  msg = ['Arterial region is not defined on every dynamic',$
+    			'Please select another region and/or series']
+    	  goto, jump
+    	ENDIF
+    	Aif = LMU__Enhancement(Aif,in.nb,relative=1)
+    	Aif /= const.relaxivity*const.T1_blood
+    	Aif /= 1-const.Hematocrit
+
+		return, 1
+        JUMP: IF 'Cancel' EQ dialog_message(msg,/information,/cancel) THEN return, 0
+
+  	ENDWHILE
+END
+
+
+
+PRO PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
+
+	PMI__Info, ev.top, Status=Status, Stdy=Stdy
+    IF NOT PMI__Button__Input__MOCOMO_3D_DCE_2CM(ev.top,series,aif,in,win,const) THEN RETURN
+
+	PMI__Message, status, 'Calculating..'
+
+	;Get aif and time points
+
+	d = Series -> d()
+	time = Series->t() - Series->t(0)
+	independent = {t:time, ca:aif, n0:in.nb}
+
+    ;Define new image series
+
+    Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
+    S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Baseline Signal]')
+    FB 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Blood Flow (mL/min/100mL)]')
+    VD 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[Volume of Distribution (%)]')
+
+	;Set time coordinates
+
+	S0 	-> t, Series->t(0)
+    FB 	-> t, Series->t(0)
+    VD 	-> t, Series->t(0)
+
+	;Set default windowing
+
+	FB 	-> Trim, [0,400]
+	VD 	-> Trim, [0,100]
+
+	;Start calculation
+
+	PMI__Message, status, 'Calculating..'
+	start_time = systime(1)
+
+	Par = FLTARR(d[0],d[1],d[2],4)
+	Source = Series->Read(Stdy->DataPath())
+
+	;Perform MDR
+
+	Model = 'TwoCompartmentFiltration'
+	Source = TRANSPOSE(Source, [3,0,1,2])
+	MOCOMO, Source, Model, independent, GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win
+	Fit = MoCoModelFit(Source, Model, Independent, PARAMETERS=Par)
+	Par = PHYSICAL_2CFM_PARS(Par)
+	Par = TRANSPOSE(Par, [1,2,3,0])
+	Source = TRANSPOSE(Source, [1,2,3,0])
+
+	;Export results
+
+	IF independent.n0 EQ 1 THEN S0im = REFORM(Source[*,*,*,0]) $
+	ELSE S0im = TOTAL(Source[*,*,*,0:independent.n0-1],4)/independent.n0
+
+	scale = S0im * const.T1_tissue * const.relaxivity
+
+	;Write results to disk
+
+	Corr -> Write, Stdy->DataPath(), Source
+	S0 	 -> Write, Stdy->DataPath(), S0im
+	FB 	 -> Write, Stdy->DataPath(), 6000*Par[*,*,*,0]/scale/(1-const.Hematocrit)
+	VD	 -> Write, Stdy->DataPath(), 100*(Par[*,*,*,0]*Par[*,*,*,1] + Par[*,*,*,2]*Par[*,*,*,3])/scale
+
+	print, 'calculation time (min): ', (systime(1)-start_time)/60.
+
+    PMI__Control, ev.top, /refresh
+end
+
+
+
+pro PMI__Button__Control__MOCOMO_3D_DCE_2CM, id, v
+
+	PMI__Info, tlb(id), Stdy=Stdy
+	if obj_valid(Stdy) then begin
+		Series = Stdy->Names(0,ns,DefDim=3)
+		Regions = Stdy->Names(1,nr)
+		sensitive = (ns gt 0) and (nr gt 0)
+	endif else sensitive=0
+    widget_control, id, sensitive=sensitive
+end
+
+function PMI__Button__MOCOMO_3D_DCE_2CM, parent,value=value,separator=separator
+
+    if n_elements(value) eq 0 then value = '3D Model-driven registration (DCE)'
+
+    id = widget_button(parent $
+    ,   value = value  $
+    ,  	event_pro = 'PMI__Button__Event__MOCOMO_3D_DCE_2CM' $
+    ,	pro_set_value = 'PMI__Button__Control__MOCOMO_3D_DCE_2CM' $
+    ,  	separator = separator )
+
+    return, id
+end
+
