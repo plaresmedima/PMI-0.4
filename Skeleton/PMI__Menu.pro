@@ -14,11 +14,11 @@
 ;	PMI__Menu__iBEAt, mbar
 ;	PMI__Menu__demo, mbar
 ;	PMI__Menu__TRISTAN, mbar
-;	PMI__Menu__Jeong, mbar
+	PMI__Menu__Jeong, mbar
 ;	PMI__Menu__Steven, mbar
 ;	PMI__Menu__Shapiro, mbar
 ;	PMI__Menu__Hughes, mbar
-	PMI__Menu__MoCoMo, mbar
+;	PMI__Menu__MoCoMo, mbar
 
 
 end
