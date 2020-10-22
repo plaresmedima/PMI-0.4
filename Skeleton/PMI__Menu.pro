@@ -11,7 +11,13 @@
 
 	;Please name all your menus "PMI__Menu__XXXXX"
 
+<<<<<<< HEAD
 	PMI__Menu__iBEAt, mbar
+=======
+	PMI__Menu__Sugar, mbar
+
+;	PMI__Menu__iBEAt, mbar
+>>>>>>> 597cca87a776f625c1ef3bd106e4ad6cfbf2fe4f
 ;	PMI__Menu__demo, mbar
 ;	PMI__Menu__TRISTAN, mbar
 ;	PMI__Menu__Jeong, mbar
