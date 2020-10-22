@@ -2,9 +2,7 @@
 
 PRO MoCoModel_T2Map__Model, PrepTime, P, S
 
-
     S = P[0]*exp(-PrepTime/P[1]) ; S =  S0exp(-TE/T2)
-
 
 END
 
@@ -17,7 +15,7 @@ FUNCTION MoCoModel_T2Map::PIXEL_PARAMETERS, S, FIT=F
 
   parinfo = replicate({limited:[1B,0B], limits:[0D,1D]}, 2)
    P = [max(S), 70.0]
-  F = mpcurvefit(*self.fixed, S, 1+0E*S, P, $
+   F = mpcurvefit(*self.PrepTime, S, 1+0E*S, P, $
     function_name='MoCoModel_T2Map__Model',/quiet, PARINFO=parinfo, /NODERIVATIVE)
 
   IF ARG_PRESENT(F) THEN F = self->PIXEL_FORWARD(P)
@@ -33,7 +31,7 @@ END
 
 FUNCTION MoCoModel_T2Map::PIXEL_FORWARD, P, S
 
-  MoCoModel_T2Map__Model, *self.fixed, P, S
+  MoCoModel_T2Map__Model, *self.PrepTime, P, S
   RETURN, S
 END
 
@@ -47,7 +45,7 @@ END
 
 PRO MoCoModel_T2Map::CLEANUP
 
-  ptr_free, self.fixed
+  ptr_free, self.PrepTime
 END
 
 
@@ -55,7 +53,7 @@ END
 FUNCTION MoCoModel_T2Map::INIT, f
 
   self.nr_of_free_parameters = 2
-  self.fixed = ptr_new(f.PrepTime)
+  self.PrepTime = ptr_new(f.PrepTime)
 
   RETURN, 1
 END
@@ -67,7 +65,7 @@ PRO MoCoModel_T2Map__DEFINE
   struct = {$
     MoCoModel_T2Map, $
     INHERITS MoCoModel, $
-    fixed: ptr_new() $
+    PrepTime: ptr_new() $
   }
 
 END

@@ -186,7 +186,6 @@ end
 
 function PMI__Button__MOCOMO_2D_DCE_2CM, parent,value=value,separator=separator
 
-	MoCoModel__DEFINE
 	MoCoModel_TwoCompartmentFiltration__DEFINE
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
