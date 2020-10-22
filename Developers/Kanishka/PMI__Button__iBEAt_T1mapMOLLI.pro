@@ -76,8 +76,8 @@ pro PMI__Button__Event__iBEAt_T1mapMOLLI, ev
 
 	PMI__Message, status, 'Calculating'
 
-	d = Series -> d() ;d = Dcm -> d(); [x,y,z,t] dimensions; x,y, slice location:z, acquisition time:t
-    TI = Series -> GETVALUE('0018'x,'0082'x);  TI from each slice using respective column
+	d = Series -> d()
+    TI = Series -> GETVALUE('0018'x,'0082'x)
     independent = {TI:TI}
 
 
@@ -103,8 +103,8 @@ pro PMI__Button__Event__iBEAt_T1mapMOLLI, ev
 	;Set default windowing
 
 	T1final		    -> Trim, [0E, 2000] ; T1 map range: 1200-1800ms for cortex and medulla in HV
-	A               -> Trim, [0E, 2000] ; TO CHANGE
-	B               -> Trim, [0E, 2000] ; TO CHANGE
+	A               -> Trim, [0E, 2000]
+	B               -> Trim, [0E, 2000]
 	T1mapMOLLIApp   -> Trim, [0E, 2000]
 
 
@@ -113,39 +113,22 @@ pro PMI__Button__Event__iBEAt_T1mapMOLLI, ev
 
 	;Loop over all slices
 
-    for k=0L,d[2]-1 do begin ; loop over all slices; 5 slices for T1 mapping
+    for k=0L,d[2]-1 do begin
 
 		PMI__Message, status, 'Calculating', k/(d[2]-1E) ; loopin over slices; %age progress
-		independent = {TI:TI[k,*]} ; TIs for slice k: defining IDL structures: currently uses sorted column for each slice differently
-		PRINT, k
-		PRINT, TI
-		PRINT, independent
+		independent = {TI:TI[k,*]}
 
-  		Par = FLTARR(d[0],d[1],3) ; 3 paramters for fitting in T1 mapping; size same as that of the slice: x,y
+  		Par = FLTARR(d[0],d[1],3)
 
-  		Source = Series->Read(Stdy->DataPath(), k, -1) ;Source images/series that are not motion corrected
+  		Source = Series->Read(Stdy->DataPath(), k, -1)
 
     	if product(win[k].n) gt 0 then begin
 
 	        Source = TRANSPOSE(Source, [2,0,1])
 
+           IF NOT KEYWORD_SET(no_moco) THEN MOCOMO, source, 'T1mapMOLLI', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
+           Fit = MoCoModelFit(Source, 'T1mapMOLLI' , Independent, PARAMETERS=Par)
 
-	        MOCOMO_2D, source, 'T1mapMOLLI', Independent, $
-	        GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
-
-;            ; change the sign of signal from null point and before to neg value
-;;
-;	         for l=0L,d[0]-1 do begin ; dim x 384 dim[2,0,1]
-;
-;	              for m = 0L,d[1]-1 do begin  ; dim y 384
-;
-;	                  TI_Source = min(Source[*,l,m], indxx) ; find min index
-;	                  Source[0:indxx,l,m] = -  Source[0:indxx,l,m]
-;
-;                   endfor
-;
-;               endfor
-;
 
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])

@@ -35,12 +35,12 @@ pro PMI__Menu__iBeat, parent
     Sid = PMI__Button__iBEAt_DTI(id, value='DTI mapping')
     Sid = PMI__Button__iBEAt_IVIM(id, value='IVIM mapping')
     Sid = PMI__Button__iBEAt_DCE(id, value='DCE mapping')
-    Sid = PMI__Button__iBEAt_Dummy(id, value='MTR mapping')
+    Sid = PMI__Button__iBEAt_MTR(id, value='MTR mapping')
     Sid = PMI__Button__iBEAt_Dummy(id, value='ASL mapping')
 
-    Sid = PMI__Button__iBEAt_Dummy(id, value='T1 ROI analysis', /separator)
-    Sid = PMI__Button__iBEAt_Dummy(id, value='T2* ROI analysis')
-    Sid = PMI__Button__iBEAt_Dummy(id, value='T2 ROI analysis')
+    Sid = PMI__Button__iBEAt_T1_ROI(id, value='T1 ROI analysis', /separator)
+    Sid = PMI__Button__iBEAt_T2star_ROI(id, value='T2* ROI analysis')
+    Sid = PMI__Button__iBEAt_T2_ROI(id, value='T2 ROI analysis')
     Sid = PMI__Button__iBEAt_Dummy(id, value='DTI ROI analysis')
     Sid = PMI__Button__iBEAt_Dummy(id, value='IVIM ROI analysis')
     Sid = PMI__Button__iBEAt_DCE_ROI(id, value='DCE ROI analysis')
@@ -65,7 +65,5 @@ pro PMI__Menu__iBeat, parent
 	Sid = PMI__Button__KidneyModelsROI_iBEAt(id, value = 'DCE ROI modelling')
 	Sid = PMI__Button__DumpDicom(id, /separator)
 
-
-;	Sid = PMI__Button__iBeat_Siemens_T1mapping(id, value = 'T1-mapping')
 
 end
