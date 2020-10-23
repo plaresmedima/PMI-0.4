@@ -126,6 +126,20 @@ pro PMI__Button__Event__iBEAt_T1mapMOLLI, ev
 
 	        Source = TRANSPOSE(Source, [2,0,1])
 
+            ; negative values from null point
+
+	         for l=0L,d[0]-1 do begin ; dim x 384 dim[2,0,1]
+
+	              for m = 0L,d[1]-1 do begin  ; dim y 384
+
+	                  TI_Source = min(Source[*,l,m], indxx) ; find min index
+	                  Source[0:indxx,l,m] = -  Source[0:indxx,l,m]
+
+                   endfor
+
+               endfor
+;
+
            IF NOT KEYWORD_SET(no_moco) THEN MOCOMO, source, 'T1mapMOLLI', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
            Fit = MoCoModelFit(Source, 'T1mapMOLLI' , Independent, PARAMETERS=Par)
 
@@ -141,8 +155,10 @@ pro PMI__Button__Event__iBEAt_T1mapMOLLI, ev
 		Corr 		-> Write, Stdy->DataPath(), Source, k, -1 ; motion corrected series; if no motion correction then it is the same no motion corrected series
 		A           -> Write, Stdy->DataPath(), Par[*,*,0], k ; Sinf_slice; A from the fitting for each slice k
 		B           -> Write, Stdy->DataPath(), Par[*,*,1], k ; Sratio_slice; B from the fitting for each slice k
-		T1mapMOLLIApp  -> Write, Stdy->DataPath(), 1/Par[*,*,2], k ;T1_slice; T1 map apparent  from the fitting
-		T1final 	-> Write, Stdy->DataPath(),(Par[*,*,1]-1)/Par[*,*,2],k;T1_corr_slice; ((Par[*,*,1]/Par[*,*,0])-1)*Par[*,*,2], k ; T1 estimated: final T1 map for each slice
+	;	T1mapMOLLIApp  -> Write, Stdy->DataPath(), 1/Par[*,*,2], k
+		T1mapMOLLIApp  -> Write, Stdy->DataPath(), Par[*,*,2], k   ; T1_slice; T1 map apparent  from the fitting
+	;	T1final 	-> Write, Stdy->DataPath(),(Par[*,*,1]-1)/Par[*,*,2],k;
+		T1final 	-> Write, Stdy->DataPath(),((Par[*,*,1]/Par[*,*,0])-1)*Par[*,*,2], k ; T1 estimated: final T1 map for each slice
 
 	endfor
 

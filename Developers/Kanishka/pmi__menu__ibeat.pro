@@ -35,7 +35,7 @@ pro PMI__Menu__iBeat, parent
     Sid = PMI__Button__iBEAt_DTI(id, value='DTI mapping')
     Sid = PMI__Button__iBEAt_IVIM(id, value='IVIM mapping')
     Sid = PMI__Button__iBEAt_DCE(id, value='DCE mapping')
-    Sid = PMI__Button__iBEAt_MTR(id, value='MTR mapping')
+  ;  Sid = PMI__Button__iBEAt_MTR(id, value='MTR mapping')
     Sid = PMI__Button__iBEAt_Dummy(id, value='ASL mapping')
 
     Sid = PMI__Button__iBEAt_T1_ROI(id, value='T1 ROI analysis', /separator)
