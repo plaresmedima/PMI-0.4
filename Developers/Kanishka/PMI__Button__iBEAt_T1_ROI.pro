@@ -19,18 +19,14 @@ PRO PMI__Display__iBEAt_T1_ROI::Fit
 
 		'T1MapMOLLI':begin
 
-
-            ExpectedT1 = max(TI)/4.0
-
-		   	P = [max(Signal), 2.0, 1/ExpectedT1]
+            P = [max(Curve),(max(Curve)-min(Curve)),1500.0] ; [687.0, 1329.0, 1500.0]
 
 	    	Fit = MoCoModelFit(Curve, 'T1MapMOLLI' , Time, PARAMETERS=P)
 
 			Parameters = $
-				[{Name:'Sratio'		,Units:''		,Value:P[1,0]	,Nr: 0} $
-				,{Name:'R1'		,Units:'ms'	,Value:P[2,0]	,Nr: 1} $
-				,{Name:'T1MapFinal'			,Units:'ms'		,Value:(P[1,0]-1)/P[2,0]	,Nr: 2} ]
-
+				[{Name:'A'		,Units:''		,Value:P[0,0]	,Nr: 0} $
+				,{Name:'B'		,Units:'ms'	,Value:P[1,0]	,Nr: 1} $
+				,{Name:'T1MapFinal'			,Units:'ms'		,Value:((P[1,0]/P[0,0])-1)*P[2,0]	,Nr: 2} ]
             end
 
 

@@ -3,7 +3,6 @@
 
 PRO MoCoModel_T1mapMOLLI__Model, TI, P, S
 
-
    S = P[0]-P[1]*exp(-TI/P[2])  ; S = A-B*exp(-TI/T1apparent) ; original function does not converge
 
 
@@ -15,6 +14,12 @@ END
 ;Returns: fitted parameters P
 
 FUNCTION MoCoModel_T1MapMOLLI::PIXEL_PARAMETERS, S, FIT=F
+
+
+       null_point_index = min(S, indx) ; find min index
+	   S[0:indx] = -  S[0:indx]
+
+      ; PRINT, S
 
        P = [max(S),(max(S)-min(S)),1500.0] ; [687.0, 1329.0, 1500.0]
 
