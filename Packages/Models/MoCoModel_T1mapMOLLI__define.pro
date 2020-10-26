@@ -1,16 +1,10 @@
-;C(t) = Sinf*(1-Sratio*exp(-Td*R1)) @ Sirisha Tadimalla absolute function
 
+;P: [A, B, T1apparent]
 
 PRO MoCoModel_T1mapMOLLI__Model, TI, P, S
 
 
-	if n_params() eq 0 then return
-
-	E = exp(-TI*P[2])
-
-	C_DER0 = 1-P[1]*E
-
-	S = ABS(P[0]*C_DER0)
+   S = P[0]-P[1]*exp(-TI/P[2])  ; S = A-B*exp(-TI/T1apparent) ; original function does not converge
 
 
 END
@@ -22,15 +16,11 @@ END
 
 FUNCTION MoCoModel_T1MapMOLLI::PIXEL_PARAMETERS, S, FIT=F
 
-       ExpectedT1 = max(* self.TI)/4.0
+       P = [max(S),(max(S)-min(S)),1500.0] ; [687.0, 1329.0, 1500.0]
 
-       P = [max(S), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1] @ Sirisha Tadimalla
+       F = mpcurvefit(* self.TI, S,  1+0E*S, P, function_name='MoCoModel_T1mapMOLLI__Model',/quiet, /NODERIVATIVE)
 
-	   F = mpcurvefit(* self.TI, S, 1+0E*S, P, function_name='MoCoModel_T1mapMOLLI__Model',/quiet,NODERIVATIVE=1)
-
-
-
-  IF ARG_PRESENT(F) THEN F = self->PIXEL_FORWARD(P)
+   IF ARG_PRESENT(F) THEN F = self->PIXEL_FORWARD(P)
 
   RETURN, P
 
