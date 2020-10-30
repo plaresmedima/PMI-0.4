@@ -76,8 +76,6 @@ pro PMI__Button__Event__iBEAt_T2star, ev
 
 	PMI__Message, status, 'Calculating'
 
-	;Get b-values and gradient vectors
-
 	d = Series -> d()
     TE = Series -> GETVALUE('0018'x,'0081'x)
     independent = {TE:TE}
@@ -118,8 +116,11 @@ pro PMI__Button__Event__iBEAt_T2star, ev
     	if product(win[k].n) gt 0 then begin
 
 	        Source = TRANSPOSE(Source, [2,0,1])
-	        MOCOMO_2D, source, 'T2star', Independent, $
-	          GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
+
+           IF NOT in.no_moco THEN MOCOMO, source, 'T2star', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
+           Fit = MoCoModelFit(Source, 'T2star' , Independent, PARAMETERS=Par)
+
+
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])
 

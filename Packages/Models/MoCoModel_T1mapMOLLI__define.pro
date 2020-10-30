@@ -17,9 +17,8 @@ FUNCTION MoCoModel_T1MapMOLLI::PIXEL_PARAMETERS, S, FIT=F
 
 
        null_point_index = min(S, indx) ; find min index
-	   S[0:indx] = -  S[0:indx]
 
-      ; PRINT, S
+	   S[0:indx] = -  S[0:indx]
 
        P = [max(S),(max(S)-min(S)),1500.0] ; [687.0, 1329.0, 1500.0]
 

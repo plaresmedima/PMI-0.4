@@ -1,152 +1,3 @@
-pro iBEAt_Import_Leeds_10_6__LoadDCE, Stdy, Series, files, status
-
-  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
-
-  ;TR (checked in Siemens DICOM header, 12/11/2019)
-  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0080'x,vr='DS',value=2.2)
-
-  ;NumberOfPhaseEncodes acquired ;(checked in Siemens DICOM header, 12/11/2019)
-  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0089'x,vr='IS',value=76)
-
-end
-
-
-
-pro iBEAt_Import_Leeds_10_6__LoadT2star, Stdy, Series, files, status
-
-  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
-
-;Read echo times
-
-  d = Dcm -> d() ;[x,y,z,t] dimensions
-  TE = fltarr(d[3])
-
-  for k=0L,d[3]-1 do begin ;Loop over time
-
-	PMI__Message, status, 'Reading echo times ' + Series, k/(d[3]-1.0) ;status update for user
-    TE[k] = PMI__Dicom__Read(files_sort[0,k],'0018'x,'0081'x) ; acquisition time k
-
-  endfor
-
-  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0081'x,vr='FD',value=TE)
-
-end
-
-pro iBEAt_Import_Leeds_10_6__LoadT2, Stdy, Series, files, status
-
-  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
-
-;Read T2 Prep times
-
-  d = Dcm -> d() ;[x,y,z,t] dimensions; x,y, slice location:z, acquisition time:t
- ; PrepTimeTest = fltarr(d[3])
-  PrepTime = [0.0, 30.0, 40.0, 50.0,60.0,70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
-
-  PRINT, PrepTime
-
- Acq_time_T2 = fltarr(d[2],d[3]) ; acquisition times: 5 columns; 28 rows
- slice_loc_T2 = fltarr(d[2],d[3])
-
-
-  for k=0L,d[3]-1 do begin ;Loop over acquistion time d[3] = 11
-
-     PMI__Message, status, 'Reading  TI times ' + Series, k/(d[3]-1.0) ;status update for user + WITH COUNTER
-
-     for l= 0L,d[2]-1 do begin ; loop over slices: d[2] = 5
-
-         Acq_time_T2[l,k] = PMI__Dicom__Read(files_sort[l,k], '0008'x,'0032'x) ; acquisition time k; slice l; [l,k] columns (5); rows (28)
-         slice_loc_T2[l,k] = PMI__Dicom__Read(files_sort[l,k], '0020'x,'1041'x); slice locations
-
-    endfor
-  endfor
-
- PRINT, Acq_time_T2
- PRINT, slice_loc_T2
-
-; return
-
-
-;  for k=0L,d[3]-1 do begin ;Loop over time
-;
-;	PMI__Message, status, 'Reading Prep times ' + Series, k/(d[3]-1.0) ;status update for user
-;    PrepTimeTest[k] = PMI__Dicom__Read(files_sort[0,k],'0020'x,'4000'x) ; acquisition time k
-;    PRINT, PrepTimeTest
-;
-;  endfor
-
-;  return
-
-  Dcm -> set, obj_new('DATA_ELEMENT','0020'x,'4000'x,vr='FD',value=PrepTime)
-
-
-
-end
-
-
-
-
-pro iBEAt_Import_Leeds_10_6__LoadIVIM, Stdy, Series, files, status
-
-  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status)
-
-;Define b-values & gradient vectors
-
-  d = Dcm -> d()
-
-  b = [$
-  	0.0010000086, $
-  	10.000086, $
-  	19.99908294, $
-  	30.00085926, $
-  	50.00168544, $
-  	80.0007135, $
-  	100.0008375, $
-  	199.9998135, $
-  	300.0027313, $
-  	600.0 ]
-
-  bvalues = [b,b,b]
-
-  gvector = fltarr(3,d[3]) ;Assumption - needs verification
-  FOR i=0,9   DO gvector[*,i] = [1,0,0]
-  FOR i=10,19 DO gvector[*,i] = [0,1,0]
-  FOR i=20,29 DO gvector[*,i] = [0,0,1]
-
-  Dcm -> set, obj_new('DATA_ELEMENT','0019'x,'100C'x,vr='FD',value=bvalues)
-  Dcm -> set, obj_new('DATA_ELEMENT','0019'x,'100E'x,vr='FD',value=gvector)
-
-end
-
-
-
-
-
-pro iBEAt_Import_Leeds_10_6__LoadDTI, Stdy, Series, files, status
-
-  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
-
-;Read b-values & gradient vectors
-
-  d = Dcm -> d() ;[x,y,z,t] dimensions
-  bvalues = fltarr(d[3])
-  gvector = fltarr(3,d[3])
-
-  for k=0L,d[3]-1 do begin ;Loop over slices
-
-	PMI__Message, status, 'Reading b-matrix ' + Series, k/(d[3]-1.0) ;status update for user
-
-    bvalues[k] = PMI__Dicom__Read(files_sort[0,k],'0019'x,'100C'x)
-  	gvector[*,k] = PMI__Dicom__Read(files_sort[0,k],'0019'x,'100E'x)
-
-  endfor
-
-  Dcm -> set, obj_new('DATA_ELEMENT','0019'x,'100C'x,vr='FD',value=bvalues)
-  Dcm -> set, obj_new('DATA_ELEMENT','0019'x,'100E'x,vr='FD',value=gvector)
-
-end
-
-
-
 FUNCTION iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI_NEW, Stdy, Series, files, status, SORTED_FILES=files_sort
 
   PMI__Message, status, 'Sorting ' + Series
@@ -195,47 +46,77 @@ end
 ; T1 mapping using MOLLI scheme
 pro iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI, Stdy, Series, files, status
 
-Dcm = iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI_NEW(Stdy, Series, files, status, SORTED_FILES=files_sort) ; ORIGINAL IMPORT: FROM STEVEN
+  Dcm = iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI_NEW(Stdy, Series, files, status, SORTED_FILES=files_sort)
 
- d = Dcm -> d() ;[x,y,z,t] dimensions; x,y, slice location:z, acquisition time:t
- TI = fltarr(d[2],d[3]); Original TI with size(5 col; 28 rows)
- Acq_time_TI = fltarr(d[2],d[3]) ; acquisition times: 5 columns; 28 rows
- slice_loc = fltarr(d[2],d[3])
+  d = Dcm -> d()
+  TI = fltarr(d[2],d[3]);
 
-
-  for k=0L,d[3]-1 do begin ;Loop over acquistion time d[3] = 28
+  for k=0L,d[3]-1 do begin ;Loop over acquistion time
 
      PMI__Message, status, 'Reading  TI times ' + Series, k/(d[3]-1.0) ;status update for user + WITH COUNTER
 
      for l= 0L,d[2]-1 do begin ; loop over slices: d[2] = 5
 
          TI[l,k] = PMI__Dicom__Read(files_sort[l,k],'0018'x,'0082'x) ; ; TI[col:5,rows:28]
-         Acq_time_TI[l,k] = PMI__Dicom__Read(files_sort[l,k], '0008'x,'0032'x) ; acquisition time k; slice l; [l,k] columns (5); rows (28)
-         slice_loc[l,k] = PMI__Dicom__Read(files_sort[l,k], '0020'x,'1041'x); slice locations
 
     endfor
   endfor
 
- PRINT, Acq_time_TI
- PRINT, TI
-
-
- Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0082'x,vr='FD',value=TI) ; set object with sorted TI
+   Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0082'x,vr='FD',value=TI) ; set object with sorted TI
 
 
 end
 
 
 
-; old: function to be removed
+;T2 Mapping
 
-pro iBEAt_Import_Leeds_10_6__LoadT1, Stdy, Series, files, status
+pro iBEAt_Import_Leeds_10_6__LoadT2, Stdy, Series, files, status
+
+    Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+
+    PrepTime = [0.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0] ; not available in dicom header for pmi
+
+    Dcm -> t, PrepTime
+
+    Dcm -> set, obj_new('DATA_ELEMENT','0020'x,'4000'x,vr='FD',value=PrepTime)
+
+
+end
+
+
+
+
+;T2* Mapping
+pro iBEAt_Import_Leeds_10_6__LoadT2star, Stdy, Series, files, status
 
   Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
 
-  RETURN ;temporary until below is fixed
+;Read echo times
 
-;Read TI-times
+  d = Dcm -> d() ;[x,y,z,t] dimensions
+  TE = fltarr(d[3])
+
+  for k=0L,d[3]-1 do begin ;Loop over time
+
+	PMI__Message, status, 'Reading echo times ' + Series, k/(d[3]-1.0) ;status update for user
+    TE[k] = PMI__Dicom__Read(files_sort[0,k],'0018'x,'0081'x) ; acquisition time k
+
+  endfor
+
+  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0081'x,vr='FD',value=TE)
+
+end
+
+
+
+
+; DTI: FA maps
+pro iBEAt_Import_Leeds_10_6__LoadDTI, Stdy, Series, files, status
+
+  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+
+;Read b-values & gradient vectors
 
   d = Dcm -> d() ;[x,y,z,t] dimensions
   bvalues = fltarr(d[3])
@@ -258,7 +139,69 @@ end
 
 
 
+; IVIM ADC slow and fast
+pro iBEAt_Import_Leeds_10_6__LoadIVIM, Stdy, Series, files, status
 
+  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status)
+
+;Define b-values & gradient vectors
+
+  d = Dcm -> d()
+
+  b = [$
+  	0.0010000086, $
+  	10.000086, $
+  	19.99908294, $
+  	30.00085926, $
+  	50.00168544, $
+  	80.0007135, $
+  	100.0008375, $
+  	199.9998135, $
+  	300.0027313, $
+  	600.0 ]
+
+  bvalues = [b,b,b]
+
+  gvector = fltarr(3,d[3]) ;Assumption - needs verification
+  FOR i=0,9   DO gvector[*,i] = [1,0,0]
+  FOR i=10,19 DO gvector[*,i] = [0,1,0]
+  FOR i=20,29 DO gvector[*,i] = [0,0,1]
+
+  Dcm -> set, obj_new('DATA_ELEMENT','0019'x,'100C'x,vr='FD',value=bvalues)
+  Dcm -> set, obj_new('DATA_ELEMENT','0019'x,'100E'x,vr='FD',value=gvector)
+
+end
+
+
+
+
+; MT
+pro iBEAt_Import_Leeds_10_6__LoadMT, Stdy, Series, files, status
+
+
+    Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status)
+
+end
+
+
+
+
+;DCE
+pro iBEAt_Import_Leeds_10_6__LoadDCE, Stdy, Series, files, status
+
+  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+
+  ;TR (checked in Siemens DICOM header, 12/11/2019)
+  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0080'x,vr='DS',value=2.2)
+
+  ;NumberOfPhaseEncodes acquired ;(checked in Siemens DICOM header, 12/11/2019)
+  Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0089'x,vr='IS',value=76)
+
+end
+
+
+
+; general
 FUNCTION iBEAt_Import_Leeds_10_6__SequenceName, file, number_of_images
 
   SeqName = PMI__Dicom__Read(file,'0018'x,'0024'x)
@@ -433,23 +376,22 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
 	iBEAt_Import_Leeds_10_6__UpdateSequenceNames, SeriesName
 
 ;Load series & save
-
     FOR i=0L, nSeries-1 DO BEGIN
       SeriesFiles = files[first[i]:first[i+1]-1]
       nr = series_number[first[i]]
   	  Name = '[' + strcompress(nr,/remove_all) +']_' + SeriesName[i]
   	  CASE SeriesName[i] OF
 
-  	    'IVIM_kidneys_cor-oblique_fb': 					iBEAt_Import_Leeds_10_6__LoadIVIM, 		Stdy, Name, SeriesFiles, status
-  	    'DTI_kidneys_cor-oblique_fb': 					iBEAt_Import_Leeds_10_6__LoadDTI, 		Stdy, Name, SeriesFiles, status
+
   	    'T1map_kidneys_cor-oblique_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI,Stdy, Name, SeriesFiles, status
+        'T2map_kidneys_cor-oblique_mbh_magnitude':		iBEAt_Import_Leeds_10_6__LoadT2,	 	Stdy, Name, SeriesFiles, status
   	    'T2star_map_pancreas_tra_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
   	    'T2star_map_kidneys_cor-oblique_mbh_magnitude': iBEAt_Import_Leeds_10_6__LoadT2star, 	Stdy, Name, SeriesFiles, status
+  	    'DTI_kidneys_cor-oblique_fb': 					iBEAt_Import_Leeds_10_6__LoadDTI, 		Stdy, Name, SeriesFiles, status
+  	    'IVIM_kidneys_cor-oblique_fb': 					iBEAt_Import_Leeds_10_6__LoadIVIM, 		Stdy, Name, SeriesFiles, status
   	    'DCE_kidneys_cor-oblique_fb':					iBEAt_Import_Leeds_10_6__LoadDCE,	 	Stdy, Name, SeriesFiles, status
-        'T2map_kidneys_cor-oblique_mbh_magnitude':		iBEAt_Import_Leeds_10_6__LoadT2,	 	Stdy, Name, SeriesFiles, status
-
-
-
+        'MT_OFF_kidneys_cor-oblique_bh':                iBEAt_Import_Leeds_10_6__LoadMT,        Stdy, Name, SeriesFiles, status
+        'MT_ON_kidneys_cor-oblique_bh':                 iBEAt_Import_Leeds_10_6__LoadMT,        Stdy, Name, SeriesFiles, status
 
 	    ELSE: Dcm = iBEAt_Import__LoadSequence(Stdy, Name, SeriesFiles, status)
 	  ENDCASE

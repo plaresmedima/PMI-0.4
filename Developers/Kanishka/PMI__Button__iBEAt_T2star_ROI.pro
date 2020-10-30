@@ -6,13 +6,13 @@ PRO PMI__Display__iBEAt_T2star_ROI::Fit
 	Self->GET, Model=Model, Time=Time, RoiCurve=Curve
 	Self->SET, Message='Fitting...', Sensitive=0
 
-            TE = self.series -> GETVALUE('0018'x,'0081'x)
+    TE = self.series -> GETVALUE('0018'x,'0081'x)
 
-            Time = {TE:TE}
+    Time = {TE:TE}
 
-            Signal= *Self.Curve[0]
+    Signal= *Self.Curve[0]
 
-		   	Curve = reform(Signal,[n_elements(TE),1])
+    Curve = reform(Signal,[n_elements(TE),1])
 
 
 	CASE Model OF

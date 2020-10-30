@@ -9,7 +9,7 @@ FUNCTION PMI__Button__Input__iBEAt_T2Map, top, series, aif, in, moco, Win
 
 	WHILE 1 DO BEGIN
 
-		in = PMI__Form(top, Title='iBEAt T2star analysis', [$
+		in = PMI__Form(top, Title='iBEAt T2Map analysis', [$
 		  ptr_new({Type:'DROPLIST',Tag:'ser', Label:'T2star series', Value:DynSeries, Select:in.ser}), $
 		  ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
 		  ptr_new({Type:'DROPLIST',Tag:'no_moco', Label:'Perform motion correction?', Value:['Yes','No'], Select:in.no_moco}) $
@@ -17,7 +17,7 @@ FUNCTION PMI__Button__Input__iBEAt_T2Map, top, series, aif, in, moco, Win
 		IF in.cancel THEN return, 0
 
 		IF NOT in.no_moco THEN BEGIN
-		  moco = PMI__Form(top, Title='iBEAt T2star MoCo settings', [$
+		  moco = PMI__Form(top, Title='iBEAt T2Map MoCo settings', [$
 		    ptr_new({Type:'VALUE'	,Tag:'res', Label:'Deformation Field Resolution (pixel sizes)', Value:moco.res}), $
 		    ptr_new({Type:'VALUE'	,Tag:'prec', Label:'Deformation Field Precision (pixel sizes)', Value:moco.prec}) $
 		    ])
@@ -76,15 +76,13 @@ pro PMI__Button__Event__iBEAt_T2Map, ev
 
 	PMI__Message, status, 'Calculating'
 
-	;Get b-values and gradient vectors
+	;Get T2 prep times
 
 	d = Series -> d()
-;	PrepTime -> set, obj_new('DATA_ELEMENT','0020'x,'4000'x,vr='FD',value=PrepTime)
     PrepTime = Series -> GETVALUE('0020'x,'4000'x)
-    PRINT, PrepTime
+
     independent = {PrepTime:PrepTime}
-    PRINT, independent
-   ; return
+
 
 	;Define new image series
 
@@ -118,8 +116,11 @@ pro PMI__Button__Event__iBEAt_T2Map, ev
     	if product(win[k].n) gt 0 then begin
 
 	        Source = TRANSPOSE(Source, [2,0,1])
-	        MOCOMO_2D, source, 'T2Map', Independent, $
-	          GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
+
+            IF NOT in.no_moco THEN MOCOMO, source, 'T2Map', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
+            Fit = MoCoModelFit(Source, 'T2Map' , Independent, PARAMETERS=Par)
+
+
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])
 
@@ -139,8 +140,6 @@ pro PMI__Button__Event__iBEAt_T2Map, ev
 
     PMI__Control, ev.top, /refresh
 end
-
-
 
 
 

@@ -125,10 +125,10 @@ pro PMI__Button__Event__iBEAt_T1mapMOLLI, ev
     	if product(win[k].n) gt 0 then begin
 
 	        Source = TRANSPOSE(Source, [2,0,1])
-;
 
-           IF NOT KEYWORD_SET(no_moco) THEN MOCOMO, source, 'T1mapMOLLI', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
+           IF NOT in.no_moco THEN MOCOMO, source, 'T1mapMOLLI', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
            Fit = MoCoModelFit(Source, 'T1mapMOLLI' , Independent, PARAMETERS=Par)
+
 
 
             Source = TRANSPOSE(Source, [1,2,0])
@@ -146,8 +146,6 @@ pro PMI__Button__Event__iBEAt_T1mapMOLLI, ev
 		T1final 	-> Write, Stdy->DataPath(),((Par[*,*,1]/Par[*,*,0])-1)*Par[*,*,2], k ; T1 estimated: final T1 map for each slice
 
 	endfor
-
-
 
 
 	print, 'calculation time (min): ', (systime(1)-start_time)/60.

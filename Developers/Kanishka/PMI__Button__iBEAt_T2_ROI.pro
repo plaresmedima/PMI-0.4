@@ -6,14 +6,13 @@ PRO PMI__Display__iBEAt_T2_ROI::Fit
 	Self->GET, Model=Model, Time=Time, RoiCurve=Curve
 	Self->SET, Message='Fitting...', Sensitive=0
 
-            ;PrepTime = self.series -> GETVALUE('0020'x,'4000'x) ; currently not working
-            PrepTime = [0.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0] ; TO CHANGE
+    PrepTime = self.series -> GETVALUE('0020'x,'4000'x)
 
-            Time = {PrepTime:PrepTime}
+    Time = {PrepTime:PrepTime}
 
-            Signal= *Self.Curve[0]
+    Signal= *Self.Curve[0]
 
-		   	Curve = reform(Signal,[n_elements(PrepTime),1])
+    Curve = reform(Signal,[n_elements(PrepTime),1])
 
 
 	CASE Model OF
@@ -21,7 +20,7 @@ PRO PMI__Display__iBEAt_T2_ROI::Fit
 
 		'T2Map':begin
 
-           P = [max(Signal), 70.0] ;[max signal in ROI, T2]
+           P = [max(Curve), 70.0] ;[max signal in ROI, T2]
 
 	    	Fit = MoCoModelFit(Curve, 'T2Map' , Time, PARAMETERS=P)
 
@@ -75,7 +74,7 @@ PRO PMI__Display__iBEAt_T2_ROI::Plot
 			, 	xtitle = 'T2 PrepTime (msec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, time, RoiCurve, color=6*16, psym=4, thick=2 ; error
+			oplot, time, RoiCurve, color=6*16, psym=4, thick=2
 			oplot, time, Fit, color=12*16, linestyle=0, thick=2
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5

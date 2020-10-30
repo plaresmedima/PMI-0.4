@@ -13,7 +13,7 @@ END
 
 FUNCTION MoCoModel_T2Map::PIXEL_PARAMETERS, S, FIT=F
 
-  parinfo = replicate({limited:[1B,0B], limits:[0D,1D]}, 2)
+   parinfo = replicate({limited:[1B,0B], limits:[0D,1D]}, 2)
    P = [max(S), 70.0]
    F = mpcurvefit(*self.PrepTime, S, 1+0E*S, P, $
     function_name='MoCoModel_T2Map__Model',/quiet, PARINFO=parinfo, /NODERIVATIVE)
