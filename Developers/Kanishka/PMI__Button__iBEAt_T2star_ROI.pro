@@ -117,6 +117,13 @@ FUNCTION PMI__Display__iBEAt_T2star_ROI::Event, ev
 		return, 0B
 	endif
 
+   	i = where(Uname Eq ['ROI'], cnt) ; added for different roi selection from dropdown menu list
+	If cnt eq 1 then begin
+		ptr_free, Self.Curve[i], Self.Curve[1], self.parameters
+		self->plot
+		return, 0B
+	endif
+
 
 	if Uname Eq 'FIT' then begin
 		widget_control, sensitive=widget_info(ev.id,/droplist_select) GT 1
@@ -422,7 +429,7 @@ pro PMI__Button__Control__iBEAt_T2star_ROI, id, v
 	if obj_valid(Stdy) then begin
 		Series = Stdy->Names(0,ns,DefDim=3)
 		Regions = Stdy->Names(1,nr)
-		sensitive = (ns gt 0) and (nr gt 1)
+		sensitive = (ns gt 0) and (nr gt 0) ; button sensitive after single roi selection
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
 end

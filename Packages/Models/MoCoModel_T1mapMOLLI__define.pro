@@ -24,7 +24,7 @@ FUNCTION MoCoModel_T1MapMOLLI::PIXEL_PARAMETERS, S, FIT=F
 
        F = mpcurvefit(* self.TI, S,  1+0E*S, P, function_name='MoCoModel_T1mapMOLLI__Model',/quiet, /NODERIVATIVE)
 
-   IF ARG_PRESENT(F) THEN F = self->PIXEL_FORWARD(P)
+       F = ABS(F)
 
   RETURN, P
 
@@ -38,7 +38,7 @@ END
 FUNCTION MoCoModel_T1mapMOLLI::PIXEL_FORWARD, P, S
 
   MoCoModel_T1mapMOLLI__Model, * self.TI, P, S
-  RETURN, S
+  RETURN, ABS(S)
 END
 
 

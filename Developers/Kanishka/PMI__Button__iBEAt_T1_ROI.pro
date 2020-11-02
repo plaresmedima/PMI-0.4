@@ -94,7 +94,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_T1_ROI::Event, ev
+FUNCTION PMI__Display__iBEAt_T1_ROI::Event, ev ; add event for roi name
 
 	Uname = widget_info(ev.id,/uname)
 
@@ -111,6 +111,13 @@ FUNCTION PMI__Display__iBEAt_T1_ROI::Event, ev
 		widget_control, ev.id, sensitive=0
 		widget_control, widget_info(self.id,find_by_uname='FITbttn'), sensitive=1
 		widget_control, widget_info(self.id,find_by_uname='FIT'), sensitive=0
+		self->plot
+		return, 0B
+	endif
+
+   	i = where(Uname Eq ['ROI'], cnt) ; added for different roi selection from dropdown menu list
+	If cnt eq 1 then begin
+		ptr_free, Self.Curve[i], Self.Curve[1], self.parameters
 		self->plot
 		return, 0B
 	endif
@@ -340,7 +347,7 @@ PRO PMI__Display__iBEAt_T1_ROI::Cleanup
 END
 
 
-FUNCTION PMI__Display__iBEAt_T1_ROI::Init, parent, CursorPos, xsize=xsize, ysize=ysize
+FUNCTION PMI__Display__iBEAt_T1_ROI::Init, parent, CursorPos, xsize=xsize, ysize=ysize ; DEFINE DISPLAY: CHANGE ROI
 
 	if n_elements(CursorPos) ne 0 then self.CursorPos = CursorPos
 
@@ -354,9 +361,9 @@ FUNCTION PMI__Display__iBEAt_T1_ROI::Init, parent, CursorPos, xsize=xsize, ysize
 
 		v = ['ROI']
 		for i=0,0 do begin
-			Base = widget_base(Controls,/row,/frame,/base_align_center)
-			id = widget_button(Base, xsize=25, ysize=19, value=v[i], uname=v[i]+'bttn')
-  			id = widget_droplist(Base,/dynamic_resize, value=Stdy->Names(1), uname=v[i])
+			Base = widget_base(Controls,/row,/frame,/base_align_center) ; frame with no of buttons
+			id = widget_button(Base, xsize=25, ysize=19, value=v[i], uname=v[i]+'bttn'); button; username: ROIbutton
+  			id = widget_droplist(Base,/dynamic_resize, value=Stdy->Names(1), uname=v[i]);username: ROI
   		endfor
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
@@ -418,9 +425,9 @@ pro PMI__Button__Control__iBEAt_T1_ROI, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
-		Series = Stdy->Names(0,ns,DefDim=3)
-		Regions = Stdy->Names(1,nr)
-		sensitive = (ns gt 0) and (nr gt 1)
+		Series = Stdy->Names(0,ns,DefDim=3) ; ns : no of series with time dim
+		Regions = Stdy->Names(1,nr) ;nr number of regions
+		sensitive = (ns gt 0) and (nr gt 0)
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
 end
