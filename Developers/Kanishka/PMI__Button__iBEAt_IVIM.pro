@@ -131,8 +131,14 @@ pro PMI__Button__Event__iBEAt_IVIM, ev
     	if product(win[k].n) gt 0 then begin
 
 	        Source = TRANSPOSE(Source, [2,0,1])
-	        MOCOMO_2D, source, 'IVIM', Independent, $
-	          GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
+
+            ;OLD
+	       ; MOCOMO_2D, source, 'IVIM', Independent, $
+	      ;    GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k], PARAMETERS=Par, NO_MOCO=in.no_moco
+
+           IF NOT in.no_moco THEN MOCOMO, source, 'IVIM', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
+           Fit = MoCoModelFit(Source, 'IVIM' , Independent, PARAMETERS=Par)
+
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])
             IVIM_Parameters, Par, Map

@@ -129,8 +129,6 @@ pro PMI__Button__Event__iBEAt_T1mapMOLLI, ev
            IF NOT in.no_moco THEN MOCOMO, source, 'T1mapMOLLI', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
            Fit = MoCoModelFit(Source, 'T1mapMOLLI' , Independent, PARAMETERS=Par)
 
-
-
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])
 

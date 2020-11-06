@@ -10,7 +10,7 @@ FUNCTION PMI__Button__Input__iBEAt_T2Map, top, series, aif, in, moco, Win
 	WHILE 1 DO BEGIN
 
 		in = PMI__Form(top, Title='iBEAt T2Map analysis', [$
-		  ptr_new({Type:'DROPLIST',Tag:'ser', Label:'T2star series', Value:DynSeries, Select:in.ser}), $
+		  ptr_new({Type:'DROPLIST',Tag:'ser', Label:'T2Map series', Value:DynSeries, Select:in.ser}), $
 		  ptr_new({Type:'DROPLIST',Tag:'roi', Label:'Region of Interest', Value:['<ENTIRE FOV>',Stdy->names(1)], Select:in.roi}), $
 		  ptr_new({Type:'DROPLIST',Tag:'no_moco', Label:'Perform motion correction?', Value:['Yes','No'], Select:in.no_moco}) $
 		  ])
