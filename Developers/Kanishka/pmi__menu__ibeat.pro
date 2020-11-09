@@ -42,7 +42,7 @@ pro PMI__Menu__iBeat, parent
     Sid = PMI__Button__iBEAt_T2_ROI(id, value='T2 ROI analysis')
     Sid = PMI__Button__iBEAt_T2star_ROI(id, value='T2* ROI analysis')
     Sid = PMI__Button__iBEAt_DTI_ROI(id, value='DTI ROI analysis')
-    Sid = PMI__Button__iBEAt_Dummy(id, value='IVIM ROI analysis')
+    Sid = PMI__Button__iBEAt_IVIM_ROI(id, value='IVIM ROI analysis')
     Sid = PMI__Button__iBEAt_DCE_ROI(id, value='DCE ROI analysis')
     Sid = PMI__Button__iBEAt_Dummy(id, value='MTR ROI analysis')
     Sid = PMI__Button__iBEAt_Dummy(id, value='ASL ROI analysis')
