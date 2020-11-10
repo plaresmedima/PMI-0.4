@@ -28,7 +28,7 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Fit
 
                Fit = MoCoModelFit(Curve, 'IVIM' , Time, PARAMETERS=P)
 
-              ;  @Steven
+              ;  @Steven: ivim param
                MapIVIM[0,0] = P[0,0] + P[4,0] ; S0_IVIM_Map = S0slow + S0fast
 
                ADC1 = TOTAL(P[1:3,0],1)/3 ; tensorslow
@@ -98,13 +98,16 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Plot
 			, 	background=255, color=0 $
 			, 	xtitle = 'IVIM b-values (s/mm2)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, b, Y, color=6*16, linestyle=0, thick=2
+
+			oplot, b[0:9], Y[0:9], color=6*16, linestyle=0, thick=2 ; plot 1st dir
+			oplot, b[10:19], Y[10:19], color=6*10, linestyle=0, thick=2 ; 2nd dir
+			oplot, b[20:29], Y[20:29], color=12*16, linestyle=0, thick=2 ; 3rd dir
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
 
 		'FIT':BEGIN
-			Self -> GET, RoiCurve=RoiCurve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
+			Self -> GET, RoiCurve=RoiCurve, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
@@ -114,8 +117,12 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Plot
 			, 	xtitle = 'IVIM b-values (s/mm2)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, b, RoiCurve, color=6*16, psym=4, thick=2
-			oplot, b, Fit, color=12*16, linestyle=0, thick=2
+			oplot, b[0:9], RoiCurve[0:9], color=6*16, psym=4, thick=2 ; plot 1st dir roi
+			oplot, b[10:19], RoiCurve[10:19], color=6*10, psym=4, thick=2 ; 2nd dir roi
+			oplot, b[20:29], RoiCurve[20:29], color=12*16, psym=4, thick=2 ; 3rd dir roi
+			oplot, b[0:9], Fit[0:9], color=6*16, linestyle=0, thick=2 ; plot 1st dir fit
+			oplot, b[10:19], Fit[10:19], color=6*10, linestyle=0, thick=2 ; 2nd dir fit
+			oplot, b[20:29], Fit[20:29], color=12*16, linestyle=0, thick=2 ;3rd dir fit
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
 			xyouts, x0, top-3*dy, 'IVIM Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
@@ -156,7 +163,7 @@ FUNCTION PMI__Display__iBEAt_IVIM_ROI::Event, ev
 	endif
 
 
-    i = where(Uname Eq ['ROI'], cnt) ; added for different roi selection from dropdown menu list
+    i = where(Uname Eq ['ROI'], cnt) ; roi selection from dropdown menu list
 	If cnt eq 1 then begin
 		ptr_free, Self.Curve[i], Self.Curve[1], self.parameters
 		self->plot

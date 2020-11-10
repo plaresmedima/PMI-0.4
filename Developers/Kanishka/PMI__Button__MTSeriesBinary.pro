@@ -17,27 +17,23 @@
 
 function PMI__Button__Input__MTSeriesBinary, top, Stdy, Series0, Series1, Operation
 
+    ; @KS: modified for iBEAt study MTR
 	;"Operation" is the type of binary operation required (+,-,etc..)
 	;"Series0" and "Series1" are the series in which the operation is performed
 	;"Series0" and "Series1" must have the same dimensions
 
-	List = $
-	[ '([MT_OFF - MT_ON] / MT_OFF)*100' ]
-
-	Op = ['[-]']
 
 	sel = [Stdy->sel(0),Stdy->sel(0),0]
 
 	while 1 do begin
 
-		v = PMI__Form(top, Title='Binary operation on series', $
+		v = PMI__Form(top, Title='MTR: no moco', $
 			[ ptr_new({Type:'DROPLIST',Tag:'s0',Label:'MT OFF Series', Value:Stdy -> names(0), Select:sel[0]}) $
 			, ptr_new({Type:'DROPLIST',Tag:'s1',Label:'MT ON Series', Value:Stdy -> names(0), Select:sel[1]}) $
-			, ptr_new({Type:'DROPLIST',Tag:'op',Label:'MTR', Value:List}) ] $
-			) & if v.cancel then return, 0
+			]) & if v.cancel then return, 0
 
 		sel = [v.s0,v.s1]
-		Operation = Op[v.op]
+		Operation =  ['[-]']
 
 		Series0 = Stdy -> obj(0,sel[0])
 		Series1 = Stdy -> obj(0,sel[1])
@@ -61,7 +57,7 @@ pro PMI__Button__Event__MTSeriesBinary, ev
 	if not PMI__Button__Input__MTSeriesBinary(ev.top,Stdy,Series0,Series1,Operation) then return
 
 	Bin = Stdy -> New('SERIES' $
-	,	Name = '['+Series0->name() +']'+ operation + '['+Series1->name() +']' $
+	,	Name ='MTR (no moco): ' + '['+Series0->name() +']'+ operation + '['+Series1->name() +']' $
 	, 	domain = Series0->dom() )
 
 	d0 = Series0 -> d()
@@ -75,7 +71,7 @@ pro PMI__Button__Event__MTSeriesBinary, ev
 		im1 = Series1 -> Read(Stdy->DataPath(),k)
 
 		case operation of
-			'[-]':im0 = ((im0 - im1)/im0)*100
+			'[-]':im0 = ((im0 - im1)/im0)*100 ; ((MT_OFF-MT_ON)/MT_OFF)*100
 		endcase
 
 		Bin -> Write, Stdy->DataPath(), remove_inf(im0), k
@@ -97,7 +93,7 @@ end
 
 function PMI__Button__MTSeriesBinary, parent, value=value, separator=separator
 
-	if n_elements(value) eq 0 then value ='MT Series Combine [MTR: no moco]'
+	if n_elements(value) eq 0 then value ='MTR: no moco'
 
   	id = widget_button(parent $
   	, 	separator=separator $

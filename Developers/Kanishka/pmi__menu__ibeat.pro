@@ -35,7 +35,7 @@ pro PMI__Menu__iBeat, parent
     Sid = PMI__Button__iBEAt_DTI(id, value='DTI mapping')
     Sid = PMI__Button__iBEAt_IVIM(id, value='IVIM mapping')
     Sid = PMI__Button__iBEAt_DCE(id, value='DCE mapping')
-    Sid = PMI__Button__MTSeriesBinary(id, value='MT Series Combine [MTR: no moco]')
+    Sid = PMI__Button__MTSeriesBinary(id, value='MTR: no moco')
    ; Sid = PMI__Button__iBEAt_MTR(id, value='MTR mapping')
     Sid = PMI__Button__iBEAt_Dummy(id, value='ASL mapping')
 
