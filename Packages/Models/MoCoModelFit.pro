@@ -4,5 +4,7 @@ FUNCTION MoCoModelFit, Source, ModelName, Independent, PARAMETERS=Par
 	Model -> PARAMETERS, source, Par
 	Model -> FORWARD, source, Par, Fit
 
+	OBJ_DESTROY, Model
+
 	RETURN, Fit
 END
