@@ -23,6 +23,19 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Fit
 
 	CASE Model OF
 
+        'IVIM monoexponential':begin
+
+
+                P = [max(Curve), 0.0025] ;[max signal in ROI, ADC]
+
+	            Fit = MoCoModelFit(Curve, 'IVIM_monoexponential' , Time, PARAMETERS=P)
+
+             	Parameters = $
+	              	[{Name:'S0'		,Units:'a.u.'	        	,Value:P[0,0]   	,Nr: 0} $
+	            	,{Name:'ADC'		,Units:'[ADC* 10-3 mm2/s]'	,Value:P[1,0]*1000	,Nr: 1}]
+
+          end
+
 
 		'IVIM':begin
 
@@ -66,6 +79,8 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Fit
 
 
             end
+
+
 
 
 	endcase
@@ -117,12 +132,13 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Plot
 			, 	xtitle = 'IVIM b-values (s/mm2)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, b[0:9], RoiCurve[0:9], color=6*16, psym=4, thick=2 ; plot 1st dir roi
-			oplot, b[10:19], RoiCurve[10:19], color=6*10, psym=4, thick=2 ; 2nd dir roi
-			oplot, b[20:29], RoiCurve[20:29], color=12*16, psym=4, thick=2 ; 3rd dir roi
-			oplot, b[0:9], Fit[0:9], color=6*16, linestyle=0, thick=2 ; plot 1st dir fit
-			oplot, b[10:19], Fit[10:19], color=6*10, linestyle=0, thick=2 ; 2nd dir fit
-			oplot, b[20:29], Fit[20:29], color=12*16, linestyle=0, thick=2 ;3rd dir fit
+			oplot, b[0:9], RoiCurve[0:9], color=6*16, psym=4, thick=2 ; plot 1st dir roi ROI CURVE
+			oplot, b[10:19], RoiCurve[10:19], color=6*10, psym=4, thick=2 ; 2nd dir roi  ROI CURVE
+			oplot, b[20:29], RoiCurve[20:29], color=12*16, psym=4, thick=2 ; 3rd dir roi  ROI CURVE
+			oplot, b[0:9], Fit[0:9], color=6*16, linestyle=0, thick=2 ; plot 1st dir fit FIT 1 ; for monoexp - all 3 fits overlap so seens as 1 only
+			oplot, b[10:19], Fit[10:19], color=6*10, linestyle=0, thick=2 ; 2nd dir fit  FIT 2
+			oplot, b[20:29], Fit[20:29], color=12*16, linestyle=0, thick=2 ;3rd dir fit  FIT 3
+
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
 			xyouts, x0, top-3*dy, 'IVIM Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
@@ -420,7 +436,7 @@ FUNCTION PMI__Display__iBEAt_IVIM_ROI::Init, parent, CursorPos, xsize=xsize, ysi
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['IVIM'])
+			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['IVIM monoexponential','IVIM'])
   			widget_control, id, set_droplist_select = 5
 
 		v = ['Export','Export As','Close']
@@ -434,7 +450,10 @@ END
 
 PRO PMI__Display__iBEAt_IVIM_ROI__Define
 
+   MoCoModel_IVIM_monoexponential__DEFINE
+
 	MoCoModel_IVIM__DEFINE ; modelfit
+
 
 	Struct = {PMI__Display__iBEAt_IVIM_ROI 	$
 	,	id: 0L 	$
@@ -482,7 +501,7 @@ end
 
 function PMI__Button__iBEAt_IVIM_ROI, parent,value=value, separator=separator
 
-	MoCoModel_IVIM__DEFINE
+    PMI__Display__iBEAt_IVIM_ROI__Define
 
 	if n_elements(value) eq 0 then value = 'Renal IVIM MAP based model (ROI)'
 

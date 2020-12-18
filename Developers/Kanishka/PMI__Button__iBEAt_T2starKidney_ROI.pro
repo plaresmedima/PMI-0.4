@@ -1,78 +1,26 @@
+;
 
-; the vectors are normalised in dicom and not in vector files
-PRO PMI__Display__iBEAt_DTI_ROI::Fit
+
+PRO PMI__Display__iBEAt_T2starKidney_ROI::Fit
 
 	Self->GET, Model=Model, Time=Time, RoiCurve=Curve
 	Self->SET, Message='Fitting...', Sensitive=0
 
-    d = self.series -> d()
-    b = self.series -> GETVALUE('0019'x,'100C'x) ; 146
-  ;  PRINT, b
-    g = self.series -> GETVALUE('0019'x,'100E'x) ; 3 col; 146 rows
-    ;PRINT, g ;
+    TE = self.series -> GETVALUE('0018'x,'0081'x)
 
-    Par = FLTARR(d[0],d[1],7) ; original par dim
-  	Map = FLTARR(d[0],d[1],5) ; original map dim
+    Time = {TE:TE}
 
-    P = reform(Par[0,0,*],[n_elements(Par[0,0,*]),1]) ; reform for pixelwise fitting instead of whole image: 7 col, 1 row
-    MapDTI = reform(Map[0,0,*], [n_elements(Map[0,0,*]),1]) ; reform for pixelwise fitting instead of whole image; 5 col; 1 row
+    Signal= *Self.Curve[0]
 
-    Time = {b:b, g:reform(g,[3,d[3]])}; g= 3 cols and 146 rows: d[3] ; Time = struct with b=100,600 total 146 times and g = (x,y,z) with 146 rows
+    Curve = reform(Signal,[n_elements(TE),1])
 
-  ; KS b, g distribution
-  ; 146 directions: time points here (61 dir (b=600)+ 12 dir (b=100) X2 (NSA) =146 total)
-  ; b combinations => 11dir x (100*1,600*5) + 1dir x (100*1, 600*6) = 73 (b=100 in 12 dir; b=600 in 61 dir) x2NSA = 146
+     P = [max(Curve), 60.0] ;[max signal in ROI, T2*]
 
-    Signal= *Self.Curve[0] ; 1 row and 146 columns i.e. 1 pixel with 146 signal values per dir/b val
-
-    Curve = reform(Signal,[n_elements(b),1]) ; array: 146 cols and 1 row
-
-    Fit = MoCoModelFit(Curve, 'DiffusionTensorImaging' , Time, PARAMETERS=P) ; fit requires struct for 'Time' fixed parameter
-
-
-    ; DTI params @ Steven: TBC Tensor elements 'dti param' file - tensor elements there incorrect
-    Tensor = FLTARR(3,3)
-
-    Tensor[0,0] = P[1,0]
-    Tensor[1,1] = P[2,0]
-    Tensor[2,2] = P[3,0]
-    Tensor[0,1] = P[4,0]
-    Tensor[1,0] = P[4,0]
-    Tensor[1,2] = P[5,0]
-    Tensor[2,1] = P[5,0]
-    Tensor[2,0] = P[6,0]
-    Tensor[0,2] = P[6,0]
-
-
-    TRIRED, Tensor, V, E ; array; eigenvalues; eigenvectors
-    TRIQL, V, E, Tensor ;Eigenvectors in the rows of 'Tensor'
-
-    V = V[REVERSE(SORT(V))]
-
-    Trace = TOTAL(V) ; sum of eigenvalues
-
-    MapDTI[0,0] = Trace/3  ; mean diffusivity or ADC
-    MapDTI[1,0] =  SQRT(3*TOTAL((V-MapDTI[0,0])^2)) / SQRT(2*TOTAL(V^2))
-
-	MapDTI[2,0] = (V[0]-V[1])/Trace
-	MapDTI[3,0] = (V[1]-V[2])*2/Trace
-	MapDTI[4,0] = V[2]*3/Trace
-
+	 Fit = MoCoModelFit(Curve, 'T2starMapKidney' , Time, PARAMETERS=P)
 
 	Parameters = $
-				[{Name:'S0'		,Units:'a.u.',Value:EXP(P[0,0])	,Nr: 0} $ ; EXP(S0)
-				,{Name:'TensorDiag'		,Units:'[Dxx, * 10-3 mm2/s]'	,Value:1000*P[1,0]	,Nr: 1} $ ; 1st col; 0 row
-				,{Name:'TensorDiag'		,Units:'[Dyy, * 10-3 mm2/s]'	,Value:1000*P[2,0]	,Nr: 2} $
-				,{Name:'TensorDiag'		,Units:'[Dzz, * 10-3 mm2/s]'	,Value:1000*P[3,0]	,Nr: 3} $
-				,{Name:'TensorOffDiag'	,Units:'[Dxy, * 10-3 mm2/s]'	,Value:1000*P[4,0]	,Nr: 4} $
-				,{Name:'TensorOffDiag'	,Units:'[Dyz, * 10-3 mm2/s]'	,Value:1000*P[5,0]	,Nr: 5} $
-				,{Name:'TensorOffDiag'	,Units:'[Dzx, * 10-3 mm2/s]'	,Value:1000*P[6,0]	,Nr: 6} $
-                ,{Name:'ADC'			,Units:'[ADC  * 10-3 mm2/s] '	,Value:1000*MapDTI[0,0]	,Nr: 7} $
-				,{Name:'FA'			    ,Units:' '	       	            ,Value:MapDTI[1,0]	,Nr: 8} $
-				,{Name:'Linear Anisotropy'			    ,Units:''		                ,Value:MapDTI[2,0]	,Nr: 9} $
-				,{Name:'Planar Anisotropy'			    ,Units:''		                ,Value:MapDTI[3,0]	,Nr: 10} $
-				,{Name:'Spherical Anisotropy'			 ,Units: ''		                ,Value:MapDTI[4,0]	,Nr: 11} ]
-
+		[{Name:'S0'		,Units:'a.u.'		,Value:P[0,0]	,Nr: 0} $
+		,{Name:'T2* Kidney'		,Units:'ms'	,Value:P[1,0]	,Nr: 1}]
 
 	self.Curve[1] = ptr_new(Fit)
 	self.Parameters = ptr_new(Parameters)
@@ -81,49 +29,45 @@ END
 
 
 
-PRO PMI__Display__iBEAt_DTI_ROI::Plot
+
+PRO PMI__Display__iBEAt_T2starKidney_ROI::Plot
 
 	Self->GET, OnDisplay=OnDisplay
-
-	b = self.series -> GETVALUE('0019'x,'100C'x)
-    g = self.series -> GETVALUE('0019'x,'100E'x)
-    d = self.series -> d()
 
 	top=0.9 & dy=0.04 & x0=0.525 & charsize=1.0 & charthick=1.0
 
 	CASE OnDisplay OF
 
 		'ROI':begin
-			Self -> GET, RoiCurve=Y, RoiName=RoiName, Units=Units
+			Self -> GET, Time=Time, RoiCurve=Y, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[min(b),max(b)], [min(Y),max(Y)] $
+			, 	[0,max(time)], [min(Y),max(Y)] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'b-value (s/mm2)', ytitle=Units $
+			, 	xtitle = 'TE (sec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-
-            oplot, b, Y, color=6*16, linestyle=0, thick=2 ; plot bval versus ROI
+			oplot, time, Y, color=6*16, linestyle=0, thick=2
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
 
-          'FIT':BEGIN
-			Self -> GET, RoiCurve=RoiCurve, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
+		'FIT':BEGIN
+			Self -> GET, RoiCurve=RoiCurve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[min(b),max(b)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
+			, 	[0,max(time)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'b-values (s/mm2)', ytitle=Units $
+			, 	xtitle = 'TE (sec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, b, RoiCurve, color=6*16, psym=4, thick=2 ; ROI curve with b values
-			oplot, b, Fit, color=12*16, linestyle=0, thick=2 ;fit against b vals
+			oplot, time, RoiCurve, color=6*16, psym=4, thick=2
+			oplot, time, Fit, color=12*16, linestyle=0, thick=2
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
-			xyouts, x0, top-3*dy, 'DTI Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
+			xyouts, x0, top-3*dy, 'T2* Kidney Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
 
 			P = *self.Parameters
 
@@ -132,33 +76,6 @@ PRO PMI__Display__iBEAt_DTI_ROI::Plot
 				, P[i].Name + ' = ' + PMI__Round(P[i].Value,3,/string) + ' ' + P[i].Units $
 				, color=0, /normal, charsize=charsize, charthick=charthick
 			END
-
-            ;to do:
-            'FIT2':BEGIN
-			Self -> GET, RoiCurve=RoiCurve, Time = {b:b, g:reform(g,[3,d[3]])}, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
-			Self -> SET, /Erase
-
-
- 			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[min(g),max(g)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
-			, 	/xstyle, /ystyle $
-			, 	background=255, color=0 $
-			, 	xtitle = 'Time', ytitle=Units $
-			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-
-            oplot, g, RoiCurve, color=6*2, psym=4, thick=2  ;
-
-			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
-			xyouts, x0, top-3*dy, 'DTI Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
-
-			P = *self.Parameters
-
-			for i=0L,n_elements(P)-1 do xyouts $
-				, x0, top-dy*(5+P[i].Nr) $
-				, P[i].Name + ' = ' + PMI__Round(P[i].Value,3,/string) + ' ' + P[i].Units $
-				, color=0, /normal, charsize=charsize, charthick=charthick
-			END
-
 	ENDCASE
 
 END
@@ -166,14 +83,13 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_DTI_ROI::Event, ev ; add event for roi name
+FUNCTION PMI__Display__iBEAt_T2starKidney_ROI::Event, ev
 
 	Uname = widget_info(ev.id,/uname)
 
 	if Uname Eq 'FITbttn' then begin
 		widget_control, ev.id, sensitive=0
 		widget_control, widget_info(self.id,find_by_uname='ROIbttn'), sensitive=1
-		widget_control, widget_info(self.id,find_by_uname='FIT2bttn'), sensitive=1 ; FIT2 not sensitive
 		list = widget_info(self.id,find_by_uname='FIT')
 		widget_control, list, sensitive=1
 		self->plot
@@ -184,23 +100,12 @@ FUNCTION PMI__Display__iBEAt_DTI_ROI::Event, ev ; add event for roi name
 		widget_control, ev.id, sensitive=0
 		widget_control, widget_info(self.id,find_by_uname='FITbttn'), sensitive=1
 		widget_control, widget_info(self.id,find_by_uname='FIT'), sensitive=0
-		widget_control, widget_info(self.id,find_by_uname='FIT2bttn'), sensitive=1
 		self->plot
 		return, 0B
 	endif
 
-    if Uname Eq 'FIT2bttn' then begin
-		widget_control, ev.id, sensitive=0
-		widget_control, widget_info(self.id,find_by_uname='ROIbttn'), sensitive=1
-		widget_control, widget_info(self.id,find_by_uname='FITbttn'), sensitive=1
-		widget_control, widget_info(self.id,find_by_uname='FIT'), sensitive=0
-		list = widget_info(self.id,find_by_uname='FIT2')
-		widget_control, list, sensitive=1
-		self->plot
-		return, 0B
-	endif
 
-   	i = where(Uname Eq ['ROI'], cnt) ;
+    i = where(Uname Eq ['ROI'], cnt) ; added for different roi selection from dropdown menu list
 	If cnt eq 1 then begin
 		ptr_free, Self.Curve[i], Self.Curve[1], self.parameters
 		self->plot
@@ -215,21 +120,13 @@ FUNCTION PMI__Display__iBEAt_DTI_ROI::Event, ev ; add event for roi name
 		return, 0B
 	endif
 
-   if Uname Eq 'FIT2' then begin
-		widget_control, sensitive=widget_info(ev.id,/droplist_select) GT 1
-		ptr_free, Self.Curve[1], self.parameters
-		self -> Plot
-		return, 0B
-	endif
-
-
 
 	i = where(Uname Eq ['Export','Export As'], cnt)
 	if cnt eq 1 then begin
 		Self->GET, Time=Time, RoiCurve=RoiCurve, Fit=Fit, Model=Model, Roiname=Roiname
 		if Uname eq 'Export' then begin
 			PMI__Info, ev.top, Stdy=Stdy
-			Path = Stdy->Datapath() + 'DTI Kidney Models (ROI)'
+			Path = Stdy->Datapath() + 'T2* Kidney Model (ROI)'
 			file_mkdir, Path
 			File = Path + '\' + Roiname + '__SI_' + Model
 		endif else begin
@@ -240,7 +137,7 @@ FUNCTION PMI__Display__iBEAt_DTI_ROI::Event, ev ; add event for roi name
 		Write_tiff, File + '.tif', reverse(tvrd(/true),3)
 
 		Export = strarr(3,1+n_elements(time))
-		Export[*,0] = ['b-val (s/mm2)','Curve', 'Fit'] ; to change for fit 2
+		Export[*,0] = ['Time (s)','Curve', 'Fit']
 		Export[0,1:*] = strcompress(Time,/remove_all)
 		Export[1,1:*] = strcompress(RoiCurve,/remove_all)
 		Export[2,1:*] = strcompress(Fit,/remove_all)
@@ -263,7 +160,7 @@ FUNCTION PMI__Display__iBEAt_DTI_ROI::Event, ev ; add event for roi name
 	return, 0B
 END
 
-FUNCTION PMI__Display__Event__iBEAt_DTI_ROI, ev
+FUNCTION PMI__Display__Event__iBEAt_T2starKidney_ROI, ev
 
 	widget_control, ev.handler, get_uvalue=self
 	return, Self -> Event(ev)
@@ -271,7 +168,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_DTI_ROI::Conc, Region ;
+FUNCTION PMI__Display__iBEAt_T2starKidney_ROI::Conc, Region ;
 
 	case Region of
 		'ROI':Signal=*Self.Curve[0] ; signal
@@ -283,7 +180,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_DTI_ROI::GetCurve, Region
+FUNCTION PMI__Display__iBEAt_T2starKidney_ROI::GetCurve, Region
 
 	Self -> GET, Time=Time, Stdy=Stdy, Region=Region
 	Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
@@ -293,14 +190,14 @@ FUNCTION PMI__Display__iBEAt_DTI_ROI::GetCurve, Region
 	return, Signal
 END
 
-FUNCTION PMI__Display__iBEAt_DTI_ROI::GetName, Region
+FUNCTION PMI__Display__iBEAt_T2starKidney_ROI::GetName, Region
 
 	self->GET, Region=Region
 	return, Region -> Name()
 END
 
 
-PRO PMI__Display__iBEAt_DTI_ROI::GET, $
+PRO PMI__Display__iBEAt_T2starKidney_ROI::GET, $
  	CursorPos = CursorPos, $
 	Model=Model, $
 	Time=Time, Fit=Fit, Units=Units, SignalModel=SignalModel, $
@@ -314,7 +211,6 @@ PRO PMI__Display__iBEAt_DTI_ROI::GET, $
 
 	if arg_present(Model) then begin
 		list = widget_info(self.id,find_by_uname='FIT')
-		list = widget_info(self.id,find_by_uname='FIT2')
 		widget_control, list, Get_Value=Models
 		Model = Models[widget_info(list,/droplist_select)]
 	endif
@@ -339,7 +235,7 @@ PRO PMI__Display__iBEAt_DTI_ROI::GET, $
 	if arg_present(units) then begin
 		Self -> GET, SignalModel=tmp
 		case tmp of
-		0:units = 'DTI Signal (a.u.)'
+		0:units = 'T2* Kidney Signal (a.u.)'
 		endcase
 	endif
 
@@ -350,8 +246,8 @@ PRO PMI__Display__iBEAt_DTI_ROI::GET, $
 
 	if arg_present(OnDisplay) then begin
 		OnDisplay = ''
-		List = ['ROI','FIT', 'FIT2']
-		for i=0L,2 do $
+		List = ['ROI','FIT']
+		for i=0L,1 do $
 		if 0 eq widget_info(widget_info(self.id,find_by_uname=List[i]+'bttn'),/sensitive) then OnDisplay=List[i]
 	endif
 
@@ -372,7 +268,7 @@ PRO PMI__Display__iBEAt_DTI_ROI::GET, $
 	endif
 END
 
-PRO PMI__Display__iBEAt_DTI_ROI::SET, $
+PRO PMI__Display__iBEAt_T2starKidney_ROI::SET, $
 	PMI__REFRESH=pmi__refresh, PMI__RESIZE=pmi_resize, $
 	Refresh=Refresh, Erase=Erase, $
 	Message=Message, Sensitive=Sensitive, $
@@ -396,7 +292,7 @@ PRO PMI__Display__iBEAt_DTI_ROI::SET, $
 	endif
 	if n_elements(Sensitive) ne 0 then widget_control, self.id, sensitive=sensitive
 	if n_elements(Set_droplist_select) ne 0 then begin
-		List = ['ROI'] ; ONLY REQUIRED FOR ROI BASED WIDGETS ROI, AIF. NOT FOR FIT
+		List = ['ROI']
 		for i=0,0 do widget_control, $
 			widget_info(self.id,find_by_uname=List[i]), $
 			Set_droplist_select=Set_droplist_select[i]
@@ -417,8 +313,8 @@ PRO PMI__Display__iBEAt_DTI_ROI::SET, $
 
 	if n_elements(OnDisplay) ne 0 then begin
 
-		List = ['ROI','FIT', 'FIT2']
-		for i=0,2 do $
+		List = ['ROI','FIT']
+		for i=0,1 do $
 		widget_control, widget_info(self.id,find_by_uname=List[i]+'bttn'), Sensitive=List[i] ne OnDisplay
  		widget_control, widget_info(self.id,find_by_uname='Export')		, Sensitive=OnDisplay eq 'FIT'
 		widget_control, widget_info(self.id,find_by_uname='Export As')	, Sensitive=OnDisplay eq 'FIT'
@@ -434,14 +330,14 @@ END
 
 
 
-PRO PMI__Display__iBEAt_DTI_ROI::Cleanup
+PRO PMI__Display__iBEAt_T2starKidney_ROI::Cleanup
 	widget_control, self.id, /destroy
 	ptr_free, Self.Curve, self.Parameters
 	loadct, 0
 END
 
 
-FUNCTION PMI__Display__iBEAt_DTI_ROI::Init, parent, CursorPos, xsize=xsize, ysize=ysize ; DEFINE DISPLAY: CHANGE ROI
+FUNCTION PMI__Display__iBEAt_T2starKidney_ROI::Init, parent, CursorPos, xsize=xsize, ysize=ysize
 
 	if n_elements(CursorPos) ne 0 then self.CursorPos = CursorPos
 
@@ -449,30 +345,25 @@ FUNCTION PMI__Display__iBEAt_DTI_ROI::Init, parent, CursorPos, xsize=xsize, ysiz
 
 	PMI__Info, tlb(parent), Stdy=Stdy
 
-	self.id = widget_base(parent,/column,map=0,event_func='PMI__Display__Event__iBEAt_DTI_ROI')
+	self.id = widget_base(parent,/column,map=0,event_func='PMI__Display__Event__iBEAt_T2starKidney_ROI')
 	Controls = widget_base(self.id,/row,ysize=40,/base_align_center,space=5)
 	self.DrawId	= widget_draw(self.id,/retain)
 
 		v = ['ROI']
 		for i=0,0 do begin
-			Base = widget_base(Controls,/row,/frame,/base_align_center) ; frame with no of buttons
-			id = widget_button(Base, xsize=25, ysize=19, value=v[i], uname=v[i]+'bttn'); button; username: ROIbutton
-  			id = widget_droplist(Base,/dynamic_resize, value=Stdy->Names(1), uname=v[i]);username: ROI
+			Base = widget_base(Controls,/row,/frame,/base_align_center)
+			id = widget_button(Base, xsize=25, ysize=19, value=v[i], uname=v[i]+'bttn')
+  			id = widget_droplist(Base,/dynamic_resize, value=Stdy->Names(1), uname=v[i])
   		endfor
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
-			id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['DTI Signal (a.u.)']) ; name of the signal curve units
+			id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['T2* Kidney Signal (a.u.)'])
   			widget_control, id, set_droplist_select = 4
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['DTI_FIT']) ; name of the fitting
+			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['T2* Kidney'])
   			widget_control, id, set_droplist_select = 5
-
-       	Base = widget_base(Controls,/row,/frame,/base_align_center)
-			id = widget_button(Base, xsize=25, ysize=19, value='FIT2', uname='FIT2bttn')
-			id = widget_droplist(Base,/dynamic_resize, uname='FIT2',value = ['DTI_FIT']) ; name of the fitting
-  			widget_control, id, set_droplist_select = 6
 
 		v = ['Export','Export As','Close']
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
@@ -483,64 +374,63 @@ FUNCTION PMI__Display__iBEAt_DTI_ROI::Init, parent, CursorPos, xsize=xsize, ysiz
 	return, 1
 END
 
-PRO PMI__Display__iBEAt_DTI_ROI__Define
+PRO PMI__Display__iBEAt_T2starKidney_ROI__Define
 
-	MoCoModel_DiffusionTensorImaging__DEFINE ; modelfit
+	MoCoModel_T2starMapKidney__define ; modelfit
 
-	Struct = {PMI__Display__iBEAt_DTI_ROI 	$
+	Struct = {PMI__Display__iBEAt_T2starKidney_ROI 	$
 	,	id: 0L 	$
 	,	DrawId: 0L $
 	,	CursorPos:lonarr(4)	$
 	,	Curve:ptrarr(2) $ ;RoiCurve, Fit
 	,	Parameters: ptr_new() $
 	,	Series: obj_new() $
-;	,   matrix_forward: ptr_new()$
 	}
 END
 
 
-pro PMI__Button__Event__iBEAt_DTI_ROI, ev
+pro PMI__Button__Event__iBEAt_T2starKidney_ROI, ev
 
 	PMI__Info, ev.top, Stdy=Stdy
 
     Series = Stdy->Names(0,ns,DefDim=3,ind=ind,sel=sel)
     Regions = Stdy->Names(1,nr)
 
-	v = PMI__Form(ev.top, Title='DTI analysis setup', [$
-		ptr_new({Type:'DROPLIST',Tag:'series', Label:'DTI series', Value:Series, Select:sel}), $
+	v = PMI__Form(ev.top, Title='T2* kidney analysis setup', [$
+		ptr_new({Type:'DROPLIST',Tag:'series', Label:'T2* series', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)})])
 
 
 
 	IF v.cancel THEN return
 
-	PMI__Control, ev.top, Viewer = 'PMI__Display__iBEAt_DTI_ROI', Display=Display
+	PMI__Control, ev.top, Viewer = 'PMI__Display__iBEAt_T2starKidney_ROI', Display=Display
 
 	Display -> Set, /Refresh, $
 		Series = Stdy->Obj(0,ind[v.series]), $
 		set_droplist_select = [v.roi]
 end
 
-pro PMI__Button__Control__iBEAt_DTI_ROI, id, v
+pro PMI__Button__Control__iBEAt_T2starKidney_ROI, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
-		Series = Stdy->Names(0,ns,DefDim=3) ; ns : no of series with time dim
-		Regions = Stdy->Names(1,nr) ;nr number of regions
-		sensitive = (ns gt 0) and (nr gt 0)
+		Series = Stdy->Names(0,ns,DefDim=3)
+		Regions = Stdy->Names(1,nr)
+		sensitive = (ns gt 0) and (nr gt 0) ; button sensitive after one roi selection
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__iBEAt_DTI_ROI, parent,value=value, separator=separator
+function PMI__Button__iBEAt_T2starKidney_ROI, parent,value=value, separator=separator
 
-	PMI__Display__iBEAt_DTI_ROI__Define
+	PMI__Display__iBEAt_T2starKidney_ROI__Define
 
-	if n_elements(value) eq 0 then value = 'Renal DTI model (ROI)'
+	if n_elements(value) eq 0 then value = 'Renal T2* Kidney mono-exponential model (ROI)'
 
 	return, widget_button(parent, $
 		value = value,	$
-		event_pro = 'PMI__Button__Event__iBEAt_DTI_ROI',	$
-		pro_set_value = 'PMI__Button__Control__iBEAt_DTI_ROI', $
+		event_pro = 'PMI__Button__Event__iBEAt_T2starKidney_ROI',	$
+		pro_set_value = 'PMI__Button__Control__iBEAt_T2starKidney_ROI', $
 	 	separator = separator )
 end

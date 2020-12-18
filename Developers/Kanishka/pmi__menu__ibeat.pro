@@ -34,18 +34,22 @@ pro PMI__Menu__iBeat, parent
     Sid = PMI__Button__iBEAt_T2star(id, value='T2* mapping')
     Sid = PMI__Button__iBEAt_DTI(id, value='DTI mapping')
     Sid = PMI__Button__iBEAt_IVIM(id, value='IVIM mapping')
-    Sid = PMI__Button__iBEAt_DCE(id, value='DCE mapping')
+    Sid = PMI__Button__iBEAt_IVIM_monoexponential(id, value='IVIM Monoexponential mapping')
     Sid = PMI__Button__MTSeriesBinary(id, value='MTR: no moco')
-   ; Sid = PMI__Button__iBEAt_MTR(id, value='MTR mapping')
+    Sid = PMI__Button__iBEAt_MTR(id, value='MTR mapping')
+    Sid = PMI__Button__iBEAt_DCE(id, value='DCE mapping')
+
+
     Sid = PMI__Button__iBEAt_Dummy(id, value='ASL mapping')
 
     Sid = PMI__Button__iBEAt_T1_ROI(id, value='T1 ROI analysis', /separator)
     Sid = PMI__Button__iBEAt_T2_ROI(id, value='T2 ROI analysis')
     Sid = PMI__Button__iBEAt_T2star_ROI(id, value='T2* ROI analysis')
+    Sid = PMI__Button__iBEAt_T2starKidney_ROI(id, value='T2* Kidney ROI analysis')
     Sid = PMI__Button__iBEAt_DTI_ROI(id, value='DTI ROI analysis')
     Sid = PMI__Button__iBEAt_IVIM_ROI(id, value='IVIM ROI analysis')
     Sid = PMI__Button__iBEAt_DCE_ROI(id, value='DCE ROI analysis')
-    Sid = PMI__Button__iBEAt_Dummy(id, value='MTR ROI analysis')
+    Sid = PMI__Button__iBEAt_MT_ROI(id, value='MTR ROI analysis')
     Sid = PMI__Button__iBEAt_Dummy(id, value='ASL ROI analysis')
     Sid = PMI__Button__iBEAt_Dummy(id, value='PC ROI analysis')
 

@@ -17,7 +17,7 @@
 
 function PMI__Button__Input__MTSeriesBinary, top, Stdy, Series0, Series1, Operation
 
-    ; @KS: modified for iBEAt study MTR
+    ; @KS: modified for iBEAt study MTR: no moco
 	;"Operation" is the type of binary operation required (+,-,etc..)
 	;"Series0" and "Series1" are the series in which the operation is performed
 	;"Series0" and "Series1" must have the same dimensions
@@ -27,7 +27,7 @@ function PMI__Button__Input__MTSeriesBinary, top, Stdy, Series0, Series1, Operat
 
 	while 1 do begin
 
-		v = PMI__Form(top, Title='MTR: no moco', $
+		v = PMI__Form(top, Title='MTR%: no moco', $
 			[ ptr_new({Type:'DROPLIST',Tag:'s0',Label:'MT OFF Series', Value:Stdy -> names(0), Select:sel[0]}) $
 			, ptr_new({Type:'DROPLIST',Tag:'s1',Label:'MT ON Series', Value:Stdy -> names(0), Select:sel[1]}) $
 			]) & if v.cancel then return, 0
@@ -57,7 +57,7 @@ pro PMI__Button__Event__MTSeriesBinary, ev
 	if not PMI__Button__Input__MTSeriesBinary(ev.top,Stdy,Series0,Series1,Operation) then return
 
 	Bin = Stdy -> New('SERIES' $
-	,	Name ='MTR (no moco): ' + '['+Series0->name() +']'+ operation + '['+Series1->name() +']' $
+	,	Name ='MTR % (no moco) '$
 	, 	domain = Series0->dom() )
 
 	d0 = Series0 -> d()

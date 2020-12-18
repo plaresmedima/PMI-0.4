@@ -24,6 +24,7 @@ PRO PMI__Display__iBEAt_T2_ROI::Fit
 
 	    	Fit = MoCoModelFit(Curve, 'T2Map' , Time, PARAMETERS=P)
 
+
 			Parameters = $
 				[{Name:'S0'		,Units:'a.u.'		,Value:P[0,0]	,Nr: 0} $
 				,{Name:'T2 Map'		,Units:'ms'	,Value:P[1,0]	,Nr: 1}]
@@ -435,7 +436,7 @@ end
 
 function PMI__Button__iBEAt_T2_ROI, parent,value=value, separator=separator
 
-	MoCoModel_T2Map__define
+	PMI__Display__iBEAt_T2_ROI__Define
 
 	if n_elements(value) eq 0 then value = 'Renal T2 MAP based model (ROI)'
 

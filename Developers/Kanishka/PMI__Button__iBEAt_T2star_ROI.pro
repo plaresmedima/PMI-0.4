@@ -436,7 +436,7 @@ end
 
 function PMI__Button__iBEAt_T2star_ROI, parent,value=value, separator=separator
 
-	MoCoModel_T2star__define
+	PMI__Display__iBEAt_T2star_ROI__Define
 
 	if n_elements(value) eq 0 then value = 'Renal T2star MAP based model (ROI)'
 

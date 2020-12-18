@@ -70,7 +70,6 @@ end
 
 
 ;T2 Mapping
-
 pro iBEAt_Import_Leeds_10_6__LoadT2, Stdy, Series, files, status
 
     Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
@@ -175,14 +174,12 @@ end
 
 
 
-; MT
+
+; MT sequence
 pro iBEAt_Import_Leeds_10_6__LoadMT, Stdy, Series, files, status
 
-
-    Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status)
-
+     Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status)
 end
-
 
 
 

@@ -3,7 +3,7 @@
 
 PRO MoCoModel_T1mapMOLLI__Model, TI, P, S
 
-   S = P[0]-P[1]*exp(-TI/P[2])  ; S = A-B*exp(-TI/T1apparent) ; original function does not converge
+   S = P[0]-P[1]*exp(-TI/P[2])  ; S = A-B*exp(-TI/T1apparent)
 
 
 END

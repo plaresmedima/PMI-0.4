@@ -66,7 +66,6 @@ PRO PMI__Display__iBEAt_T1_ROI::Plot
 		'FIT':BEGIN
 			Self -> GET, RoiCurve=RoiCurve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
-
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
 			, 	[0,max(time)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
 			, 	/xstyle, /ystyle $
@@ -434,7 +433,7 @@ end
 
 function PMI__Button__iBEAt_T1_ROI, parent,value=value, separator=separator
 
-	MoCoModel_T1MapMOLLI__define
+	PMI__Display__iBEAt_T1_ROI__Define
 
 	if n_elements(value) eq 0 then value = 'Renal T1 MAP based model (ROI)'
 
