@@ -14,21 +14,34 @@ PRO DTI_Parameters, Par, M
  FOR x=0L, d[0]-1 DO BEGIN
    FOR y=0L, d[1]-1 DO BEGIN
 
-     Tensor[0,0] = Par[x,y,0]
-     Tensor[1,1] = Par[x,y,1]
-     Tensor[2,2] = Par[x,y,2]
-     Tensor[0,1] = Par[x,y,3]
-     Tensor[1,0] = Par[x,y,3]
-     Tensor[1,2] = Par[x,y,4]
-     Tensor[2,1] = Par[x,y,4]
-     Tensor[2,0] = Par[x,y,5]
-     Tensor[0,2] = Par[x,y,5]
+;     Tensor[0,0] = Par[x,y,0]
+;     Tensor[1,1] = Par[x,y,1]
+;     Tensor[2,2] = Par[x,y,2]
+;     Tensor[0,1] = Par[x,y,3]
+;     Tensor[1,0] = Par[x,y,3]
+;     Tensor[1,2] = Par[x,y,4]
+;     Tensor[2,1] = Par[x,y,4]
+;     Tensor[2,0] = Par[x,y,5]
+;     Tensor[0,2] = Par[x,y,5]
+
+
+     Tensor[0,0] = Par[x,y,1]
+     Tensor[1,1] = Par[x,y,2]
+     Tensor[2,2] = Par[x,y,3]
+     Tensor[0,1] = Par[x,y,4]
+     Tensor[1,0] = Par[x,y,4]
+     Tensor[1,2] = Par[x,y,5]
+     Tensor[2,1] = Par[x,y,5]
+     Tensor[2,0] = Par[x,y,6]
+     Tensor[0,2] = Par[x,y,6]
 
      TRIRED, Tensor, V, E
      TRIQL, V, E, Tensor ;Eigenvectors in the rows
 
+
      V = V[REVERSE(SORT(V))]
      Trace = TOTAL(V)
+
 
      M[x,y,0] = Trace/3
      M[x,y,1] = SQRT(3*TOTAL((V-M[x,y,0])^2)) / SQRT(2*TOTAL(V^2))

@@ -144,7 +144,8 @@ pro PMI__Button__Event__iBEAt_DTI, ev
 
             Source = TRANSPOSE(Source, [1,2,0])
             Par = TRANSPOSE(Par, [1,2,0])
-            DTI_Parameters, Par[*,*,1:*], Map
+            ;DTI_Parameters, Par[*,*,1:*], Map
+             DTI_Parameters, Par, Map
 
     	endif
 
