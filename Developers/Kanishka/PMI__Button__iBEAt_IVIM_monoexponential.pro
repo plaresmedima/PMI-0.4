@@ -83,6 +83,7 @@ pro PMI__Button__Event__iBEAt_IVIM_monoexponential, ev
     g = Series -> GETVALUE('0019'x,'100E'x)
     independent = {b:b, g:reform(g,[3,d[3]])}
 
+
 	;Define new image series
 
 	IF NOT in.no_moco THEN $
@@ -165,8 +166,8 @@ function PMI__Button__iBEAt_IVIM_monoexponential, parent,value=value,separator=s
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__iBEAt_IVIM' $
-    ,	pro_set_value = 'PMI__Button__Control__iBEAt_IVIM' $
+    ,  	event_pro = 'PMI__Button__Event__iBEAt_IVIM_monoexponential' $
+    ,	pro_set_value = 'PMI__Button__Control__iBEAt_IVIM_monoexponential' $
     ,  	separator = separator )
 
     return, id
