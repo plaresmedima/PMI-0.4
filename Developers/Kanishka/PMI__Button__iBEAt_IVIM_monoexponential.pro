@@ -89,7 +89,7 @@ pro PMI__Button__Event__iBEAt_IVIM_monoexponential, ev
 	IF NOT in.no_moco THEN $
     Corr 		= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[MoCo]' )
     S0 			= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[S0]' )
-    ADC     	= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[ADC mm2/s]')
+    ADC     	= Stdy -> New('SERIES', Default = Series, Name = Series->name()+'[ADC * 10-3 mm2/s]')
 
 
 	;Set time coordinates
@@ -134,7 +134,7 @@ pro PMI__Button__Event__iBEAt_IVIM_monoexponential, ev
 		IF NOT in.no_moco THEN $
 		Corr 		-> Write, Stdy->DataPath(), Source, k, -1
 		S0 			-> Write, Stdy->DataPath(), Par[*,*,0], k
-		ADC 		-> Write, Stdy->DataPath(), Par[*,*,1], k
+		ADC 		-> Write, Stdy->DataPath(), 1000*Par[*,*,1], k
 
 
 	endfor
