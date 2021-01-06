@@ -5,10 +5,8 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Fit
 	Self->SET, Message='Fitting...', Sensitive=0
 
     d = self.series -> d()
-    b = self.series -> GETVALUE('0019'x,'100C'x) ; 30 ; 10 b-vals for 3 directions = 30
+    b_original = self.series -> GETVALUE('0019'x,'100C'x) ; 30 ; 10 b-vals for 3 directions = 30
     g = self.series -> GETVALUE('0019'x,'100E'x) ; 3 dir  (cols); 3 dir x 10 b-vals =  30 rows total (NSA = 1)
-
-    Time = {b:b, g:reform(g,[3,d[3]])}
 
     Par = FLTARR(d[0],d[1],8) ;original
   	Map = FLTARR(d[0],d[1],4) ; original
@@ -18,26 +16,58 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Fit
 
     Signal= *Self.Curve[0]
 
-    Curve = reform(Signal,[n_elements(b),1])
+    Curve = reform(Signal,[n_elements(b_original),1])
 
 
 	CASE Model OF
 
         'IVIM monoexponential':begin
 
+               b = b_original[0:9]
+               Time = {b:b}
 
-                P = [max(Curve), 0.0025] ;[max signal in ROI, ADC]
+                Curve_dir_01 = reform(Signal[0:9,*],[n_elements(b_original[0:9]),1])
+                P1 = [max(Curve_dir_01), 0.0025] ;[max signal in ROI, ADC]
 
-	            Fit = MoCoModelFit(Curve, 'IVIM_monoexponential' , Time, PARAMETERS=P)
+                Curve_dir_02 = reform(Signal[10:19,*],[n_elements(b_original[10:19]),1])
+                P2 = [max(Curve_dir_02), 0.0025]
+
+                Curve_dir_03 = reform(Signal[20:29,*],[n_elements(b_original[20:29]),1])
+                P3 = [max(Curve_dir_03), 0.0025]
+
+
+                Fit = FLTARR(1,30)
+
+
+                Fit1 = MoCoModelFit(Curve_dir_01, 'IVIM_monoexponential' , Time, PARAMETERS=P1)
+                Fit[0:9] =  Fit1
+
+
+
+                Fit2 = MoCoModelFit(Curve_dir_02, 'IVIM_monoexponential' , Time, PARAMETERS=P2)
+                Fit[10:19] =  Fit2
+
+
+
+                Fit3 = MoCoModelFit(Curve_dir_03, 'IVIM_monoexponential' , Time, PARAMETERS=P3)
+                Fit[20:29] = Fit3
 
              	Parameters = $
-	              	[{Name:'S0'		,Units:'a.u.'	        	,Value:P[0,0]   	,Nr: 0} $
-	            	,{Name:'ADC'		,Units:'[ADC* 10-3 mm2/s]'	,Value:P[1,0]*1000	,Nr: 1}]
+	              	[{Name:'S0 dir 1'		,Units:'a.u.'	        	,Value:P1[0,0]   	,Nr: 0} $
+	            	,{Name:'ADC dir 1'		,Units:'[ADC* 10-3 mm2/s]'	,Value:P1[1,0]*1000	,Nr: 1} $
+	                ,{Name:'S0 dir 2'		,Units:'a.u.'	        	,Value:P2[0,0]   	,Nr: 2} $
+	            	,{Name:'ADC dir 2'		,Units:'[ADC* 10-3 mm2/s]'	,Value:P2[1,0]*1000	,Nr: 3} $
+	              	,{Name:'S0 dir 3'		,Units:'a.u.'	        	,Value:P3[0,0]   	,Nr: 4} $
+	            	,{Name:'ADC dir 3'		,Units:'[ADC* 10-3 mm2/s]'	,Value:P3[1,0]*1000	,Nr: 5}]
 
           end
 
 
 		'IVIM':begin
+
+               P = [0.9*max(Curve),0.001,0.001,0.001,0.1*max(Curve),0.01,0.01,0.01]
+               b = b_original
+               Time = {b:b, g:reform(g,[3,d[3]])}
 
                Fit = MoCoModelFit(Curve, 'IVIM' , Time, PARAMETERS=P)
 
@@ -97,7 +127,7 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Plot
 
 	Self->GET, OnDisplay=OnDisplay
 
-    b = self.series -> GETVALUE('0019'x,'100C'x)
+    b_original = self.series -> GETVALUE('0019'x,'100C'x)
     g = self.series -> GETVALUE('0019'x,'100E'x)
 
 	top=0.9 & dy=0.04 & x0=0.525 & charsize=1.0 & charthick=1.0
@@ -108,15 +138,15 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Plot
 			Self -> GET, Time=Time, RoiCurve=Y, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(b)], [min(Y),max(Y)] $
+			, 	[0,max(b_original)], [min(Y),max(Y)] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'IVIM b-values (s/mm2)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, b[0:9], Y[0:9], color=6*16, linestyle=0, thick=2 ; plot 1st dir
-			oplot, b[10:19], Y[10:19], color=6*10, linestyle=0, thick=2 ; 2nd dir
-			oplot, b[20:29], Y[20:29], color=12*16, linestyle=0, thick=2 ; 3rd dir
+			oplot, b_original[0:9], Y[0:9], color=6*16, linestyle=0, thick=2 ; plot 1st dir
+			oplot, b_original[10:19], Y[10:19], color=6*10, linestyle=0, thick=2 ; 2nd dir
+			oplot, b_original[20:29], Y[20:29], color=12*16, linestyle=0, thick=2 ; 3rd dir
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
@@ -126,18 +156,18 @@ PRO PMI__Display__iBEAt_IVIM_ROI::Plot
 			Self -> SET, /Erase
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(b)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
+			, 	[0,max(b_original)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'IVIM b-values (s/mm2)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, b[0:9], RoiCurve[0:9], color=6*16, psym=4, thick=2 ; plot 1st dir roi ROI CURVE
-			oplot, b[10:19], RoiCurve[10:19], color=6*10, psym=4, thick=2 ; 2nd dir roi  ROI CURVE
-			oplot, b[20:29], RoiCurve[20:29], color=12*16, psym=4, thick=2 ; 3rd dir roi  ROI CURVE
-			oplot, b[0:9], Fit[0:9], color=6*16, linestyle=0, thick=2 ; plot 1st dir fit FIT 1 ; for monoexp - all 3 fits overlap so seens as 1 only
-			oplot, b[10:19], Fit[10:19], color=6*10, linestyle=0, thick=2 ; 2nd dir fit  FIT 2
-			oplot, b[20:29], Fit[20:29], color=12*16, linestyle=0, thick=2 ;3rd dir fit  FIT 3
+			oplot, b_original[0:9], RoiCurve[0:9], color=6*16, psym=4, thick=2 ; plot 1st dir roi ROI CURVE
+			oplot, b_original[10:19], RoiCurve[10:19], color=6*10, psym=4, thick=2 ; 2nd dir roi  ROI CURVE
+			oplot, b_original[20:29], RoiCurve[20:29], color=12*16, psym=4, thick=2 ; 3rd dir roi  ROI CURVE
+			oplot, b_original[0:9],   Fit[0:9], color=6*16, linestyle=0, thick=2 ; plot 1st dir fit FIT 1 ; for monoexp - all 3 fits overlap so seens as 1 only
+			oplot, b_original[10:19], Fit[10:19], color=6*10, linestyle=0, thick=2 ; 2nd dir fit  FIT 2
+			oplot, b_original[20:29], Fit[20:29], color=12*16, linestyle=0, thick=2 ;3rd dir fit  FIT 3
 
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5

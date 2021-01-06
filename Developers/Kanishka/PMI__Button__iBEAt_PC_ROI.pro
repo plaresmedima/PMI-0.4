@@ -1,29 +1,54 @@
 ;
+PRO PMI__Display__iBEAt_PC_ROI::Fit
 
-
-PRO PMI__Display__iBEAt_MT_ROI::Fit
-
-	Self->GET, Model=Model, Time=Time, RoiCurve=Curve
+	Self->GET, Model=Model, Time=Time, RoiCurve=Curve,Stdy=Stdy
 	Self->SET, Message='Fitting...', Sensitive=0
+	d = self.series -> d()
+    pixel_spacing = self.series -> GETVALUE('0028'x,'0030'x)
+    rescale_slope  = self.series -> GETVALUE('0028'x,'1053'x)
+    rescale_intercept = self.series -> GETVALUE('0028'x,'1052'x)
 
     Signal= *Self.Curve[0]
 
-    Curve = reform(Signal,[2,1])
+
+   ; ; rescale slope and intercept: scaling factor for PC-MRI pixels: not required in pmi
+   ; velocity_encoding = 60 ; velocity encoding hardcoded: tbc with steven
+   ; new_signal_with_scaling_factor = ABS(((Signal*rescale_slope + rescale_intercept)/4096)*velocity_encoding)
+
+    Curve = reform(Signal,[N_ELEMENTS(Curve),1]) ; number of cardiac phases = 20
 
 
 	CASE Model OF
 
 
-		'MTMap':begin
+		'PC-RBF':begin
 
-          Fit = MoCoModelFit(Curve, 'MTR', Time, PARAMETERS=P)
+            Region='ROI'
+	    	Self->GET, Stdy=Stdy, Region=Region
 
-		  Parameters = $
-                     [{Name:'MT_OFF'		,Units:'a.u.'		,Value:Fit[0],Nr: 0}$
-                      ,{Name:'MT_ON'		,Units:'a.u.'		,Value:Fit[1],Nr: 1}$
-                      ,{Name:'MTR'		,Units:'%'		,Value:P,Nr: 2}]
+            v = PMI__RoiValues(Stdy->DataPath(), Self.series, Region, cnt=npix)
+            ROIstatTotalPixel = npix
 
+            PC_velocity  = MEAN(Curve)
+
+            RBF = (PC_velocity*ROIstatTotalPixel*pixel_spacing[0]*pixel_spacing[1]*0.001/0.0166667)/2 ; (mm/sec)*mm2=mm3/sec->mm3/sec*0.001->ml/sec*1/0.016667->ml/min
+            ; mm/sec*mm2->mm3/sec->ml/sec(*0.001/0.016667): velocity*totalpixels*pixelarea*ml_conversion*per_min_conversion
+
+
+            Par = FLTARR(d[0],d[1],3) ; original par dim
+            P = reform(Par[0,0,*],[n_elements(Par[0,0,*]),1]) ; reform for pixelwise fitting instead of whole image: 7 col, 1 row
+            P[0,0] = RBF
+            P[1,0] = MAX(Curve)
+            P[2,0] = MEAN(Curve)
+
+            Fit = Curve
+
+			Parameters = $
+			    [{Name:'PC-RBF'			,Units:'ml/min'		,Value: P[0,0]	,Nr: 0} $
+				, {Name:'peak velocity'			,Units:'mm/sec'		,Value:P[1,0]	,Nr: 1}$
+				, {Name:'mean velocity'			,Units:'mm/sec'		,Value:P[2,0]	,Nr: 2}]
             end
+
 
 	endcase
 
@@ -34,7 +59,8 @@ END
 
 
 
-PRO PMI__Display__iBEAt_MT_ROI::Plot
+
+PRO PMI__Display__iBEAt_PC_ROI::Plot
 
 	Self->GET, OnDisplay=OnDisplay
 
@@ -45,13 +71,15 @@ PRO PMI__Display__iBEAt_MT_ROI::Plot
 		'ROI':begin
 			Self -> GET, Time=Time, RoiCurve=Y, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
+
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(time)], [min(Y),max(Y)] $
+			, 	[0,0.35], [min(Y),max(Y)] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'time', ytitle=Units $
+			, 	xtitle = 'Time (sec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, time, Y, color=6*16, linestyle=0, thick=2
+
+			oplot, time, Y, color=6*16, psym=4, thick=2
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
@@ -59,19 +87,18 @@ PRO PMI__Display__iBEAt_MT_ROI::Plot
 		'FIT':BEGIN
 			Self -> GET, RoiCurve=RoiCurve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
-
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(time)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
+			, 	[0,0.35], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'time', ytitle=Units $
+			, 	xtitle = 'Time (sec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, time, RoiCurve, color=6*16, psym=4, thick=2
-			oplot, time, Fit, color=12*16, linestyle=0, thick=2
+			oplot, time, RoiCurve, color=6*16, linestyle=0, thick=2
+
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
-			xyouts, x0, top-3*dy, 'MT Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
+			xyouts, x0, top-3*dy, 'PC Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
 
 			P = *self.Parameters
 
@@ -87,7 +114,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_MT_ROI::Event, ev
+FUNCTION PMI__Display__iBEAt_PC_ROI::Event, ev ; add event for roi name
 
 	Uname = widget_info(ev.id,/uname)
 
@@ -108,8 +135,7 @@ FUNCTION PMI__Display__iBEAt_MT_ROI::Event, ev
 		return, 0B
 	endif
 
-
-    i = where(Uname Eq ['ROI'], cnt) ; added for different roi selection from dropdown menu list
+   	i = where(Uname Eq ['ROI'], cnt) ; added for different roi selection from dropdown menu list
 	If cnt eq 1 then begin
 		ptr_free, Self.Curve[i], Self.Curve[1], self.parameters
 		self->plot
@@ -130,7 +156,7 @@ FUNCTION PMI__Display__iBEAt_MT_ROI::Event, ev
 		Self->GET, Time=Time, RoiCurve=RoiCurve, Fit=Fit, Model=Model, Roiname=Roiname
 		if Uname eq 'Export' then begin
 			PMI__Info, ev.top, Stdy=Stdy
-			Path = Stdy->Datapath() + 'MT Kidney Model (ROI)'
+			Path = Stdy->Datapath() + 'PC Kidney Models (ROI)'
 			file_mkdir, Path
 			File = Path + '\' + Roiname + '__SI_' + Model
 		endif else begin
@@ -164,7 +190,7 @@ FUNCTION PMI__Display__iBEAt_MT_ROI::Event, ev
 	return, 0B
 END
 
-FUNCTION PMI__Display__Event__iBEAt_MT_ROI, ev
+FUNCTION PMI__Display__Event__iBEAt_PC_ROI, ev
 
 	widget_control, ev.handler, get_uvalue=self
 	return, Self -> Event(ev)
@@ -172,7 +198,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_MT_ROI::Conc, Region ;
+FUNCTION PMI__Display__iBEAt_PC_ROI::Conc, Region ;
 
 	case Region of
 		'ROI':Signal=*Self.Curve[0] ; signal
@@ -180,11 +206,12 @@ FUNCTION PMI__Display__iBEAt_MT_ROI::Conc, Region ;
 	Self -> GET, SignalModel=SignalModel
 	If SignalModel eq 0 then return, Signal
 
+
 END
 
 
 
-FUNCTION PMI__Display__iBEAt_MT_ROI::GetCurve, Region
+FUNCTION PMI__Display__iBEAt_PC_ROI::GetCurve, Region
 
 	Self -> GET, Time=Time, Stdy=Stdy, Region=Region
 	Self -> SET, Message = 'Loading ' + Region->Name() + ' curve', Sensitive=0
@@ -194,14 +221,14 @@ FUNCTION PMI__Display__iBEAt_MT_ROI::GetCurve, Region
 	return, Signal
 END
 
-FUNCTION PMI__Display__iBEAt_MT_ROI::GetName, Region
+FUNCTION PMI__Display__iBEAt_PC_ROI::GetName, Region
 
 	self->GET, Region=Region
 	return, Region -> Name()
 END
 
 
-PRO PMI__Display__iBEAt_MT_ROI::GET, $
+PRO PMI__Display__iBEAt_PC_ROI::GET, $
  	CursorPos = CursorPos, $
 	Model=Model, $
 	Time=Time, Fit=Fit, Units=Units, SignalModel=SignalModel, $
@@ -239,7 +266,7 @@ PRO PMI__Display__iBEAt_MT_ROI::GET, $
 	if arg_present(units) then begin
 		Self -> GET, SignalModel=tmp
 		case tmp of
-		0:units = 'MT Signal (a.u.)'
+		0:units = 'PC velocity (mm/sec)'
 		endcase
 	endif
 
@@ -272,7 +299,7 @@ PRO PMI__Display__iBEAt_MT_ROI::GET, $
 	endif
 END
 
-PRO PMI__Display__iBEAt_MT_ROI::SET, $
+PRO PMI__Display__iBEAt_PC_ROI::SET, $
 	PMI__REFRESH=pmi__refresh, PMI__RESIZE=pmi_resize, $
 	Refresh=Refresh, Erase=Erase, $
 	Message=Message, Sensitive=Sensitive, $
@@ -334,14 +361,14 @@ END
 
 
 
-PRO PMI__Display__iBEAt_MT_ROI::Cleanup
+PRO PMI__Display__iBEAt_PC_ROI::Cleanup
 	widget_control, self.id, /destroy
 	ptr_free, Self.Curve, self.Parameters
 	loadct, 0
 END
 
 
-FUNCTION PMI__Display__iBEAt_MT_ROI::Init, parent, CursorPos, xsize=xsize, ysize=ysize
+FUNCTION PMI__Display__iBEAt_PC_ROI::Init, parent, CursorPos, xsize=xsize, ysize=ysize ; DEFINE DISPLAY: CHANGE ROI
 
 	if n_elements(CursorPos) ne 0 then self.CursorPos = CursorPos
 
@@ -349,24 +376,24 @@ FUNCTION PMI__Display__iBEAt_MT_ROI::Init, parent, CursorPos, xsize=xsize, ysize
 
 	PMI__Info, tlb(parent), Stdy=Stdy
 
-	self.id = widget_base(parent,/column,map=0,event_func='PMI__Display__Event__iBEAt_MT_ROI')
+	self.id = widget_base(parent,/column,map=0,event_func='PMI__Display__Event__iBEAt_PC_ROI')
 	Controls = widget_base(self.id,/row,ysize=40,/base_align_center,space=5)
 	self.DrawId	= widget_draw(self.id,/retain)
 
 		v = ['ROI']
 		for i=0,0 do begin
-			Base = widget_base(Controls,/row,/frame,/base_align_center)
-			id = widget_button(Base, xsize=25, ysize=19, value=v[i], uname=v[i]+'bttn')
-  			id = widget_droplist(Base,/dynamic_resize, value=Stdy->Names(1), uname=v[i])
+			Base = widget_base(Controls,/row,/frame,/base_align_center) ; frame with no of buttons
+			id = widget_button(Base, xsize=25, ysize=19, value=v[i], uname=v[i]+'bttn'); button; username: ROIbutton
+  			id = widget_droplist(Base,/dynamic_resize, value=Stdy->Names(1), uname=v[i]);username: ROI
   		endfor
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
-			id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['MT Signal (a.u.)'])
+			id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['PC Signal (a.u.)']) ; name of the signal curve units
   			widget_control, id, set_droplist_select = 4
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['MTMap'])
+			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['PC-RBF']) ; name of the fitting
   			widget_control, id, set_droplist_select = 5
 
 		v = ['Export','Export As','Close']
@@ -378,11 +405,10 @@ FUNCTION PMI__Display__iBEAt_MT_ROI::Init, parent, CursorPos, xsize=xsize, ysize
 	return, 1
 END
 
-PRO PMI__Display__iBEAt_MT_ROI__Define
+PRO PMI__Display__iBEAt_PC_ROI__Define
 
-	MoCoModel_MTR__DEFINE ; modelfit ; to change if constant model used
 
-	Struct = {PMI__Display__iBEAt_MT_ROI 	$
+	Struct = {PMI__Display__iBEAt_PC_ROI 	$
 	,	id: 0L 	$
 	,	DrawId: 0L $
 	,	CursorPos:lonarr(4)	$
@@ -393,48 +419,48 @@ PRO PMI__Display__iBEAt_MT_ROI__Define
 END
 
 
-pro PMI__Button__Event__iBEAt_MT_ROI, ev
+pro PMI__Button__Event__iBEAt_PC_ROI, ev
 
 	PMI__Info, ev.top, Stdy=Stdy
 
     Series = Stdy->Names(0,ns,DefDim=3,ind=ind,sel=sel)
     Regions = Stdy->Names(1,nr)
 
-	v = PMI__Form(ev.top, Title='MT analysis setup', [$
-		ptr_new({Type:'DROPLIST',Tag:'series', Label:'MT series', Value:Series, Select:sel}), $
+	v = PMI__Form(ev.top, Title='PC RBF analysis setup', [$
+		ptr_new({Type:'DROPLIST',Tag:'series', Label:'PC series', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)})])
 
 
 
 	IF v.cancel THEN return
 
-	PMI__Control, ev.top, Viewer = 'PMI__Display__iBEAt_MT_ROI', Display=Display
+	PMI__Control, ev.top, Viewer = 'PMI__Display__iBEAt_PC_ROI', Display=Display
 
 	Display -> Set, /Refresh, $
 		Series = Stdy->Obj(0,ind[v.series]), $
 		set_droplist_select = [v.roi]
 end
 
-pro PMI__Button__Control__iBEAt_MT_ROI, id, v
+pro PMI__Button__Control__iBEAt_PC_ROI, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
-		Series = Stdy->Names(0,ns,DefDim=3)
-		Regions = Stdy->Names(1,nr)
-		sensitive = (ns gt 0) and (nr gt 0) ; button sensitive after one roi selection
+		Series = Stdy->Names(0,ns,DefDim=3) ; ns : no of series with time dim
+		Regions = Stdy->Names(1,nr) ;nr number of regions
+		sensitive = (ns gt 0) and (nr gt 0)
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__iBEAt_MT_ROI, parent,value=value, separator=separator
+function PMI__Button__iBEAt_PC_ROI, parent,value=value, separator=separator
 
-    PMI__Display__iBEAt_MT_ROI__Define
+	PMI__Display__iBEAt_PC_ROI__Define
 
-	if n_elements(value) eq 0 then value = 'Renal MTR based model (ROI)'
+	if n_elements(value) eq 0 then value = 'Renal PC MAP based model (ROI)'
 
 	return, widget_button(parent, $
 		value = value,	$
-		event_pro = 'PMI__Button__Event__iBEAt_MT_ROI',	$
-		pro_set_value = 'PMI__Button__Control__iBEAt_MT_ROI', $
+		event_pro = 'PMI__Button__Event__iBEAt_PC_ROI',	$
+		pro_set_value = 'PMI__Button__Control__iBEAt_PC_ROI', $
 	 	separator = separator )
 end

@@ -83,6 +83,10 @@ FUNCTION PMI__Button__Input__iBEAt_MTR, top, series, aif, in, moco, Win
 	in = {ser:sel, roi:0L, no_moco:1B}
 	moco = {res:16E, prec:1E}
 
+
+    PRINT, SIZE(DynSeries,/N_DIMENSIONS)
+
+
 	WHILE 1 DO BEGIN
 
 		in = PMI__Form(top, Title='iBEAt MTR analysis', [$
@@ -182,6 +186,9 @@ pro PMI__Button__Event__iBEAt_MTR, ev
 		PMI__Message, status, 'Calculating', k/(d[2]-1E)
 
   		Par = FLTARR(d[0],d[1],1)
+
+        MT_Map = FLTARR(d[0],d[1],1)
+
   		Source = Series->Read(Stdy->DataPath(), k, -1)
 
     	if product(win[k].n) gt 0 then begin
@@ -191,9 +198,11 @@ pro PMI__Button__Event__iBEAt_MTR, ev
             IF NOT in.no_moco THEN MOCOMO, source, 'MTR', Independent, GRID_SIZE=moco.res, TOLERANCE=moco.prec, WINDOW=win[k]
             Fit = MoCoModelFit(Source, 'MTR' , Independent, PARAMETERS=Par)
 
+            MT_Map = 100*((Source[0,*,*]-Source[1,*,*])/Source[0,*,*]) ;100*((MT_OFF-MT_ON)/MT_OFF))
+
 
             Source = TRANSPOSE(Source, [1,2,0])
-            Par = TRANSPOSE(Par, [1,2,0])
+          ;  Par = TRANSPOSE(Par, [1,2,0])
 
     	endif
 
@@ -201,7 +210,8 @@ pro PMI__Button__Event__iBEAt_MTR, ev
 
 		IF NOT in.no_moco THEN $
 		Corr 		-> Write, Stdy->DataPath(), Source, k, -1
-		MTR 	    -> Write, Stdy->DataPath(), Par[*,*,0], k
+	;	MTR 	    -> Write, Stdy->DataPath(), Par[*,*,0], k
+		MTR 	    -> Write, Stdy->DataPath(), MT_Map, k
 
 
 	endfor
@@ -227,7 +237,8 @@ end
 
 function PMI__Button__iBEAt_MTR, parent,value=value,separator=separator
 
-	MoCoModel_MTR__DEFINE
+;	MoCoModel_MTR__DEFINE
+    MoCoModel_Constant__DEFINE
 
     if n_elements(value) eq 0 then value = 'MT motion correction'
 
