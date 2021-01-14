@@ -1,21 +1,21 @@
-;
+
 PRO PMI__Display__iBEAt_PC_ROI::Fit
 
 	Self->GET, Model=Model, Time=Time, RoiCurve=Curve,Stdy=Stdy
 	Self->SET, Message='Fitting...', Sensitive=0
 	d = self.series -> d()
+
     pixel_spacing = self.series -> GETVALUE('0028'x,'0030'x)
-    rescale_slope  = self.series -> GETVALUE('0028'x,'1053'x)
-    rescale_intercept = self.series -> GETVALUE('0028'x,'1052'x)
+    vel  = self.series -> GETVALUE('0051'x,'1014'x) ; velocity encoding
+    velocity_encoding  = FIX(STRSPLIT(vel, 'v'+'[_through]', /EXTRACT))
 
-    Signal= *Self.Curve[0]
+    Signal = *Self.Curve[0]
 
+    for i=0,N_ELEMENTS(Signal)-1 do begin
+        Signal[i] = ((Signal[i])/4096)*velocity_encoding
+    endfor
 
-   ; ; rescale slope and intercept: scaling factor for PC-MRI pixels: not required in pmi
-   ; velocity_encoding = 60 ; velocity encoding hardcoded: tbc with steven
-   ; new_signal_with_scaling_factor = ABS(((Signal*rescale_slope + rescale_intercept)/4096)*velocity_encoding)
-
-    Curve = reform(Signal,[N_ELEMENTS(Curve),1]) ; number of cardiac phases = 20
+    Curve = reform(Signal,[N_ELEMENTS(Signal),1]) ; number of cardiac phases = 20
 
 
 	CASE Model OF
@@ -31,22 +31,21 @@ PRO PMI__Display__iBEAt_PC_ROI::Fit
 
             PC_velocity  = MEAN(Curve)
 
-            RBF = (PC_velocity*ROIstatTotalPixel*pixel_spacing[0]*pixel_spacing[1]*0.001/0.0166667)/2 ; (mm/sec)*mm2=mm3/sec->mm3/sec*0.001->ml/sec*1/0.016667->ml/min
-            ; mm/sec*mm2->mm3/sec->ml/sec(*0.001/0.016667): velocity*totalpixels*pixelarea*ml_conversion*per_min_conversion
-
+            RBF = (PC_velocity*ROIstatTotalPixel*pixel_spacing[0]*pixel_spacing[1]*10*0.001/0.0166667) ; cm/sec->(mm/sec)*mm2=mm3/sec->mm3/sec*0.001->ml/sec*1/0.016667->ml/min
+            ;cm/sec->mm/sec->mm/sec*mm2->mm3/sec->ml/sec(*0.001/0.016667): velocity*totalpixels*pixelarea*ml_conversion*per_min_conversion
 
             Par = FLTARR(d[0],d[1],3) ; original par dim
             P = reform(Par[0,0,*],[n_elements(Par[0,0,*]),1]) ; reform for pixelwise fitting instead of whole image: 7 col, 1 row
-            P[0,0] = RBF
-            P[1,0] = MAX(Curve)
-            P[2,0] = MEAN(Curve)
+            P[0,0] = ABS(RBF)
+            P[1,0] = MAX(ABS(Curve))
+            P[2,0] = MEAN(ABS(Curve))
 
             Fit = Curve
 
 			Parameters = $
 			    [{Name:'PC-RBF'			,Units:'ml/min'		,Value: P[0,0]	,Nr: 0} $
-				, {Name:'peak velocity'			,Units:'mm/sec'		,Value:P[1,0]	,Nr: 1}$
-				, {Name:'mean velocity'			,Units:'mm/sec'		,Value:P[2,0]	,Nr: 2}]
+				, {Name:'peak velocity'			,Units:'cm/sec'		,Value:P[1,0]	,Nr: 1}$
+				, {Name:'mean velocity'			,Units:'cm/sec'		,Value:P[2,0]	,Nr: 2}]
             end
 
 
@@ -85,16 +84,16 @@ PRO PMI__Display__iBEAt_PC_ROI::Plot
 
 
 		'FIT':BEGIN
-			Self -> GET, RoiCurve=RoiCurve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
+			Self -> GET, RoiCurve=Curve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,0.35], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
+			, 	[0,0.35], [min([min(Fit),min(Fit)]),max([max(Fit),max(Fit)])] $ ; 0,0.35
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'Time (sec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, time, RoiCurve, color=6*16, linestyle=0, thick=2
+			oplot, time, Fit, color=6*16, linestyle=0, thick=2
 
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
@@ -198,11 +197,20 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_PC_ROI::Conc, Region ;
+FUNCTION PMI__Display__iBEAt_PC_ROI::Region_Of_Interest, Region ;remove Conc
 
-	case Region of
-		'ROI':Signal=*Self.Curve[0] ; signal
-	endcase
+    Region='ROI'
+    vel  = self.series -> GETVALUE('0051'x,'1014'x) ; velocity encoding
+    velocity_encoding  = FIX(STRSPLIT(vel, 'v'+'[_through]', /EXTRACT))
+
+    Signal=*Self.Curve[0]
+
+    for i=0,N_ELEMENTS(Signal)-1 do begin
+
+         Signal[i]= ((Signal[i])/4096)*velocity_encoding
+
+    endfor
+
 	Self -> GET, SignalModel=SignalModel
 	If SignalModel eq 0 then return, Signal
 
@@ -255,7 +263,7 @@ PRO PMI__Display__iBEAt_PC_ROI::GET, $
 
 	if arg_present(RoiCurve) then begin
 		if not ptr_valid(Self.Curve[0]) then Self.Curve[0] = ptr_new(Self->GetCurve('ROI'))
-		RoiCurve = self->Conc('ROI')
+		RoiCurve = self->Region_Of_Interest('ROI')
 	endif
 
 	if arg_present(FIT) then begin
@@ -266,7 +274,7 @@ PRO PMI__Display__iBEAt_PC_ROI::GET, $
 	if arg_present(units) then begin
 		Self -> GET, SignalModel=tmp
 		case tmp of
-		0:units = 'PC velocity (mm/sec)'
+		0:units = 'PC velocity (cm/sec)'
 		endcase
 	endif
 
@@ -334,7 +342,7 @@ PRO PMI__Display__iBEAt_PC_ROI::SET, $
 		xs = floor((xsize - 750)/2E)
 		if xs lt 50 then xs = 50
 		List = ['ROI']
-		for i=0,0 do widget_control, widget_info(self.id,find_by_uname=List[i]), xsize=xs
+		for i=0,0 do widget_control, widget_info(self.id,find_by_uname=List[i]), xsize=xs ;remove i:i
 	endif
 
 	if keyword_set(Erase) then begin
@@ -381,14 +389,14 @@ FUNCTION PMI__Display__iBEAt_PC_ROI::Init, parent, CursorPos, xsize=xsize, ysize
 	self.DrawId	= widget_draw(self.id,/retain)
 
 		v = ['ROI']
-		for i=0,0 do begin
+		for i=0,0 do begin ; remove i:i
 			Base = widget_base(Controls,/row,/frame,/base_align_center) ; frame with no of buttons
 			id = widget_button(Base, xsize=25, ysize=19, value=v[i], uname=v[i]+'bttn'); button; username: ROIbutton
   			id = widget_droplist(Base,/dynamic_resize, value=Stdy->Names(1), uname=v[i]);username: ROI
   		endfor
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
-			id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['PC Signal (a.u.)']) ; name of the signal curve units
+			id = widget_droplist(Base,/dynamic_resize, uname='SIG',value = ['PC velocity (cm/sec)']) ; name of the signal curve units
   			widget_control, id, set_droplist_select = 4
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
