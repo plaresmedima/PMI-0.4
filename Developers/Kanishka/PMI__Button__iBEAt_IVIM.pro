@@ -153,7 +153,7 @@ pro PMI__Button__Event__iBEAt_IVIM, ev
 		S0slow 		-> Write, Stdy->DataPath(), Par[*,*,0], k
 		S0fast 		-> Write, Stdy->DataPath(), Par[*,*,4], k
 		TensorSlow 	-> Write, Stdy->DataPath(), 1000*Par[*,*,1:3], k, -1
-		TensorFast 	-> Write, Stdy->DataPath(), 1000*Par[*,*,5:7], k, -1 ; shouldn't this be 5:7?@ steven
+		TensorFast 	-> Write, Stdy->DataPath(), 1000*Par[*,*,5:7], k, -1
 		ADCslow 	-> Write, Stdy->DataPath(), 1000*Map[*,*,1], k
 		ADCfast 	-> Write, Stdy->DataPath(), 1000*Map[*,*,2], k
 		FastFrac 	-> Write, Stdy->DataPath(), Map[*,*,3], k

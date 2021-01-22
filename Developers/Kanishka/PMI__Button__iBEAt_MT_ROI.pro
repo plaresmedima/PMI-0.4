@@ -10,18 +10,17 @@ PRO PMI__Display__iBEAt_MT_ROI::Fit
 
     Curve = reform(Signal,[2,1])
 
-
 	CASE Model OF
 
 
 		'MTMap':begin
 
-          Fit = MoCoModelFit(Curve, 'MTR', Time, PARAMETERS=P)
+          Fit = 100*((Curve[0,*]-Curve[1,*])/Curve[0,*])
 
 		  Parameters = $
-                     [{Name:'MT_OFF'		,Units:'a.u.'		,Value:Fit[0],Nr: 0}$
-                      ,{Name:'MT_ON'		,Units:'a.u.'		,Value:Fit[1],Nr: 1}$
-                      ,{Name:'MTR'		,Units:'%'		,Value:P,Nr: 2}]
+                     [{Name:'MT_OFF'		,Units:'a.u.'		,Value:Curve[0],Nr: 0}$
+                      ,{Name:'MT_ON'		,Units:'a.u.'		,Value:Curve[1],Nr: 1}$
+                      ,{Name:'MTR'		,Units:'%'		        ,Value:Fit,Nr: 2}]
 
             end
 
@@ -43,32 +42,31 @@ PRO PMI__Display__iBEAt_MT_ROI::Plot
 	CASE OnDisplay OF
 
 		'ROI':begin
-			Self -> GET, Time=Time, RoiCurve=Y, RoiName=RoiName, Units=Units
+			Self -> GET, Time=Time, RoiCurve=Curve, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(time)], [min(Y),max(Y)] $
+			, 	[-10,max(time)+10], [min(Curve)-10,max(Curve)+10] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'time', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
-			oplot, time, Y, color=6*16, linestyle=0, thick=2
+			oplot, time, Curve, color=6*16, psym=4, thick=2
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
 
 		'FIT':BEGIN
-			Self -> GET, RoiCurve=RoiCurve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
+			Self -> GET, RoiCurve=Curve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,max(time)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
+			, 	[-10,max(time)+10], [min(Curve)-10,max(Curve)+10] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
 			, 	xtitle = 'time', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, time, RoiCurve, color=6*16, psym=4, thick=2
-			oplot, time, Fit, color=12*16, linestyle=0, thick=2
+			oplot, time, Curve, color=12*16, psym=4, thick=2
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
 			xyouts, x0, top-3*dy, 'MT Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
@@ -172,7 +170,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_MT_ROI::Conc, Region ;
+FUNCTION PMI__Display__iBEAt_MT_ROI::Region_Of_Interest, Region ;
 
 	case Region of
 		'ROI':Signal=*Self.Curve[0] ; signal
@@ -228,7 +226,7 @@ PRO PMI__Display__iBEAt_MT_ROI::GET, $
 
 	if arg_present(RoiCurve) then begin
 		if not ptr_valid(Self.Curve[0]) then Self.Curve[0] = ptr_new(Self->GetCurve('ROI'))
-		RoiCurve = self->Conc('ROI')
+		RoiCurve = self->Region_Of_Interest('ROI')
 	endif
 
 	if arg_present(FIT) then begin
@@ -380,7 +378,7 @@ END
 
 PRO PMI__Display__iBEAt_MT_ROI__Define
 
-	MoCoModel_MTR__DEFINE ; modelfit ; to change if constant model used
+	MoCoModel_Constant__DEFINE ; modelfit ;
 
 	Struct = {PMI__Display__iBEAt_MT_ROI 	$
 	,	id: 0L 	$

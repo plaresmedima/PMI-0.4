@@ -35,7 +35,7 @@ PRO PMI__Display__iBEAt_PC_ROI::Fit
             ;cm/sec->mm/sec->mm/sec*mm2->mm3/sec->ml/sec(*0.001/0.016667): velocity*totalpixels*pixelarea*ml_conversion*per_min_conversion
 
             Par = FLTARR(d[0],d[1],3) ; original par dim
-            P = reform(Par[0,0,*],[n_elements(Par[0,0,*]),1]) ; reform for pixelwise fitting instead of whole image: 7 col, 1 row
+            P = reform(Par[0,0,*],[n_elements(Par[0,0,*]),1])
             P[0,0] = ABS(RBF)
             P[1,0] = MAX(ABS(Curve))
             P[2,0] = MEAN(ABS(Curve))
@@ -415,6 +415,7 @@ END
 
 PRO PMI__Display__iBEAt_PC_ROI__Define
 
+   MoCoModel_Constant__DEFINE
 
 	Struct = {PMI__Display__iBEAt_PC_ROI 	$
 	,	id: 0L 	$
