@@ -17,7 +17,6 @@ PRO PMI__Display__iBEAt_PC_ROI::Fit
 
     Curve = reform(Signal,[N_ELEMENTS(Signal),1]) ; number of cardiac phases = 20
 
-
 	CASE Model OF
 
 
@@ -27,6 +26,12 @@ PRO PMI__Display__iBEAt_PC_ROI::Fit
 	    	Self->GET, Stdy=Stdy, Region=Region
 
             v = PMI__RoiValues(Stdy->DataPath(), Self.series, Region, cnt=npix)
+
+        	if npix lt 2 then begin
+	           ok = dialog_message(/Information, 'You need more than two pixels in the ROI: Draw larger ROI')
+	      	   return
+	        endif
+
             ROIstatTotalPixel = npix
 
             PC_velocity  = MEAN(Curve)
@@ -38,7 +43,7 @@ PRO PMI__Display__iBEAt_PC_ROI::Fit
             P = reform(Par[0,0,*],[n_elements(Par[0,0,*]),1])
             P[0,0] = ABS(RBF)
             P[1,0] = MAX(ABS(Curve))
-            P[2,0] = MEAN(ABS(Curve))
+            P[2,0] = ABS(MEAN(Curve))
 
             Fit = Curve
 
@@ -61,8 +66,19 @@ END
 
 PRO PMI__Display__iBEAt_PC_ROI::Plot
 
-	Self->GET, OnDisplay=OnDisplay
 
+
+    Region='ROI'
+	Self->GET, Stdy=Stdy, Region=Region
+
+   v = PMI__RoiValues(Stdy->DataPath(), Self.series, Region, cnt=npix)
+
+   if npix lt 2 then begin
+	  ok = dialog_message(/Information, 'You need more than two pixels in the ROI: Draw larger ROI')
+	  return
+   endif
+
+    Self->GET, OnDisplay=OnDisplay
 	top=0.9 & dy=0.04 & x0=0.525 & charsize=1.0 & charthick=1.0
 
 	CASE OnDisplay OF
@@ -72,13 +88,13 @@ PRO PMI__Display__iBEAt_PC_ROI::Plot
 			Self -> SET, /Erase
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,0.35], [min(Y),max(Y)] $
+			, 	[0,0.35*1000], [min(Y),max(Y)] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'Time (sec)', ytitle=Units $
+			, 	xtitle = 'Time (msec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, time, Y, color=6*16, psym=4, thick=2
+			oplot, time*1000, Y, color=6*16, psym=4, thick=2
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName, color=6*16, /normal, charsize=1.5, charthick=1.5
 			end
 
@@ -87,13 +103,13 @@ PRO PMI__Display__iBEAt_PC_ROI::Plot
 			Self -> GET, RoiCurve=Curve, Time=Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[0,0.35], [min([min(Fit),min(Fit)]),max([max(Fit),max(Fit)])] $ ; 0,0.35
+			, 	[0,0.35*1000], [min([min(Fit),min(Fit)]),max([max(Fit),max(Fit)])] $ ; 0,0.35
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'Time (sec)', ytitle=Units $
+			, 	xtitle = 'Time (msec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-			oplot, time, Fit, color=6*16, linestyle=0, thick=2
+			oplot, time*1000, Fit, color=6*16, linestyle=0, thick=2
 
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
@@ -166,7 +182,7 @@ FUNCTION PMI__Display__iBEAt_PC_ROI::Event, ev ; add event for roi name
 		Write_tiff, File + '.tif', reverse(tvrd(/true),3)
 
 		Export = strarr(3,1+n_elements(time))
-		Export[*,0] = ['Time (s)','Curve', 'Fit']
+		Export[*,0] = ['Time (ms)','Curve', 'Fit']
 		Export[0,1:*] = strcompress(Time,/remove_all)
 		Export[1,1:*] = strcompress(RoiCurve,/remove_all)
 		Export[2,1:*] = strcompress(Fit,/remove_all)
