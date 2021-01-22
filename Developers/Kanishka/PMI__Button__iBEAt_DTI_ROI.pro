@@ -7,9 +7,8 @@ PRO PMI__Display__iBEAt_DTI_ROI::Fit
 
     d = self.series -> d()
     b = self.series -> GETVALUE('0019'x,'100C'x) ; 146
-  ;  PRINT, b
+
     g = self.series -> GETVALUE('0019'x,'100E'x) ; 3 col; 146 rows
-    ;PRINT, g ;
 
     Par = FLTARR(d[0],d[1],7) ; original par dim
   	Map = FLTARR(d[0],d[1],5) ; original map dim
@@ -21,14 +20,13 @@ PRO PMI__Display__iBEAt_DTI_ROI::Fit
 
   ; KS b, g distribution
   ; 146 directions: time points here (61 dir (b=600)+ 12 dir (b=100) X2 (NSA) =146 total)
-  ; b combinations => 11dir x (100*1,600*5) + 1dir x (100*1, 600*6) = 73 (b=100 in 12 dir; b=600 in 61 dir) x2NSA = 146
+  ; b combinations => 11dir x (100*1g,600*5g) + 1dir x (100*1g, 600*6g) = 73 (b=100 in 12 dir; b=600 in 61 dir) x2NSA = 146
 
     Signal= *Self.Curve[0] ; 1 row and 146 columns i.e. 1 pixel with 146 signal values per dir/b val
 
     Curve = reform(Signal,[n_elements(b),1]) ; array: 146 cols and 1 row
 
     Fit = MoCoModelFit(Curve, 'DiffusionTensorImaging' , Time, PARAMETERS=P) ; fit requires struct for 'Time' fixed parameter
-
 
     ; DTI params @ Steven: TBC Tensor elements 'dti param' file - tensor elements there incorrect
     Tensor = FLTARR(3,3)
@@ -69,9 +67,9 @@ PRO PMI__Display__iBEAt_DTI_ROI::Fit
 				,{Name:'TensorOffDiag'	,Units:'[Dzx, * 10-3 mm2/s]'	,Value:1000*P[6,0]	,Nr: 6} $
                 ,{Name:'ADC'			,Units:'[ADC  * 10-3 mm2/s] '	,Value:1000*MapDTI[0,0]	,Nr: 7} $
 				,{Name:'FA'			    ,Units:' '	       	            ,Value:MapDTI[1,0]	,Nr: 8} $
-				,{Name:'Linear Anisotropy'			    ,Units:''		                ,Value:MapDTI[2,0]	,Nr: 9} $
-				,{Name:'Planar Anisotropy'			    ,Units:''		                ,Value:MapDTI[3,0]	,Nr: 10} $
-				,{Name:'Spherical Anisotropy'			 ,Units: ''		                ,Value:MapDTI[4,0]	,Nr: 11} ]
+				,{Name:'Linear Anisotropy'			    ,Units:''		,Value:MapDTI[2,0]	,Nr: 9} $
+				,{Name:'Planar Anisotropy'			    ,Units:''		,Value:MapDTI[3,0]	,Nr: 10} $
+				,{Name:'Spherical Anisotropy'			 ,Units: ''		,Value:MapDTI[4,0]	,Nr: 11} ]
 
 
 	self.Curve[1] = ptr_new(Fit)
@@ -133,20 +131,27 @@ PRO PMI__Display__iBEAt_DTI_ROI::Plot
 				, color=0, /normal, charsize=charsize, charthick=charthick
 			END
 
-            ;to do:
+
             'FIT2':BEGIN
-			Self -> GET, RoiCurve=RoiCurve, Time = {b:b, g:reform(g,[3,d[3]])}, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
+			Self -> GET, RoiCurve=Curve, Time = Time, Fit=Fit, Model=Model, RoiName=RoiName, Units=Units
 			Self -> SET, /Erase
 
 
  			plot, /nodata, position=[0.1,0.2,0.5,0.9]  $
-			, 	[min(g),max(g)], [min([min(RoiCurve),min(Fit)]),max([max(RoiCurve),max(Fit)])] $
+ 		;	, 	[min(g),max(g)], [min([min(g),min(g)]),max([max(g),max(g)])] $
+ 		    ,    [min(Time),max(Time)], [min([min(Curve),min(Fit)]),max([max(Curve),max(Fit)])] $
 			, 	/xstyle, /ystyle $
 			, 	background=255, color=0 $
-			, 	xtitle = 'Time', ytitle=Units $
+			, 	xtitle = 'Time (msec)', ytitle=Units $
 			, 	charsize=1.5, charthick=2.0, xthick=2.0, ythick=2.0
 
-            oplot, g, RoiCurve, color=6*2, psym=4, thick=2  ;
+
+          ;  oplot, g[0,*,*], g[1,*,*], color=6*16, psym=4, thick=2  ;;gx
+          ;  oplot, g[1,*,*], g[2,*,*], color=16*16, psym=4, thick=2 ;;gy
+           ; oplot, g[0,*,*], g[2,*,*], color=2*16, psym=4, thick=2  ;;gz
+            oplot, time, Curve, color=2*16, psym=4, thick=2
+            oplot, time, Fit, color=12*16, psym=4, thick=2
+
 
 			xyouts, x0, top-0*dy, 'Region Of Interest: ' + RoiName		, color=6*16, /normal, charsize=1.5, charthick=1.5
 			xyouts, x0, top-3*dy, 'DTI Tissue Model: ' + Model				, color=12*16, /normal, charsize=1.5, charthick=1.5
@@ -166,14 +171,14 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_DTI_ROI::Event, ev ; add event for roi name
+FUNCTION PMI__Display__iBEAt_DTI_ROI::Event, ev
 
 	Uname = widget_info(ev.id,/uname)
 
 	if Uname Eq 'FITbttn' then begin
 		widget_control, ev.id, sensitive=0
 		widget_control, widget_info(self.id,find_by_uname='ROIbttn'), sensitive=1
-		widget_control, widget_info(self.id,find_by_uname='FIT2bttn'), sensitive=1 ; FIT2 not sensitive
+		widget_control, widget_info(self.id,find_by_uname='FIT2bttn'), sensitive=1
 		list = widget_info(self.id,find_by_uname='FIT')
 		widget_control, list, sensitive=1
 		self->plot
@@ -240,7 +245,7 @@ FUNCTION PMI__Display__iBEAt_DTI_ROI::Event, ev ; add event for roi name
 		Write_tiff, File + '.tif', reverse(tvrd(/true),3)
 
 		Export = strarr(3,1+n_elements(time))
-		Export[*,0] = ['b-val (s/mm2)','Curve', 'Fit'] ; to change for fit 2
+		Export[*,0] = ['b-val (s/mm2)/time (msec)','Curve', 'Fit'] ; to change for fit 2
 		Export[0,1:*] = strcompress(Time,/remove_all)
 		Export[1,1:*] = strcompress(RoiCurve,/remove_all)
 		Export[2,1:*] = strcompress(Fit,/remove_all)
@@ -271,7 +276,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_DTI_ROI::Conc, Region ;
+FUNCTION PMI__Display__iBEAt_DTI_ROI::Region_Of_Interest, Region ;
 
 	case Region of
 		'ROI':Signal=*Self.Curve[0] ; signal
@@ -328,7 +333,7 @@ PRO PMI__Display__iBEAt_DTI_ROI::GET, $
 
 	if arg_present(RoiCurve) then begin
 		if not ptr_valid(Self.Curve[0]) then Self.Curve[0] = ptr_new(Self->GetCurve('ROI'))
-		RoiCurve = self->Conc('ROI')
+		RoiCurve = self->Region_Of_Interest('ROI')
 	endif
 
 	if arg_present(FIT) then begin
