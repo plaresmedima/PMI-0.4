@@ -53,7 +53,7 @@ pro PMI__Menu__iBeat, parent
     Sid = PMI__Button__iBEAt_Dummy(id, value='ASL ROI analysis')
     Sid = PMI__Button__iBEAt_PC_ROI(id, value='PC ROI analysis')
 
-  ;  Sid = PMI__Button__iBEAt_DCE_AIF_Segmentation(id, value='DCE AIF segmentation', /separator)
+    Sid = PMI__Button__iBEAt_DCE_AIF_Segmentation(id, value='DCE AIF segmentation', /separator)
     Sid = PMI__Button__iBEAt_Dummy(id, value='PC ROI detection')
     Sid = PMI__Button__iBEAt_Dummy(id, value='Sequence co-registration')
     Sid = PMI__Button__iBEAt_Dummy(id, value='Kidney ROI detection')

@@ -197,7 +197,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_PC_ROI::Region_Of_Interest, Region ;remove Conc
+FUNCTION PMI__Display__iBEAt_PC_ROI::Region_Of_Interest, Region
 
     Region='ROI'
     vel  = self.series -> GETVALUE('0051'x,'1014'x) ; velocity encoding

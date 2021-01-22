@@ -177,7 +177,7 @@ END
 
 
 
-FUNCTION PMI__Display__iBEAt_T1_ROI::Conc, Region ;
+FUNCTION PMI__Display__iBEAt_T1_ROI::Region_Of_Interest, Region ;
 
 	case Region of
 		'ROI':Signal=*Self.Curve[0] ; signal
@@ -233,7 +233,7 @@ PRO PMI__Display__iBEAt_T1_ROI::GET, $
 
 	if arg_present(RoiCurve) then begin
 		if not ptr_valid(Self.Curve[0]) then Self.Curve[0] = ptr_new(Self->GetCurve('ROI'))
-		RoiCurve = self->Conc('ROI')
+		RoiCurve = self->Region_Of_Interest('ROI')
 	endif
 
 	if arg_present(FIT) then begin
