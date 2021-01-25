@@ -49,15 +49,15 @@ pro iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI, Stdy, Series, files, status
   Dcm = iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI_NEW(Stdy, Series, files, status, SORTED_FILES=files_sort)
 
   d = Dcm -> d()
-  TI = fltarr(d[2],d[3]);
+  TI = fltarr(d[2],d[3])
 
-  for k=0L,d[3]-1 do begin ;Loop over acquistion time
+  for k=0L,d[3]-1 do begin ;Loop over acquistion time: 28
 
      PMI__Message, status, 'Reading  TI times ' + Series, k/(d[3]-1.0) ;status update for user + WITH COUNTER
 
      for l= 0L,d[2]-1 do begin ; loop over slices: d[2] = 5
 
-         TI[l,k] = PMI__Dicom__Read(files_sort[l,k],'0018'x,'0082'x) ; ; TI[col:5,rows:28]
+         TI[l,k] = PMI__Dicom__Read(files_sort[l,k],'0018'x,'0082'x) ; TI[col:5,rows:28]
 
     endfor
   endfor
@@ -173,8 +173,6 @@ end
 
 
 
-
-
 ; MT sequence
 pro iBEAt_Import_Leeds_10_6__LoadMT, Stdy, Series, files, status
 
@@ -182,11 +180,62 @@ pro iBEAt_Import_Leeds_10_6__LoadMT, Stdy, Series, files, status
 end
 
 
+; remove first few (3) baselines of DCE-MRI
+
+FUNCTION iBEAt_Import_Leeds_10_6__LoadDCESequence_NEW, Stdy, Series, files, status, SORTED_FILES=files_sort
+
+  PMI__Message, status, 'Sorting ' + Series
+
+
+  z = PMI__Dicom__Read(files,'0020'x,'1041'x); slice location
+  t = PMI__Dicom__Read(files,'0008'x,'0032'x) ; dynamics
+
+  files_sort = PMI__Dicom__Sort(files, z, t)
+  files_sort_new = files_sort[*,3:n_elements(t)-1] ; remove first 3 slices from the series
+
+  nx = PMI__Dicom__Read(files_sort,'0028'x,'0011'x) ; x coordinates for files 384
+  ny = PMI__Dicom__Read(files_sort,'0028'x,'0010'x) ; y coordinates for files 384
+
+  d = [max(nx),max(ny),n_elements(z),n_elements(t)-3]
+
+  Dcm = Stdy -> New('SERIES', Name = Series, Domain = {z:z, t:t[3:n_elements(t)-1], m:d[0:1]})
+
+  x = (d[0]-nx)/2
+
+  y = (d[1]-ny)/2
+
+  im = fltarr(d[0],d[1])
+  range = [0E,0E]
+
+ for l=0L,d[3]-1 do begin ; dynamics
+    for k=0L,d[2]-1 do begin ; slices;
+     	PMI__Message, status, 'Loading ' + Series, (l*d[2]+k)/(d[2]*d[3]-1.0)
+
+	    image = PMI__Dicom__ReadImage(files_sort_new[k,l])
+
+	    if size(image,/n_dimensions) ne 0 then begin
+	    	im[0:max(nx)-1,0:max(ny)-1] = image
+		    range[0] = min([range[0],min(image,max=max)])
+	    	range[1] = max([range[1],max])
+	    endif
+	     Dcm -> Write, Stdy->DataPath(), im, k,l
+	     im *= 0
+     endfor
+  endfor
+
+  Dcm -> Trim, [range[0],0.8*range[1]]
+  Dcm -> ReadDicom, files_sort[0]
+
+  RETURN, Dcm
+
+end
+
+
 
 ;DCE
 pro iBEAt_Import_Leeds_10_6__LoadDCE, Stdy, Series, files, status
 
-  Dcm = iBEAt_Import__LoadSequence(Stdy, Series, files, status, SORTED_FILES=files_sort)
+  Dcm = iBEAt_Import_Leeds_10_6__LoadDCESequence_NEW(Stdy, Series, files, status, SORTED_FILES=files_sort)
 
   ;TR (checked in Siemens DICOM header, 12/11/2019)
   Dcm -> set, obj_new('DATA_ELEMENT','0018'x,'0080'x,vr='DS',value=2.2)
