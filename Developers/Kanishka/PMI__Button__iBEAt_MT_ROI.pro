@@ -399,7 +399,7 @@ pro PMI__Button__Event__iBEAt_MT_ROI, ev
     Regions = Stdy->Names(1,nr)
 
 	v = PMI__Form(ev.top, Title='MT analysis setup', [$
-		ptr_new({Type:'DROPLIST',Tag:'series', Label:'MT series', Value:Series, Select:sel}), $
+		ptr_new({Type:'DROPLIST',Tag:'series', Label:'MT merged series', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Tissue Region', Value:Regions, Select:stdy->sel(1)})])
 
 
