@@ -386,8 +386,8 @@ pro TRISTAN_Import_Siemens3T__LoadInversionRecovery, Sequence, Stdy, files, Seri
 		for i=0L,d[0]*d[1]-1 do begin
 			Sig = reform(P[i,*])
 			; Identify the minimum and its index and reverse signs of all elements upto this index
-			minS = min(Sig,ind)
-			Sig[0:ind] = -Sig[0:ind]
+			;minS = min(Sig,ind)
+			;Sig[0:ind] = -Sig[0:ind]
 
 			Pars = [max(Sig), 2.0, 1/ExpectedT1] ;[Sinf, Sratio(B/A), R1]
 			Fit = mpcurvefit(time, Sig, 1+0E*Sig, Pars, function_name='PMI__TRISTAN_MOLLI_T1mapping',/quiet,NODERIVATIVE=1)

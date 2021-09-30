@@ -9,7 +9,7 @@ pro TRISTAN_Import_GE1_5T__LoadVFA_MoCo, Sequence, Stdy, files
 
 	files = PMI__Dicom__Sort(files, z, t) ; returns a 2D string array of file names
 
-	nz = 26 ; use a reduced set of slices from the centre of the volume
+	nz = 6 ; use a reduced set of slices from the centre of the volume
 	FA = [2,5,10,15,20,25]
 	nFA = n_elements(FA)
 	nt = 12
@@ -17,18 +17,18 @@ pro TRISTAN_Import_GE1_5T__LoadVFA_MoCo, Sequence, Stdy, files
 	; Gather all images into a single 5D image
 	d = [nx,ny,nz,nFA,nt] ;dimensions of the series
 	image = fltarr(nx,ny,nz,nFA,nt)
-	for k=15L, 40 do begin ;0L, d[2]-1 do begin ;loop over all slices and times
+	for k=35L, 40 do begin ;0L, d[2]-1 do begin ;loop over all slices and times
 		for p=0L,d[4]-1 do begin
 			for j=0L,d[3]-1 do begin
 				ind = j + d[3]*p
-				image[*,*,k-15,j,p] = PMI__Dicom__ReadImage(files[k,ind]) ;read image data from file
+				image[*,*,k-35,j,p] = PMI__Dicom__ReadImage(files[k,ind]) ;read image data from file
 			endfor
 		endfor
 	endfor
 
 	; For each FA, create a series and display
 	for j=0L,d[3]-1 do begin
-		Dcm = Stdy -> New('SERIES', Name=Sequence, Domain = {z:z[15:40], t:indgen(nt), m:[nx,ny]}) ;new series object in display
+		Dcm = Stdy -> New('SERIES', Name=Sequence, Domain = {z:z[35:40], t:indgen(nt), m:[nx,ny]}) ;new series object in display
 		Dcm -> Write, Stdy->DataPath(), image[*,*,*,j,*]  ;write raw data to disk
 		Dcm -> Trim, [min(image[*,*,*,j,*]),0.8*max(image[*,*,*,j,*])]  ;set default grey scale ranges
 		Dcm -> ReadDicom, files[0]  ;read DICOM header information for the series
@@ -44,7 +44,7 @@ pro TRISTAN_Import_GE1_5T__LoadVFA_MoCo, Sequence, Stdy, files
 		imageFA = image[*,*,*,j,*]
 		; Perform MoCo
 		imageFA = TRANSPOSE(imageFA, [4,0,1,2])
-		imageFA = MOCOMO_3D(imageFA, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
+		;imageFA = MOCOMO_3D(imageFA, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
 		imageFA = TRANSPOSE(imageFA, [1,2,3,0])
 
 		; Calculate mean over time

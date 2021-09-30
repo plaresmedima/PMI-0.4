@@ -521,7 +521,6 @@ pro TRISTAN_Import_Siemens3T, Stdy, files, first, status=status
 
 ;;;;CHECK SEQUENCE PARAMETERS
 
-
 ;;;;LOAD THE SERIES
 
 	seq1 = '*tfi2d1_192 ' ; All Localiser images bundled up

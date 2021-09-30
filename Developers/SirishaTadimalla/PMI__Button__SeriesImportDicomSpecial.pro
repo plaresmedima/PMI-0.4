@@ -23,13 +23,16 @@ pro PMI__Button__SeriesImportDicomSpecial__Load, Stdy, files, sort0, sort1, stat
 	PMI__Message, status, 'Sorting DICOM Series ' + cnt
 
 	n = n_elements(files)
-	z = make_array(n)
-	for i=0L,n-1 do begin
-		kk = PMI__Dicom__Read(files[i],sort0[0],sort0[1])
-		z[i] = kk[1]; 1 for coronal, 2 for trans
-	endfor
+;	z = make_array(n)
+;	for i=0L,n-1 do begin
+;		kk = PMI__Dicom__Read(files[i],sort0[0],sort0[1])
+;		z[i] = kk[1]; 1 for coronal, 2 for trans
+;	endfor
+	z = PMI__Dicom__Read(files,sort0[0],sort0[1])
 	t = PMI__Dicom__Read(files,sort1[0],sort1[1])
-
+	;;
+	;z = z - 0.919845 - 9
+	;;
 	files = PMI__Dicom__Sort(files, z, t)
 
 	PMI__Message, status, 'Loading DICOM Series '+cnt
@@ -108,10 +111,10 @@ function PMI__Button__SeriesImportDicomSpecial__Input, top, files=files, first=f
 
 
 ;;;;GET SORTING PARAMETERS
-	sort0 = [	['0020'x,'0032'x] $	;Slice location
+	sort0 = [	['0020'x,'1041'x] $	;Slice location - instead of 0020,9057
 			,	['0020'x,'0013'x] $ ;Image Number
 			,	['0008'x,'0020'x] ] ;Study date
-	sort1 = [	['0008'x,'0032'x] $ ;Acquisition time
+	sort1 = [	['0008'x,'0032'x] $ ;Acquisition time - 2005, 1572 instead of 0008, 0032
 			,	['0008'x,'002A'x] $ ;Acquisition Datetime
 			,	['0020'x,'0013'x] $ ;Image Number
 			,	['0020'x,'0100'x] $	;Temporal position identifier
