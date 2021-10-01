@@ -11,8 +11,7 @@
 
 	;Please name all your menus "PMI__Menu__XXXXX"
 
-<<<<<<< Updated upstream
-	PMI__Menu__HEPARIM, mbar
+	PMI__Menu__MountSinai, mbar
 
 ;	PMI__Menu__iBEAt, mbar
 ;	PMI__Menu__Sugar, mbar
@@ -25,13 +24,5 @@
 ;	PMI__Menu__Hughes, mbar
 ;	PMI__Menu__MoCoMo, mbar
 
-=======
-;	PMI__Menu__iBEAt, mbar
-;	PMI__Menu__TRISTANRATS, mbar
-;	PMI__Menu__Jeong, mbar
-
-	PMI__Menu__TRISTAN, mbar
-	
->>>>>>> Stashed changes
 
 end

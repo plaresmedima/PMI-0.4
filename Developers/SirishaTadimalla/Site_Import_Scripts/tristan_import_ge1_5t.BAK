@@ -44,7 +44,7 @@ pro TRISTAN_Import_GE1_5T__LoadVFA_MoCo, Sequence, Stdy, files
 		imageFA = image[*,*,*,j,*]
 		; Perform MoCo
 		imageFA = TRANSPOSE(imageFA, [4,0,1,2])
-		imageFA = MOCOMO_3D(imageFA, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
+		;imageFA = MOCOMO_3D(imageFA, 'QIM_CONST', 0B, in.res, in.prec, Win=win)
 		imageFA = TRANSPOSE(imageFA, [1,2,3,0])
 
 		; Calculate mean over time

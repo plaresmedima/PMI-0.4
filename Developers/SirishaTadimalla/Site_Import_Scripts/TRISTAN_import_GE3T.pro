@@ -159,20 +159,6 @@ pro TRISTAN_Import_GE3T__LoadVFA, Sequence, Stdy, files
 end
 
 
-pro TRISTAN_Import_GE3T__Load3DSPGR_BHdyn, Sequence, Stdy, files, status
-
-	PMI__Message, status, 'Loading 3DSPGR BH Data'
-	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
-	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
-	if cnt eq 0 then return
-
-	files_BH = files[i]
-
-	; Load dynamic BH images - no motion correction
-	TRISTAN_Import_GE3T__LoadDynamics, Sequence+'_dynamic', Stdy, files_BH
-
-end
-
 pro TRISTAN_Import_GE3T__Load3DSPGR_BH, Sequence, Stdy, files, status
 
 	PMI__Message, status, 'Loading 3DSPGR BH Data'
@@ -187,18 +173,6 @@ pro TRISTAN_Import_GE3T__Load3DSPGR_BH, Sequence, Stdy, files, status
 
 end
 
-pro TRISTAN_Import_GE3T__Load3DSPGR_FBdyn, Sequence, Stdy, files, status
-
-	PMI__Message, status, 'Loading 3DSPGR FB dynamic Data'
-	Series = string(PMI__Dicom__Read(files,'0008'x,'103E'x))
-	i = where(strmatch(Series, Sequence+'*') eq 1,cnt)
-	if cnt eq 0 then return
-	files_FB = files[i]
-
-	; Load dynamic FB images - after motion correction
-	TRISTAN_Import_GE3T__LoadDynamics_MoCo, Sequence+'_dynamic', Stdy, files_FB
-
-end
 
 pro TRISTAN_Import_GE3T__Load3DSPGR_FB, Sequence, Stdy, files, status
 
