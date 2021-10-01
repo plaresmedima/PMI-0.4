@@ -128,11 +128,14 @@ pro PMI__Button__Control__MOCOMO_2D_DCE_1CMD, id, v
 		sensitive = (ns gt 0) and (nr gt 0)
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
+    widget_control, id, sensitive=0 ;remove when debugged
 end
 
 function PMI__Button__MOCOMO_2D_DCE_1CMD, parent,value=value,separator=separator
 
-    QIM_DCE_1CMD
+	MOCOMO_3D__DEFINE
+	MoCoModel__DEFINE
+    MoCoModel_OneCompartment__DEFINE
 
     if n_elements(value) eq 0 then value = 'PK motion correction'
 

@@ -111,7 +111,9 @@ pro PMI__Button__Event__MOCOMO_2D_DTI, ev
     	if product(win[k].n) gt 0 then begin
 
 	        Source = TRANSPOSE(Source, [2,0,1])
+
 	        MOCOMO, source, Model, Independent, GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win[k]
+
 	        Fit = MoCoModelFit(Source, Model, Independent, PARAMETERS=Par)
 	        Par = TRANSPOSE(Par, [1,2,0])
             Source = TRANSPOSE(Source, [1,2,0])
@@ -151,6 +153,8 @@ end
 
 function PMI__Button__MOCOMO_2D_DTI, parent,value=value,separator=separator
 
+	MOCOMO_3D__DEFINE
+	MoCoModel__DEFINE
 	MoCoModel_DiffusionTensorImaging__DEFINE
 
     if n_elements(value) eq 0 then value = 'DTI motion correction'

@@ -201,7 +201,6 @@ FUNCTION iBEAt_Import_Leeds_10_6__LoadDCESequence_NEW, Stdy, Series, files, stat
   Dcm = Stdy -> New('SERIES', Name = Series, Domain = {z:z, t:t[3:n_elements(t)-1], m:d[0:1]})
 
   x = (d[0]-nx)/2
-
   y = (d[1]-ny)/2
 
   im = fltarr(d[0],d[1])
@@ -427,7 +426,6 @@ PRO iBEAt_Import_Leeds_10_6, Stdy, files, status=status
       nr = series_number[first[i]]
   	  Name = '[' + strcompress(nr,/remove_all) +']_' + SeriesName[i]
   	  CASE SeriesName[i] OF
-
 
   	    'T1map_kidneys_cor-oblique_mbh_magnitude': 		iBEAt_Import_Leeds_10_6__LoadT1mapMOLLI,Stdy, Name, SeriesFiles, status
         'T2map_kidneys_cor-oblique_mbh_magnitude':		iBEAt_Import_Leeds_10_6__LoadT2,	 	Stdy, Name, SeriesFiles, status

@@ -141,7 +141,9 @@ PRO PMI__Button__Event__MOCOMO_3D_DCE_2CM, ev
 
 	Model = 'TwoCompartmentFiltration'
 	Source = TRANSPOSE(Source, [3,0,1,2])
+
 	MOCOMO, Source, Model, independent, GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win
+
 	Fit = MoCoModelFit(Source, Model, Independent, PARAMETERS=Par)
 	Par = PHYSICAL_2CFM_PARS(Par)
 	Par = TRANSPOSE(Par, [1,2,3,0])
@@ -180,6 +182,10 @@ pro PMI__Button__Control__MOCOMO_3D_DCE_2CM, id, v
 end
 
 function PMI__Button__MOCOMO_3D_DCE_2CM, parent,value=value,separator=separator
+
+	MOCOMO_3D__DEFINE
+	MoCoModel__DEFINE
+	MoCoModel_TwoCompartmentFiltration__DEFINE
 
     if n_elements(value) eq 0 then value = '3D Model-driven registration (DCE)'
 

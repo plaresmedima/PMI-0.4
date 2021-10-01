@@ -123,6 +123,7 @@ function FitSingleInlet, Model, Time, Input, Residue, Pars, DELAY_VALUES=s, DELA
 
 	tmp = min(Error,i)
 	Delay = Delay[i]
+
 	If Delay gt 0 then Input_del = ShiftAif(Input,Time,Delay) else Input_del = Input
 	If Delay lt 0 then Residue_del = ShiftAif(Residue,Time,-Delay) else Residue_del = Residue
 

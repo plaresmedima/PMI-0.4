@@ -135,6 +135,8 @@ end
 
 function PMI__Button__MOCOMO_3D_VFA, parent,value=value,separator=separator
 
+	MOCOMO_3D__DEFINE
+	MoCoModel__DEFINE
 	MoCoModel_VariableFlipAngle__DEFINE
 
     if n_elements(value) eq 0 then value = 'VFA motion correction'

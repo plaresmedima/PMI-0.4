@@ -1,6 +1,4 @@
-
-
-FUNCTION PMI__Button__Input__MOCOMO_3D_CONST, top, series, in, Win
+FUNCTION PMI__Button__Input__MOCOMO_3D_VFA, top, series, in, Win
 
     PMI__Info, top, Stdy=Stdy
     DynSeries = Stdy->Names(0,DefDim=3,ind=ind,sel=sel)
@@ -56,6 +54,7 @@ FUNCTION PMI__Button__Input__MOCOMO_3D_CONST, top, series, in, Win
     	    goto, jump
     	  endif
     	ENDIF
+
 		return, 1
         JUMP: IF 'Cancel' EQ dialog_message(msg,/information,/cancel) THEN return, 0
 
@@ -63,72 +62,88 @@ FUNCTION PMI__Button__Input__MOCOMO_3D_CONST, top, series, in, Win
 END
 
 
-pro PMI__Button__Event__MOCOMO_3D_CONST, ev
+pro PMI__Button__Event__MOCOMO_3D_VFA, ev
 
 	PMI__Info, ev.top, Status=Status, Stdy=Stdy
-	PMI__Message, status, 'Preparing calculation..'
+    IF NOT PMI__Button__Input__MOCOMO_3D_VFA(ev.top,series,in,win) THEN RETURN
 
-    IF NOT PMI__Button__Input__MOCOMO_3D_CONST(ev.top,series,in,win) THEN RETURN
+	PMI__Message, status, 'Preparing..'
 
-	PMI__Message, status, 'Preparing calculation..'
+	;Get independent parameters
 
-	time = Series->t() - Series->t(0)
-	Source = Series->Read(Stdy->DataPath())
+	FA = Series -> t()
+	TR = Series -> GETVALUE('0018'x,'0080'x)
+	Independent = [TR,FA]
 
 	;Define new image series
 
     Corr = Stdy -> New('SERIES', Default = Series, Name = Series->name() + '[MoCo]' )
-    S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name() + '[S]')
+    S0 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name() + '[S0]')
+    T1 	 = Stdy -> New('SERIES', Default = Series, Name = Series->name() + '[T1 (msec)]')
 
-	S0 -> t, Series->t(0)
+	;Set time coordinates
+
+	S0 	-> t, Series->t(0)
+    T1 	-> t, Series->t(0)
+
+	;Set default windowing
 
 	Corr -> Trim, Series->Trim()
-	S0 -> Trim, Series->Trim()
+	S0 	 -> Trim, Series->Trim()
+	T1 	 -> Trim, [0,2000.0]
 
-    PMI__Message, status, 'Calculating..'
+	;Start calculation
 
-	Model = 'Constant'
-	Independent = 0B
+	PMI__Message, status, 'Calculating..'
+	start_time = systime(1)
 
-tt=systime(1)
+	Source = Series->Read(Stdy->DataPath())
 
+	;Perform MDR
+
+	Model = 'VariableFlipAngle'
 	Source = TRANSPOSE(Source, [3,0,1,2])
-	MOCOMO, Source, Model, Independent, GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win
+	MOCOMO, Source, Model, independent, GRID_SIZE=in.res, TOLERANCE=in.prec, WINDOW=win
 	Fit = MoCoModelFit(Source, Model, Independent, PARAMETERS=Par)
-	Par = TRANSPOSE(Par, [1,2,3,0])
-	Source = TRANSPOSE(Source, [1,2,3,0])
+    Source = TRANSPOSE(Source, [1,2,3,0])
+
+	;Write results to disk
 
 	Corr -> Write, Stdy->DataPath(), Source
-	S0 	 -> Write, Stdy->DataPath(), Par
+	S0 	 -> Write, Stdy->DataPath(), Par[0,*,*,*]
+	T1 	 -> Write, Stdy->DataPath(), REMOVE_INF(1/Par[1,*,*,*])
 
-print,(systime(1)-tt)/60.
+	print, 'calculation time (min): ', (systime(1)-start_time)/60.
 
     PMI__Control, ev.top, /refresh
 end
 
 
-pro PMI__Button__Control__MOCOMO_3D_CONST, id, v
+
+pro PMI__Button__Control__MOCOMO_3D_VFA, id, v
 
 	PMI__Info, tlb(id), Stdy=Stdy
 	if obj_valid(Stdy) then begin
 		Series = Stdy->Names(0,ns,DefDim=3)
-		sensitive = ns gt 0
+		Regions = Stdy->Names(1,nr)
+		sensitive = (ns gt 0) and (nr gt 0)
 	endif else sensitive=0
     widget_control, id, sensitive=sensitive
 end
 
-function PMI__Button__MOCOMO_3D_CONST, parent,value=value,separator=separator
+
+
+function PMI__Button__MOCOMO_3D_VFA, parent,value=value,separator=separator
 
 	MOCOMO_3D__DEFINE
-	MoCoModel__DEFINE
-	MoCoModel_Constant__DEFINE
+	MoCoModel_VariableFlipAngle__DEFINE
 
-    if n_elements(value) eq 0 then value = 'Dynamic motion correction'
+    if n_elements(value) eq 0 then value = 'VFA motion correction'
 
     id = widget_button(parent $
     ,   value = value  $
-    ,  	event_pro = 'PMI__Button__Event__MOCOMO_3D_CONST' $
-    ,	pro_set_value = 'PMI__Button__Control__MOCOMO_3D_CONST' $
+    ,  	event_pro = 'PMI__Button__Event__MOCOMO_3D_VFA' $
+    ,	pro_set_value = 'PMI__Button__Control__MOCOMO_3D_VFA' $
     ,  	separator = separator )
 
     return, id

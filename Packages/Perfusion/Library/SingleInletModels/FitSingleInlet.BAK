@@ -1,0 +1,139 @@
+;DESCRIPTION: Fits a model with a single arterial inlet into the central (blood) compartment
+;WRITTEN BY: Steven Sourbron, Ludwig Maximilian University Munich
+;INTRODUCED: 17 july 2009
+
+;CALLING SEQUENCE
+;Fit = FitSingleInlet(Model, Time, Input, Residue, Pars)
+
+;RETURN VALUES
+;Fit: 	the best fit to the data
+
+;REQUIRED ARGUMENTS
+;Model		A string with the name of the model to be fitted (eg. 'FitSingleInletPatlak')
+;Time: 		time points at which the arterial input function is defined (in seconds)
+;Input: 		the arterial input function (in arbitrary units)
+;				must have the same number of elements as "time"
+;Residue: 	the tissue curve (in the same units as "input")
+;				must have the same number of elements as "time"
+;Pars: 		a named variable with an array of initial values for the model parameters
+;				Upon return, "Pars" contains the values of the fitted parameters
+
+;KEYWORD ARGUMENTS
+
+;DELAY_VALUES=s		a three-element array defining the delay values over which should be fitted
+;					if undefined, the model is fitted without a delay parameter
+;						s[0] and s[1] are the smallest and largest delays under consideration (in seconds)
+;						s[2] is the stepsize (in seconds)
+;						eg. s = [-10,20,0.5] fits with delay from -10 to 20 seconds in steps of 0.5 seconds
+;DELAY_PAR			A named variable that contains the value of the optimal delay time upon return
+;INDICES=ti			indices of "time" which are used for the fit. If not defined, all time points are fitted.
+;AKAIKE_ERROR=aic 	a named variable that contains the Akaike Fit error upon return
+;LIMITED_BELOW		a binary array with the same number of elements as "Par"
+;					set to 1 to fit the corresponding element in "Par" with a lower limit (default=not limited)
+;LIMITS_BELOW		an array of lower limits, one element for each entry "1" in LIMITED_BELOW (default=0)
+;LIMITED_ABOVE		a binary array with the same number of elements as "Par"
+;					set to 1 to fit the corresponding element in "Par" with an upper limit (default=not limited)
+;LIMITS_ABOVE		an array of upper limits, one element for each entry "1" in LIMITED_ABOVE (default=1)
+;POSITIVITY 		If set, the parameter values are constrained to be positive
+;NODERIVATIVE		If set, the derivatives with respect to the model parameters are calculated from the data
+
+
+;
+;
+;    Copyright (C) 2009 Steven Sourbron
+;
+;    This program is free software; you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation; either version 2 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License along
+;    with this program; if not, write to the Free Software Foundation, Inc.,
+;    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;
+;
+;
+
+
+FUNCTION FitSingleInletModel, Model, Time, Input, Residue, Pars, $
+	INDICES=ti, $
+	AKAIKE_ERROR=aic, $
+	LIMITED_BELOW=limited_below,$
+	LIMITS_BELOW=limits_below, $
+	LIMITED_ABOVE=limited_above, $
+	LIMITS_ABOVE=limits_above, $
+	POSITIVITY=positivity, $
+	NODERIVATIVE=noderivative
+
+
+	;SET LIMITS
+	nP = n_elements(Pars)
+	limited = bytarr(2)	;Default = not limited
+	limits = dindgen(2)	;Default limits = [0,1]
+	parinfo = replicate({limited:limited, limits:limits}, nP)
+	if keyword_set(positivity) then parinfo[*].limited[0] = 1+bytarr(nP)
+  	if n_elements(limited_below) ne 0 then begin
+  		parinfo[*].limited[0] = limited_below
+  		if n_elements(limits_below) ne 0 then begin
+  			i = where(limited_below, cnt)
+  			if cnt gt 0 then parinfo[i].limits[0] = limits_below
+  		endif
+  	endif
+  	if n_elements(limited_above) ne 0 then begin
+  		parinfo[*].limited[1] = limited_above
+  		if n_elements(limits_above) ne 0 then begin
+  			i = where(limited_above, cnt)
+  			if cnt gt 0 then parinfo[i].limits[1] = limits_above
+  		endif
+  	endif
+
+	;CALCULATE FIT
+	n = n_elements(Time)
+	if n_elements(ti) eq 0 then ti=lindgen(n)
+	ni = n_elements(ti)
+	Fit = mpcurvefit([ni,ti,Time,Input], Residue[ti], 1+0E*Residue[ti], Pars, function_name='SingleInlet'+Model,/quiet,PARINFO=parinfo,NODERIVATIVE=noderivative)
+	if ni ne n then CALL_PROCEDURE, 'SingleInlet'+Model, [n,lindgen(n),Time,Input], Pars, Fit
+	if arg_present(aic) then aic = ni*alog(total((Residue[ti]-Fit[ti])^2)/ni) + 2D*(1+nP)
+
+	return, Fit
+END
+
+
+function FitSingleInlet, Model, Time, Input, Residue, Pars, DELAY_VALUES=s, DELAY_PAR=delay, AKAIKE_ERROR=aic, _EXTRA=e
+
+	IF n_elements(s) EQ 0 THEN $	;Fit without delay
+		return, FitSingleInletModel(Model,Time,Input,Residue, Pars, AKAIKE_ERROR=aic, _EXTRA=e)
+
+print, s
+
+	n = 1 + floor((s[1]-s[0])/s[2])
+	Delay = s[0] + s[2]*findgen(n)
+	Error = Delay*0
+
+
+	for i=0L,n-1 do begin
+		Init = Pars
+		If Delay[i] gt 0 then Input_del = ShiftAif(Input,Time,Delay[i]) else Input_del = Input
+		If Delay[i] lt 0 then Residue_del = ShiftAif(Residue,Time,-Delay[i]) else Residue_del = Residue
+		Fit = FitSingleInletModel(Model, Time, Input_del, Residue_del, Init, AKAIKE_ERROR=aic, _EXTRA=e)
+		Error[i] = aic
+	endfor
+
+	tmp = min(Error,i)
+	Delay = Delay[i]
+
+	If Delay gt 0 then Input_del = ShiftAif(Input,Time,Delay) else Input_del = Input
+	If Delay lt 0 then Residue_del = ShiftAif(Residue,Time,-Delay) else Residue_del = Residue
+
+	Fit = FitSingleInletModel(Model,Time,Input_del, Residue_del, Pars, AKAIKE_ERROR=aic, _EXTRA=e)
+	If Delay lt 0 then Fit = interpol(Fit,Time,Time-Delay)
+
+	aic = aic + 2D
+
+	return, Fit
+end

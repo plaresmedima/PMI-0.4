@@ -80,6 +80,7 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 	nx = PMI__Dicom__Read(files[0],'0028'x,'0011'x)
 	ny = PMI__Dicom__Read(files[0],'0028'x,'0010'x)
 
+
 	scale_up = $
 		strmid(ProtocolName,0,10) eq 'vFAIgFLASH' $
 	 || strmid(ProtocolName,2,10) eq 'vFAIgFLASH' $
@@ -91,7 +92,6 @@ pro PMI__Button__SeriesImportTristanRatDicom__Load, Stdy, files, status=status, 
 		nx = floor(scalefactor*nx)
 		ny = floor(scalefactor*ny)
 	endif
-
 
 	PMI__Message, status, 'Sorting DICOM Series ' + cnt
 

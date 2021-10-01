@@ -1,13 +1,13 @@
 
 FUNCTION PMI__Display__tristanratsroi_v3_2::Constants
 
-	c = {rb:0E, rh:0E, ve:0E, vh:0E, ves:0E, R1l:0E, R1s:0E}
+	c = {rb:0E, rh:0E, ve:0E, vh:0E, ves:0E, R1l:0E, R1s:0E, fp:0E}
 
 	; Relaxivity measurements provided by Claudia Green, Bayer, sept 2019
 
-	FieldStrength = self.series->GETVALUE('0018'x,'0087'x)
+	FieldStrength = Self.FieldStrength
 
-	Case floor(FieldStrength) of
+	Case FieldStrength of
 		4.0: begin
 			c.rb = 6.4 ;relaxivity of blood in Hz/mM ;assume spleen relaxivity is the same
 			c.rh = 7.6 ;relaxivity of hepatocytes
@@ -22,10 +22,16 @@ FUNCTION PMI__Display__tristanratsroi_v3_2::Constants
 		end
 	Endcase
 
+
 	;Volume values provided by Dan Scotcher (email 13 sept 2019)
 	c.ve = 0.230 ;extracellular_volume_fraction in the liver
 	c.vh = 0.722 ;hepatocyte_volume_fraction
 	c.ves = 0.314 ;spleen_extracellular_volume_fraction
+
+	fb = 3.61/60. ;liver blood flow (mL/sec/mL) (https://doi.org/10.1021/acs.molpharmaceut.1c00206
+	Hct = 0.418 ; (Cremer et al, J Cereb Blood Flow Metab 3, 254-256 (1983).
+
+	c.fp = fb * Hct ;liver plasma flow
 
 	return, c
 
@@ -48,12 +54,12 @@ PRO PMI__Display__tristanratsroi_v3_2::Fit
 
 	Pars = [0.0393, 0.00153] * (1-0.23) 	;[khe, kbh] in units 1/s
 	parinfo = replicate({limited:[1B,0B], limits:[0D,1D]}, 2)
-	Fit = mpcurvefit([c.rb,c.rh,c.ve,c.vh,ni,ti,Time,aif], $
+	Fit = mpcurvefit([c.rb,c.rh,c.ve,c.vh,c.fp,ni,ti,Time,aif], $
 		Curve, 1+0E*Curve, Pars, $
-		function_name='TristanRatModel_v2_0', $
+		function_name='TristanRatModel_v3_2', $
 		/quiet,/NODERIVATIVE, PARINFO=parinfo)
 	FitError = sqrt(total((Fit-Curve)^2))/sqrt(total((Curve)^2))
-	if ni ne n then TristanRatModel_v2_0, [c.rb,c.rh,c.ve,c.vh, n,lindgen(n),Time,aif], Pars, Fit
+	if ni ne n then TristanRatModel_v3_2, [c.rb,c.rh,c.ve,c.vh,c.fp,n,lindgen(n),Time,aif], Pars, Fit
 
 	Parameters = $
 		[{Name:'Hepatocellular Uptake Rate (khe) '		,Units:'ml/min/ml'		,Value: 60D*Pars[0]	        ,Nr: 2} $
@@ -194,9 +200,9 @@ FUNCTION PMI__Display__tristanratsroi_v3_2::Event, ev
 		Self->GET, Time=Time, RoiCurve=RoiCurve, AifCurve=AifCurve, Fit=Fit, Model=Model, Roiname=Roiname, Indices=Ind
 		if Uname eq 'Export' then begin
 			PMI__Info, ev.top, Stdy=Stdy
-			Path = Stdy->Datapath() + 'TRISTAN Rat Model v3.0 (ROI)'
+			Path = Stdy->Datapath() + 'TRISTAN Rat Model v3.2 (ROI)'
 			file_mkdir, Path
-			File = Path + '\' + Roiname + '__SI_' + Model
+			File = Path + '\' + Roiname
 		endif else begin
 			PMI__Info, ev.top, State=State
 			if not State -> Get_file(file, file=cleanstr(Roiname + '__' + Model), title='Save as..', filter='.tif') then return,0B
@@ -371,7 +377,7 @@ PRO PMI__Display__tristanratsroi_v3_2::SET, $
 	xsize=xsize, ysize=ysize, $
 	Set_droplist_select = Set_droplist_select, $
 	Series=Series, Baseline=Baseline, $
-	OnDisplay=OnDisplay
+	OnDisplay=OnDisplay, FieldStrength = FieldStrength
 
 	if keyword_set(pmi_resize) then begin
 		gpmi = widget_info(/geometry, tlb(self.id))
@@ -379,6 +385,7 @@ PRO PMI__Display__tristanratsroi_v3_2::SET, $
 		self->plot
 	endif
 
+	if n_elements(FieldStrength) 	ne 0 then Self.FieldStrength = FieldStrength
 	if n_elements(Series) 	ne 0 then Self.Series = Series
 	if n_elements(Baseline) 	ne 0 then self.Baseline = Baseline
 	if n_elements(Message) 	ne 0 then begin
@@ -457,7 +464,7 @@ FUNCTION PMI__Display__tristanratsroi_v3_2::Init, parent, CursorPos, xsize=xsize
 
 		Base = widget_base(Controls,/row,/frame,/base_align_center)
 			id = widget_button(Base, xsize=25, ysize=19, value='FIT', uname='FITbttn')
-			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['TRISTAN Rat Model v3.0'])
+			id = widget_droplist(Base,/dynamic_resize, uname='FIT',value = ['TRISTAN Rat Model v3.2'])
   			widget_control, id, set_droplist_select = 0, sensitive=0
 
 		Base = widget_base(Controls,/row,/frame,/nonexclusive)
@@ -475,8 +482,6 @@ END
 
 PRO PMI__Display__tristanratsroi_v3_2__Define
 
-	TristanRatModel_v2_0
-
 	Struct = {PMI__Display__tristanratsroi_v3_2 	$
 	,	id: 0L 	$
 	,	DrawId: 0L $
@@ -486,6 +491,7 @@ PRO PMI__Display__tristanratsroi_v3_2__Define
 	,	Parameters: ptr_new() $
 	,	Series: obj_new() $
 	,	Baseline: 0L $
+	,	FieldStrength: 0L
 	}
 END
 
@@ -501,16 +507,22 @@ pro PMI__Button__Event__tristanratsroi_v3_2, ev
 		ptr_new({Type:'DROPLIST',Tag:'series', Label:'Dynamic series', Value:Series, Select:sel}), $
 		ptr_new({Type:'DROPLIST',Tag:'aif'	 , Label:'Spleen Region', Value:Regions, Select:stdy->sel(1)}), $
 		ptr_new({Type:'DROPLIST',Tag:'roi'	 , Label:'Liver Region', Value:Regions, Select:stdy->sel(1)}), $
-		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Number of precontrast scans', Value:5L})])
+		ptr_new({Type:'VALUE'	,Tag:'nbase' , Label:'Number of precontrast scans', Value:4L})])
 	IF v.cancel THEN return
 
 	Series = Stdy->Obj(0,ind[v.series])
-	FieldStrength = series->GETVALUE('0018'x,'0087'x)
+
+	FieldStrength = FLOOR(series->GETVALUE('0018'x,'0087'x))
 	IF FieldStrength EQ 0 THEN BEGIN
-		in = PMI__Form(ev.top, Title='Verify field strength', [$
+		in = PMI__Form(ev.top, Title='Please enter the correct field strength.', [$
 			ptr_new({Type:'VALUE',Tag:'field', Label:'Field strength (Tesla)', Value:7D})])
 		IF in.cancel THEN return
-		Series -> set, obj_new('DATA_ELEMENT','0018'x,'0087'x,vr='DS',name='Magnetic Field Strength',value=in.field)
+		FieldStrength = FLOOR(in.field)
+	ENDIF
+	IF NOT ((FieldStrength EQ 4.0) OR (FieldStrength EQ 7.0)) THEN BEGIN
+		msg = 'Sorry, only field strengths of 4T and 7T are currently supported.'
+		OK = dialog_message(msg,/information)
+		return
 	ENDIF
 
 	PMI__Control, ev.top, Viewer = 'PMI__Display__tristanratsroi_v3_2', Display=Display
@@ -518,7 +530,8 @@ pro PMI__Button__Event__tristanratsroi_v3_2, ev
 	Display -> Set, /Refresh, $
 		Series = Series, $
 		Baseline = v.nbase, $
-		set_droplist_select = [v.roi,v.aif]
+		set_droplist_select = [v.roi,v.aif], $
+		FieldStrength = FieldStrength
 end
 
 pro PMI__Button__Control__tristanratsroi_v3_2, id, v

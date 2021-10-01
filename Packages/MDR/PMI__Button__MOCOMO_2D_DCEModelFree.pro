@@ -183,6 +183,8 @@ end
 
 function PMI__Button__MOCOMO_2D_DCEModelFree, parent,value=value,separator=separator
 
+	MOCOMO_2D__DEFINE
+	MoCoModel__DEFINE
 	MoCoModel_DCEModelFree__DEFINE
 
     if n_elements(value) eq 0 then value = 'PK motion correction'

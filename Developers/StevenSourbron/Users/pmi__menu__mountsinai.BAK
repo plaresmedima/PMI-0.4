@@ -18,7 +18,7 @@ pro PMI__Menu__MountSinai, parent
     id = widget_button(parent, value='Mount Sinai',/menu)
 
 	Sid = PMI__Button__Sergios_FitDualInletRoi(id, value = 'Liver DCE (ROI)')
-	Sid = PMI__Button__Sergios_DualInletUptakePixel_Orig(id, value='Liver DCE (Pixel)')
+	Sid = PMI__Button__Sergios_DualInletUptakePixel(id, value='Liver DCE (Pixel)')
 	Sid = PMI__Button__Sergios_DualInletUptakePixel_Orig(id, value='Liver DCE with T1-map (Pixel)')
 	Sid = PMI__Button__HEPARIM_VFA(id, value='Variable Flip Angle T1-mapping')
 
